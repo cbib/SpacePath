@@ -1,0 +1,15 @@
+
+Messages pip install bio2bel_kegg (07 05 2024)
+
+Successfully built flask-bootstrap ratelimit requests-ftp visitor
+DEPRECATION: bio2bel 0.4.2 has a non-standard dependency specifier pybel>=0.15.0<0.16.0. pip 24.1 will enforce this behaviour change. A possible replacement is to upgrade to a newer version of bio2bel or contact the author to suggest that they release a version with a conforming dependency specifiers. Discussion can be found at https://github.com/pypa/pip/issues/12063
+
+
+- - 
+
+python3 -m pip install bio2bel_hmdb
+
+
+ERROR: Could not find a version that satisfies the requirement bio2bel_hmdb (from versions: none)
+ERROR: No matching distribution found for bio2bel_hmdb ---> NOT INSTALLED
+

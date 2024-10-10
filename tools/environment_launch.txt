@@ -1,0 +1,3 @@
+# copy and paste these commands
+conda deactivate # deactivate the general conda env
+micromamba activate prototype_py

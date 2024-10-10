@@ -1,0 +1,42 @@
+name: prototype_py
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip  
+  - numpy
+  - pandas
+  - openpyxl
+  - poetry
+  - pyyaml
+  - scikit-learn
+  - scipy
+  - matplotlib
+  - seaborn
+  - networkx
+  - conda-forge::sphinx
+  - conda-forge::coverage
+  - conda-forge::flake8=4.0.1
+  - conda-forge::flake8-import-order=0.18.1
+  - conda-forge::click
+  - conda-forge::pytest 
+  - conda-forge::pytest-cov 
+  - conda-forge::mypy
+  - conda-forge::python-dotenv>=0.5.1
+  - conda-forge::jupyterlab
+  - requests
+  - tqdm
+  - scanpy
+  - anndata
+  - squidpy
+  - bioconda::gseapy
+  - pip:
+    - rpy2
+    - sspa    
+    - bio2bel_kegg
+    - pyimzml
+    - metaspace2020
+    - harmonypy
+
