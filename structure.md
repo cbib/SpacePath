@@ -34,7 +34,7 @@ data
     ├── ..
     ├── ..
     ├── gmt1   <- the KEGG gmt file (generated with ssPA package)
-    └── gmt2  <-  a custom gmt file (metabolites in our workflow) given by the biologist expertise
+    └── gmt2  <-  a custom gmt file elaborated with the help of the biologist expertise
 
 ```
 
