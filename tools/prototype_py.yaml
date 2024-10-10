@@ -35,7 +35,6 @@ dependencies:
   - pip:
     - rpy2
     - sspa    
-    - bio2bel_kegg
     - pyimzml
     - metaspace2020
     - harmonypy
