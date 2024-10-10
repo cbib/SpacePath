@@ -1,13 +1,12 @@
 notebooks and code must be here in this folder
 
 must exist a 'data' folder for initial input, outside this folder
+inside it, each data with its annotations must be in a folder that has the name of the "project"
 
 ```
 data
-  imzML
-  db_tables : e.g. kidkit/src/kegg_lipidmaps_table_generator.py produces one of the files inhere
-  annotations_tables
-  pixel_mx_metaspace: matrices of pixel intensities of the annotated metabolites, downloaded from Metaspace
+  reference_tables/ : working on this in a separate repository
+  brain-ellis/ : normal brain from Metaspace 
 ```
 
 also, must exist a structure for outputs, outside this folder:
