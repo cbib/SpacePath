@@ -1,7 +1,6 @@
 # Structure to reproduce the workflow
 
-must exist a 'data' folder for initial input, outside this folder
-inside it, each data with its annotations must be in a folder that has the name of the "project"
+The workflow uses spatial metabolomics data as input, as well as reference data files, that must be organized exactly as follows.
 
 ## required global structure OUTSIDE this repo
 
