@@ -11,8 +11,8 @@ from tqdm import tqdm
 
 def compute_metrics_for_variables(adata):
     adata.var['mz'] = adata.var.index.astype(float).to_numpy()
-    adata.var['rounded_mz'] = np.around(adata.var['mz'].to_numpy(),
-                                        decimals=9)
+    #adata.var['rounded_mz'] = np.around(adata.var['mz'].to_numpy(),
+    #                                    decimals=9)
     adata.var['variance'] = np.var(adata.X, axis=0)
     adata.var['mean'] = np.mean(adata.X, axis=0)
     adata.var['sum'] = np.sum(adata.X, axis=0)
@@ -107,25 +107,11 @@ def purge_approximate_matching(df ):
 
 
 def run_approximate_match_two_adata(adata1, adata2, TOLERANCE: float):
-    mzs1 = adata1.var['rounded_mz'].astype(float).to_numpy()
-    mzs2 = adata2.var['rounded_mz'].astype(float).to_numpy()
+    mzs1 = adata1.var['mz'].astype(float).to_numpy()
+    mzs2 = adata2.var['mz'].astype(float).to_numpy()
     df = approximate_matching(mzs1, mzs2, TOLERANCE)
     df = purge_approximate_matching(df)
     return df
-
-
-def rounded_mz_as_variable_index_adata(adata):
-    def deduplicate_keep_best_sum(adata):
-        tmp = adata.var.copy()
-        tmp = tmp.sort_values(by=["sum", "rounded_mz"], ascending=[False, False])
-        tmp = tmp.drop_duplicates(subset=['rounded_mz'], keep="first")
-        tmp = tmp.sort_values(by="rounded_mz", ascending=True)
-        return tmp.index.tolist()
-
-    final_mz_to_keep = deduplicate_keep_best_sum(adata)
-    adata = adata[:, final_mz_to_keep]
-    adata.var.index = adata.var['rounded_mz'].tolist()
-    return adata
 
 
 def plot_gross_initial_clusters(adata, out_substring: str, leiden_resolution) -> None:
@@ -160,16 +146,14 @@ def plot_post_filtered_clusters(adata, out_substring):
 
 
 
-
-
 def harmonize_mz_identifiers_data2(adata2, df):
     # preference by the adata1 mz identifiers
     df2 = df.loc[~df['mzs2'].isna(), :]
     def order_good(df2, adata2):
-        # order df2 by mzs2 identical as in adata2.var['rounded_mz']
+        # order df2 by mzs2 identical as in adata2.var['mz']
         df2.index = df2["mzs2"]
         tmp = df2.T
-        tmp = tmp[adata2.var["rounded_mz"].tolist()]
+        tmp = tmp[adata2.var["mz"].tolist()]
         return tmp.T
 
     df2 = df2.assign(harmo_mzs2=df2["mzs2"])
@@ -183,36 +167,7 @@ def harmonize_mz_identifiers_data2(adata2, df):
     return adata2, df2
 
 
-def concatenate_finally(adata1, adata2 ):
-    # bigo = adata1.concatenate(adata2, join='outer',
-    #                          index_unique=None  # keep mz as given, make sure harmonized before!
-    #                          )  ## deprecated !
-    bigo = ad.concat([adata1, adata2],
-                     join="outer",
-                     label='batch',
-                     merge="same",  # how not aligned elems are selected
-                     index_unique=None)
-    bigo.X[np.isnan(bigo.X)] = 0
-
-    return bigo
 
 
-def save_visualizations_after_concat(bigo) -> None:
-    # sc.pp.log1p(bigo)   # log or not yields the same results, let unchanged
-    sc.pp.pca(bigo)
-    sc.pp.neighbors(bigo)
-    sc.tl.umap(bigo)
-    sc.pl.umap(bigo, color=["batch"], save="batch_TDdata.pdf")
-    sc.pl.umap(bigo, color="leiden", save="cluster_TDdata.pdf")
 
 
-def run_harmony(bigo):
-    sc.pp.pca(bigo)
-    print("===", bigo.X[:, 370].sum())
-    sc.external.pp.harmony_integrate(bigo, 'batch')
-    # bigo.obsm['X_pca_harmony']
-    print("===", bigo.X[:, 370].sum())
-    sc.pp.neighbors(bigo)
-    sc.tl.umap(bigo)
-    sc.pl.umap(bigo, color=["batch"], save="batch_TD_data_harmony.pdf")
-    return bigo
