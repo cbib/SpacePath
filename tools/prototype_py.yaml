@@ -33,9 +33,6 @@ dependencies:
   - squidpy
   - bioconda::gseapy
   - pip:
-    - rpy2
     - sspa    
     - pyimzml
-    - metaspace2020
-    - harmonypy
 

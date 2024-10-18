@@ -1,6 +1,7 @@
 
 import os
 import logging
+import numpy as np
 import time
 from pathlib import Path
 from typing import List, Dict, Literal, Optional, Set, Union
@@ -36,7 +37,67 @@ class Dataset(BaseModel, extra=Extra.allow):
     subfolder: str  # where either imzml+ibd files, or spatialmatrix  ! 
 
 
-class DataAnnotations(Dataset):
+class MetaboliteReferenceMappings(BaseModel, extra=Extra.allow):
+    data_dir: str
+    subfolder: str
+    delimiter: str = '\t'  # we provide tab delimited .tsv viles
+    mapping_files: Dict[str, str]  # list with basename.extension
+
+    def load_mappings(self):
+        logger.info(
+            "Loading reference files for mapping compounds identifiers")
+        self.check_expectations_map1()
+
+        dfs_dict = {}
+        admitted_keys = list(set(supported_mappings).intersection(
+            set(list(self.mapping_files.keys()))))
+        for map_key in admitted_keys:
+            logger.info(f"  loading {map_key}")
+            try:
+                df = pd.read_csv(
+                    os.path.join(
+                        self.data_dir, self.subfolder,
+                        self.mapping_files[map_key]),
+                    sep=self.delimiter,
+                    header=0
+                )
+            except Exception as e:
+                logger.info(f"Error (read_csv): \n {e}")
+
+            self.check_expectations_map2(df, map_key)
+            logger.info(f"   your loaded dataframe :\n {df.head(2)}")
+            df = df.dropna()
+            df = df.loc[df["KEGG"] != "", :]
+            df = df.loc[df["KEGG"] != "NA", :]
+            df = df.loc[df["KEGG"] != "NaN", :]
+            df['database'] = map_key
+            df.columns = ["not_kegg_id", "KEGG", "database"]
+            dfs_dict[map_key] = df
+
+        self.table = helpers.combine_frames_identical_columns(
+            dfs_dict
+        )
+
+    def check_expectations_map1(self):
+        if len(set(list(self.mapping_files.keys())).intersection(
+                set(supported_mappings))) == 0:
+            logger.error(f"Error, none of the mappings is supported,"
+                         f" or the dictionary keys are misspelled. Only: "
+                         f"{supported_mappings}) are supported")
+        for k in list(self.mapping_files.keys()):
+            if k not in supported_mappings:
+                logger.warning(f"warning: '{k}' mapping is not"
+                               " yet supported and will be ignored")
+
+    def check_expectations_map2(self, df, map_key: str):
+        cols = list(df.columns)
+        if not np.all(np.array(cols) == np.array([map_key, "KEGG"])):
+            logger.error(f"Error: the columns of this table are not "
+                         f"as expected, they must be exactly : "
+                         f"'{map_key}' and 'KEGG'")
+
+
+class MetabolomeAnnotations(Dataset):
     annotation_files : Dict[str, str]
     delimiter : str = ","  # the metaspace current delimiter is comma
     col_molecule_ids: str = "moleculeIds"  
@@ -60,9 +121,7 @@ class DataAnnotations(Dataset):
                         self.data_dir, self.subfolder, 
                         self.annotation_files[anno_key]),
                     comment='#',  # override any comment (metaspace comments)
-                    sep=self.delimiter,
-                    header=0
-                )
+                    sep=self.delimiter, header=0)
             except Exception as e:
                 logger.info(f"Error (read_csv): \n {e}")
 
@@ -70,17 +129,30 @@ class DataAnnotations(Dataset):
 
             df = df[[self.col_mz, self.col_formula, 
                      self.col_molecule_ids, self.col_molecule_names]]
-            
+            df = df.dropna()
             df['database'] = anno_key
+            if anno_key == "custom_kegg":
+                df['database'] = "KEGG"
             dfs_dict[anno_key] = df
 
-            self.annotation_pretable = helpers.combine_annotations(
-                dfs_dict
-                )
+            self.annotation_pretable = \
+                helpers.combine_frames_identical_columns(dfs_dict)
+
             self.annotation_table = helpers.spreadout_annotation_df(
                 self.annotation_pretable, self.col_mz, self.col_formula, 
                 self.col_molecule_ids, self.col_molecule_names
                 )
+
+    def translate_ids_to_kegg(self,
+                                  ref_obj: MetaboliteReferenceMappings,
+                                  ):
+        df = self.annotation_table
+        table = ref_obj.table
+        try:
+            res = helpers.newfun(df, table)
+        except Exception as e:
+            logger.warning("Error: {e}")
+
      
     def check_expectations_1(self):
         if len(set(list(self.annotation_files.keys())).intersection(
@@ -108,13 +180,13 @@ class DataAnnotations(Dataset):
             logger.error(f"one or more columns of in your annotations are missing, "
                          f"expected ones are exactly {expected_columns_by_df}")
 
-           
-class DataImzmlIbd(Dataset):
+
+class MetabolomeImzmlIbd(Dataset):
     data_imz_ibd_basename : str # one
     # TODO: complete with real data later
 
 
-class DataSpatialMatrix(Dataset):
+class MetabolomeSpatialMatrix(Dataset):
     matrix_filename: str  # one only
     col_mz : str = "mz"
     style_coordinates_names: str = "metaspace"
@@ -128,53 +200,6 @@ class DataSpatialMatrix(Dataset):
         print("checking")
 
 
-class ReferenceMappings(BaseModel, extra=Extra.allow):
-    data_dir: str
-    subfolder : str  
-    delimiter : str = '\t'  # we provide tab delimited .tsv viles
-    mapping_files: Dict[str, str] # list with basename.extension
-
-    def load_mappings(self):
-        logger.info("Loading reference files for mapping compounds identifiers")
-        self.check_expectations_map1()
-
-        dfs_dict = {}
-        admitted_keys = list(set(supported_mappings).intersection(
-            set(list(self.mapping_files.keys()))))
-        for map_key in admitted_keys:
-            logger.info(f"  loading {map_key}")
-            try:
-                df = pd.read_csv(
-                    os.path.join(
-                        self.data_dir, self.subfolder, 
-                        self.mapping_files[map_key]),
-                    sep=self.delimiter,
-                    header=0
-                )
-            except Exception as e:
-                logger.info(f"Error (read_csv): \n {e}")
-
-            #  self.check_expectations_map2(df)  # TODO: define
-
-            df = df[[self.col_mz, self.col_formula, 
-                     self.col_molecule_ids, self.col_molecule_names]]
-            
-            df['database'] = map_key
-            dfs_dict[map_key] = df
-        
-        self.mapping_df_dict = dfs_dict
-
-
-    def check_expectations_map1(self):
-        if len(set(list(self.mapping_files.keys())).intersection(
-            set(supported_mappings))) == 0:
-            logger.error(f"Error, none of the mappings is supported," 
-            f" or the dictionary keys are misspelled. Only: " 
-            f"{supported_mappings}) are supported")
-        for k in list(self.mapping_files.keys()):
-            if k not in supported_mappings:
-                logger.warning(f"warning: '{k}' mapping is not" 
-                " yet supported and will be ignored")
 
 
       

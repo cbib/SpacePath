@@ -6,7 +6,6 @@ import numpy as np
 import anndata as ad
 import gc
 import scanpy as sc
-import harmonypy as hm
 import squidpy as sq
 from tqdm import tqdm
 
@@ -21,7 +20,7 @@ def reset_log_config(logger):
     return logger
     
 
-def combine_annotations(dfs_dict : Dict[str, pd.DataFrame]
+def combine_frames_identical_columns(dfs_dict : Dict[str, pd.DataFrame]
 ) -> pd.DataFrame:
     list_of_frames = []
     for k in dfs_dict.keys():
@@ -61,6 +60,10 @@ def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str,
     df_out = pd.concat([tmp1, tmp2], axis=1)
 
     return df_out
+
+
+def newfun(df, ref):
+    print("Ill be back")
 
 
 def compute_metrics_for_variables(adata):

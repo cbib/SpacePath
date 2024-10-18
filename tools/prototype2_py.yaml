@@ -250,4 +250,4 @@ dependencies:
     - umap-learn==0.5.5
     - unicodedata2==15.1.0
     - wheezy-template==3.2.2
-prefix: /home/jgalvis/.conda/envs/prototype_py
+
