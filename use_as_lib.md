@@ -26,14 +26,60 @@ sinteractive --nodes=1 --ntasks-per-node=8
 Activate the conda environment, launch python:
 ```
 module load Metabo/stable
-python
-```
+cd zonist
+pip install -e .
 
 
 ```
-from zonist.src import spectra2anndata
 
-spectra = spectra2anndata.open_spectra("my_imzml","my_ibd")
+Finally do a script in python wherever you want
+```
+
+#import sys
+# caution: path[0] is reserved for script path (or '' in REPL)
+#sys.path.insert(1, '/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/zonist/')
+#import zonist as zo
+#from zo.data import DataSpatialMatrix
+
+
+# OR
+# locate above zonist, launch pip install -e zonist
+
+import zonist.data as zd   # works if pip -e ... thing
+
+##
+# vars
+
+mappingfiles = {'HMDB': 'ww', 'LIPIDMAPS': 'mm'} # kegg to kegg is senseless
+
+mx = {'HMDB': 'r', 
+      'LIPIDMAPS': 't', 
+      'KEGG': ""}  # if no kegg, empty string
+
+annots = {'HMDB': 'oo', 
+         'LIPIDMAPS': 'ee',
+         'KEGG': ""}  # same as above
+
+##
+
+anno_obj = zd.References(
+    parent_dir="nose",    
+    subfolder_mappings="mappingsfolder", 
+    mappings_filenames=mappingfiles, 
+   )
+print("anno_obj", anno_obj, "\n")
+
+oh = zd.DataSpatialMatrices(
+    name="heheh",
+    parent_dir="nose",    
+    subfolder_data="heheh",  annotations_filenames=annots,
+    matrices_filenames=mx)
+
+print("datatata", oh, "\n")
+
+print("loaded")
+
+
 ```
 
 and call all the rest of functions you want

@@ -1,4 +1,6 @@
-from typing import List
+import sys
+import logging
+from typing import List, Dict
 import pandas as pd
 import numpy as np
 import anndata as ad
@@ -7,6 +9,58 @@ import scanpy as sc
 import harmonypy as hm
 import squidpy as sq
 from tqdm import tqdm
+
+
+def reset_log_config(logger):
+    """parameters for the log file"""
+    out_log_file_name = "log.log"
+    logging.basicConfig(encoding='utf-8', stream=sys.stdout)
+    file_handler = logging.FileHandler(out_log_file_name)
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.DEBUG)
+    return logger
+    
+
+def combine_annotations(dfs_dict : Dict[str, pd.DataFrame]
+) -> pd.DataFrame:
+    list_of_frames = []
+    for k in dfs_dict.keys():
+         list_of_frames.append(dfs_dict[k])
+    df_out = pd.concat(list_of_frames)
+
+    return df_out  
+    
+
+def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str, 
+    col_molecule_ids: str, col_molecule_names: str):
+    """
+    Transforms this format:
+
+    mz      formula      moleculeIds                  moleculeNames                 database
+    720.55	C39H78NO8P   LMGP02011252, LMGP01010532	  PE(13:0/21:0), PC(15:0/16:0)  LipidMaps
+    
+    Into:
+
+    moleculeIds   mz            formula     moleculeNames   database
+    LMGP02011252	720.553782	C39H78NO8P	PE(13:0/21:0)	LipidMaps
+    LMGP01010532	720.553782	C39H78NO8P	PC(15:0/16:0)	LipidMaps
+    """
+    pd.options.mode.chained_assignment = None  # mute SettingWithCopyWarning
+
+    comma_plus_space = ", " ## caution, do not remove the space
+
+    tmp1 = df[[col_mz, col_formula, col_molecule_ids]]
+    tmp2 = df[[col_molecule_names, 'database']]
+    tmp1[col_molecule_ids] = tmp1[col_molecule_ids
+                   ].str.split(comma_plus_space)
+    tmp2[col_molecule_names] = tmp2[col_molecule_names
+                   ].str.split(comma_plus_space)
+
+    tmp1 = tmp1.explode(col_molecule_ids)
+    tmp2 = tmp2.explode(col_molecule_names)
+    df_out = pd.concat([tmp1, tmp2], axis=1)
+
+    return df_out
 
 
 def compute_metrics_for_variables(adata):
