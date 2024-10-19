@@ -4,7 +4,6 @@ from typing import List, Dict
 import pandas as pd
 import numpy as np
 import anndata as ad
-import gc
 import scanpy as sc
 import squidpy as sq
 from tqdm import tqdm
@@ -62,8 +61,32 @@ def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str,
     return df_out
 
 
-def newfun(df, ref):
-    print("Ill be back")
+def newfun(annotdf: pd.DataFrame, mappings_ref_ids: pd.DataFrame,
+           col_molecule_ids: str, col_mz: str):
+    dfs_list = []
+    common_notkegg_database = set(annotdf['database'].unique()).intersection(
+        set(mappings_ref_ids['database'].unique()))
+    for cd in list(common_notkegg_database):
+        tmp_df = annotdf.loc[annotdf['database'] == cd, :]
+        tmp_ref = mappings_ref_ids.loc[mappings_ref_ids['database'] == cd, :]
+        joined = pd.merge(tmp_df, tmp_ref, left_on=col_molecule_ids,
+                          right_on='not_kegg_id', how='left')
+        joined = joined.assign(database=joined.database_y)
+        joined = joined.drop(columns=['database_x', 'database_y',
+                                      'not_kegg_id']).dropna()
+        dfs_list.append(joined)
+    # end for
+    if "KEGG" in annotdf['database'].unique():
+        kegg_tmp_df = annotdf.loc[annotdf['database'] == "KEGG", :]
+        kegg_tmp_df = kegg_tmp_df.assign(KEGG=kegg_tmp_df[col_molecule_ids])
+        dfs_list.append(kegg_tmp_df)
+
+    final = pd.concat(dfs_list)
+    final = final.sort_values(by=col_molecule_ids, ascending=True)
+    final = final.drop_duplicates(subset=[col_mz, 'KEGG'], keep='first')
+    final = final.sort_values(by=col_mz, ascending=True)
+
+    return final
 
 
 def compute_metrics_for_variables(adata):

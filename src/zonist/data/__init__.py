@@ -74,9 +74,7 @@ class MetaboliteReferenceMappings(BaseModel, extra=Extra.allow):
             df.columns = ["not_kegg_id", "KEGG", "database"]
             dfs_dict[map_key] = df
 
-        self.table = helpers.combine_frames_identical_columns(
-            dfs_dict
-        )
+        self.table = helpers.combine_frames_identical_columns(dfs_dict)
 
     def check_expectations_map1(self):
         if len(set(list(self.mapping_files.keys())).intersection(
@@ -144,14 +142,23 @@ class MetabolomeAnnotations(Dataset):
                 )
 
     def translate_ids_to_kegg(self,
-                                  ref_obj: MetaboliteReferenceMappings,
-                                  ):
-        df = self.annotation_table
-        table = ref_obj.table
+                              ref_obj: MetaboliteReferenceMappings):
+        logger.info('Translating ids in the metabolome annotation'
+                    ' table to KEGG')
         try:
-            res = helpers.newfun(df, table)
+            np.all(np.array(list(ref_obj.table.columns)) == np.array(
+                ["not_kegg_id", "KEGG", "database"]))
+        except KeyError:
+            logger.error("Metabolite reference mappings object not loadable, "
+                         "make sure you ran '.load_mappings' without errors")
+        try:
+            rs = helpers.newfun(self.annotation_table,
+                                ref_obj.table,
+                                self.col_molecule_ids, self.col_mz)
         except Exception as e:
-            logger.warning("Error: {e}")
+            logger.warning(f"Error: {e}")
+
+        self.annotation_table = rs  # updates the attribute value
 
      
     def check_expectations_1(self):
