@@ -105,10 +105,18 @@ def pull_pathway_ids_name_df(gmt_df):
                        "pathwayName": gmt_df.iloc[:,1].tolist()})
     return df
 
-def produce_gmt_with_mz_from_data(gmt, pertinent_anno_table) -> pd.DataFrame:
+
+def gmt_to_piled_form(gmt_df):
+    return 0
+
+def piled_form_to_gmt(gmt_piled):
+    return 0
+
+def produce_gmt_with_mz_from_data(gmt_df, pertinent_anno_table) -> pd.DataFrame:
     # needs to pile up the gmt first
+    gmt_piled = gmt_to_piled_form(gmt_df)
     # then join
-    # then reorder as gmt
+    # then reshape as gmt
     # must return the gmt_mz_df df pandas obj
     return 0
 
