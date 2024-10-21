@@ -61,8 +61,9 @@ def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str,
     return df_out
 
 
-def newfun(annotdf: pd.DataFrame, mappings_ref_ids: pd.DataFrame,
-           col_molecule_ids: str, col_mz: str):
+def translate_metabo_annots(
+        annotdf: pd.DataFrame,  mappings_ref_ids: pd.DataFrame,
+        col_molecule_ids: str, col_mz: str) -> pd.DataFrame:
     dfs_list = []
     common_notkegg_database = set(annotdf['database'].unique()).intersection(
         set(mappings_ref_ids['database'].unique()))
@@ -87,6 +88,39 @@ def newfun(annotdf: pd.DataFrame, mappings_ref_ids: pd.DataFrame,
     final = final.sort_values(by=col_mz, ascending=True)
 
     return final
+
+def clean_gmt(gmt_df, undesired_substring: str):
+    gmt_df["to_delete"] = 0
+    # delete all rows that do not have any metabolite or gene (3rd col)
+    gmt_df.loc[gmt_df.iloc[:, 2].isna(), "to_delete"] = 1
+    gmt_df = gmt_df.loc[gmt_df["to_delete"] != 1, :]
+    gmt_df = gmt_df.drop(columns=["to_delete"])
+    if undesired_substring != "":
+        gmt_df.iloc[:, 2] = gmt_df.iloc[:, 2].str.replace(undesired_substring, "")
+    return gmt_df
+
+def pull_pathway_ids_name_df(gmt_df):
+    # unified
+    df = pd.DataFrame({"pathwayId": gmt_df.iloc[:,0].tolist(),
+                       "pathwayName": gmt_df.iloc[:,1].tolist()})
+    return df
+
+def produce_gmt_with_mz_from_data(gmt, pertinent_anno_table) -> pd.DataFrame:
+    # needs to pile up the gmt first
+    # then join
+    # then reorder as gmt
+    # must return the gmt_mz_df df pandas obj
+    return 0
+
+def write_gmt_pathways(gmt_mz_df, preferred_ref: str):
+    # unified
+    if preferred_ref == "pathwayName":
+        # get rid of column 0 (first, hsa////)
+        logger.info("")
+    if preferred_ref == "pathwayId":
+        #get rid of column 1 (second, hsa)
+        logger.info("")
+
 
 
 def compute_metrics_for_variables(adata):

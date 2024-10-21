@@ -19,10 +19,10 @@ class Test(TestCase):
         "KEGG": ["C00232", "C00077", "CXXXXYY", "C0101010", "C999999"],
         "database": ["HMDB", "HMDB", "LipidMaps", "LipidMaps", "HMDB"]
     })
-    result = helpers.newfun(metabolome_annot_df,
+    result = helpers.translate_metabo_annots(metabolome_annot_df,
                             ref_ids_map_kegg,
                             col_molecule_ids="moleculeIds", col_mz="mz")
-    def test_newfun(self):
+    def test_translate_metabo_annots(self):
         self.assertListEqual(
             list(self.result.columns),
             ['mz', 'formula', 'moleculeIds', 'moleculeNames',

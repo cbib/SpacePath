@@ -8,6 +8,7 @@ from typing import List, Dict, Literal, Optional, Set, Union
 
 import pandas as pd
 
+import sspa as sspa
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra
@@ -95,6 +96,47 @@ class MetaboliteReferenceMappings(BaseModel, extra=Extra.allow):
                          f"'{map_key}' and 'KEGG'")
 
 
+class MetabolicGmt(BaseModel, extra=Extra.allow):
+    data_dir: str
+    subfolder: str
+    filename_official: str
+    filename_custom: str
+    input_type_official: str = "sspa"
+    undesired_name_substring: str = " - Homo sapiens (human)" # in names
+    preferred_ref: str = "pathwayName"  # instead pathwayId
+
+    def load_official(self):
+        if not os.path.exists(os.path.join(
+                data_dir, subfolder, filename_official)):
+            sspa.process_pathways.process_kegg(
+                organism="hsa", infile=None, download_latest=True,
+                filepath=os.path.join(data_dir, subfolder))
+        try:
+            official_gmt = pd.read_csv(
+                os.path.join(data_dir, subfolder, filename_official),
+                header=None, sep='\t', index_col=False)
+        except Exception as e:
+            logger.error(e)    #KEGG_hsa_pathways_compounds_R110.gmt"),
+
+        self.official = helpers.clean_gmt(
+            official_gmt, undesired_name_substring)
+
+    def load_custom(self):
+        try:
+            custom_gmt = pd.read_csv(
+                os.path.join(data_dir, subfolder, filename_custom),
+                header=None, sep='\t', index_col=False)
+        except Exception as e:
+            logger.error(e)
+        first_row = custom_gmt.iloc[0:]
+        logger.info(f"the first set of your custom gmt file: \n" 
+                    f"  abbreviation: '{first_row[0]}'; "
+                    f"  name : '{first_row[1]}'; "
+                    f"  metabolites : '{first_row[2:]}'.\n")
+        self.custom = custom_gmt
+
+
+
 class MetabolomeAnnotations(Dataset):
     annotation_files : Dict[str, str]
     delimiter : str = ","  # the metaspace current delimiter is comma
@@ -152,9 +194,9 @@ class MetabolomeAnnotations(Dataset):
             logger.error("Metabolite reference mappings object not loadable, "
                          "make sure you ran '.load_mappings' without errors")
         try:
-            rs = helpers.newfun(self.annotation_table,
-                                ref_obj.table,
-                                self.col_molecule_ids, self.col_mz)
+            rs = helpers.translate_metabo_annots(
+                self.annotation_table, ref_obj.table,
+                self.col_molecule_ids, self.col_mz)
         except Exception as e:
             logger.warning(f"Error: {e}")
 
@@ -188,11 +230,6 @@ class MetabolomeAnnotations(Dataset):
                          f"expected ones are exactly {expected_columns_by_df}")
 
 
-class MetabolomeImzmlIbd(Dataset):
-    data_imz_ibd_basename : str # one
-    # TODO: complete with real data later
-
-
 class MetabolomeSpatialMatrix(Dataset):
     matrix_filename: str  # one only
     col_mz : str = "mz"
@@ -206,6 +243,10 @@ class MetabolomeSpatialMatrix(Dataset):
     def check_expectations(self):
         print("checking")
 
+
+class MetabolomeImzmlIbd(Dataset): # TODO think if needed ....
+    data_imz_ibd_basename : str # one
+    # TODO: complete? or simply create external code to produce the matrix directly?
 
 
 
