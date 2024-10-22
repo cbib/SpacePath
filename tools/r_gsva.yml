@@ -23,6 +23,7 @@ dependencies:
   - r-hdf5r
   - r-irlba
   - conda-forge::r-biocmanager
+  - conda-forge::r-rjson   # new
   - bioconductor-biocparallel
   - bioconductor-s4vectors
   - bioconductor-delayedarray

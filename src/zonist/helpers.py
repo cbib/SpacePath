@@ -1,8 +1,9 @@
 import sys
 import logging
-from typing import List, Dict
+from typing import List, Dict, Union
 import pandas as pd
 import numpy as np
+import json
 import anndata as ad
 import scanpy as sc
 import squidpy as sq
@@ -89,46 +90,92 @@ def translate_metabo_annots(
 
     return final
 
-def clean_gmt(gmt_df, undesired_substring: str):
+
+def clean_gmt(gmt_df, undesired_name_substring: Union[str, None]):
     gmt_df["to_delete"] = 0
     # delete all rows that do not have any metabolite or gene (3rd col)
     gmt_df.loc[gmt_df.iloc[:, 2].isna(), "to_delete"] = 1
     gmt_df = gmt_df.loc[gmt_df["to_delete"] != 1, :]
     gmt_df = gmt_df.drop(columns=["to_delete"])
-    if undesired_substring != "":
-        gmt_df.iloc[:, 2] = gmt_df.iloc[:, 2].str.replace(undesired_substring, "")
+    if undesired_name_substring is not None:
+        gmt_df.iloc[:, 1] = gmt_df.iloc[:, 1].str.replace(
+            undesired_name_substring, "")
     return gmt_df
 
-def pull_pathway_ids_name_df(gmt_df):
-    # unified
-    df = pd.DataFrame({"pathwayId": gmt_df.iloc[:,0].tolist(),
-                       "pathwayName": gmt_df.iloc[:,1].tolist()})
-    return df
+
+def gmt_to_piled_form(gmt_df, col_pathway_id: str, col_molecule_id: str):
+    """return df with 2 columns:  pathway name, molecule kegg identifiers"""
+    l_1 = []
+    l_2 = []
+    for i, r in gmt_df.iterrows():
+        p_id = r.iloc[0]
+        molecules = r.iloc[2:].dropna().tolist()
+        l_1 += [p_id for i in range(len(molecules))]
+        l_2 += molecules
+
+    piled_df = pd.DataFrame({col_pathway_id: l_1, col_molecule_id: l_2})
+
+    return piled_df
 
 
-def gmt_to_piled_form(gmt_df):
+def gmts_merge_pile_splitid(dfs_dict, col_pathway_id: str,
+                            col_pathway_name: str, col_molecule_ids: str):
+    pathways_identities_dfs = {}
+    for k in dfs_dict.keys():
+        tmp = dfs_dict[k]
+        pathways_identities_dfs[k] = pd.DataFrame(
+            {col_pathway_id: tmp.iloc[:,0].tolist(),
+             col_pathway_name: tmp.iloc[:,1].tolist()})
+        dfs_dict[k] = gmt_to_piled_form(     # is a table in piled form
+            tmp, col_pathway_id, col_molecule_ids)
+    # end for
+    gmt_piled = combine_frames_identical_columns(dfs_dict)
+    id_name_df = combine_frames_identical_columns(pathways_identities_dfs)
+
+    return id_name_df, gmt_piled
+
+
+def gmt_join_mz(gmt_piled, anno_mz_kegg, col_molecule_id: str) -> pd.DataFrame:
+    assert len(list(gmt_piled.columns)) == 2, \
+        "too many columns in gmt piled table, bad format"
+    assert len(list(anno_mz_kegg.columns)) == 2, \
+        "too many annotation columns: only the mz and KEGG are admitted"
+    assert col_molecule_id in list(anno_mz_kegg.columns), \
+        f"no column {col_molecule_id}  in annotations table"
+
+    anno_mz_kegg = anno_mz_kegg.drop_duplicates()
+    gmt_piled_mz = pd.merge(gmt_piled, anno_mz_kegg, on="KEGG", how="inner")
+    # delete rows where kegg has no mz: no need as did inner
+    return gmt_piled_mz
+
+
+def gmt_piled_to_dict(gmt_piled_mz, pathway_id: str, mz_or_kegg: str):
+    keptdf = gmt_piled_mz[[pathway_id, mz_or_kegg]]
+    # np unique is mandatory
+    pathways_uniqs = keptdf[pathway_id].unique()
+    out = {}
+    for w in pathways_uniqs:
+        items_w = keptdf.loc[keptdf[pathway_id] == w, 1].unique()
+        out[w] = items_w
+
+    return out
+
+
+def gmt_dict_write_json(gmt_piled_mz, col_pathway_id, mz_or_kegg: str,
+                        full_path_file_json):
+    a_dict = gmt_piled_to_dict(gmt_piled_mz, col_pathway_id,
+                               mz_or_kegg=mz_or_kegg)
+    json_str = json.dumps(a_dict, indent=2)
+
+    with open(full_path_file_json, "w") as f:
+        json.dump(a_dict, f)
     return 0
 
-def piled_form_to_gmt(gmt_piled):
-    return 0
 
-def produce_gmt_with_mz_from_data(gmt_df, pertinent_anno_table) -> pd.DataFrame:
-    # needs to pile up the gmt first
-    gmt_piled = gmt_to_piled_form(gmt_df)
-    # then join
-    # then reshape as gmt
-    # must return the gmt_mz_df df pandas obj
-    return 0
 
-def write_gmt_pathways(gmt_mz_df, preferred_ref: str):
-    # unified
-    if preferred_ref == "pathwayName":
-        # get rid of column 0 (first, hsa////)
-        logger.info("")
-    if preferred_ref == "pathwayId":
-        #get rid of column 1 (second, hsa)
-        logger.info("")
 
+
+#####   ancient code phantoms:
 
 
 def compute_metrics_for_variables(adata):
