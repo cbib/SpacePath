@@ -7,7 +7,7 @@ import numpy as np
 
 class Test(TestCase):
 
-    def test_translate_metabo_annots(self):
+    def test_convert_metabo_annots(self):
         metabolome_annot_df = pd.DataFrame({
             "mz": ["102.0317", "132.0899", "913.821868", "132.0899"],
             "formula": ["C4H6O3", "C5H12N2O2", "C59H108O6", "C5H12N2O2"],
@@ -23,10 +23,9 @@ class Test(TestCase):
             "KEGG": ["C00232", "C00077", "CXXXXYY", "C0101010", "C999999"],
             "database": ["HMDB", "HMDB", "LipidMaps", "LipidMaps", "HMDB"]
         })
-        result = helpers.translate_metabo_annots(metabolome_annot_df,
-                                                 ref_ids_map_kegg,
-                                                 col_molecule_ids="moleculeIds",
-                                                 col_mz="mz")
+        result = helpers.convert_metabo_annots_tokegg(
+            metabolome_annot_df, ref_ids_map_kegg,
+            col_molecule_ids="moleculeIds", col_mz="mz")
         self.assertListEqual(
             list(result.columns),
             ['mz', 'formula', 'moleculeIds', 'moleculeNames',
@@ -59,19 +58,6 @@ class Test(TestCase):
             ['pathway-one', 'pathway-two', 'pathway-three'],
             result.iloc[:, 1].tolist())
 
-    # def test_pull_pathway_ids_name_df(self):
-    #     data = [
-    #         ['IDpath1', 'pathway-one', 'm1', 'm4', 'm6', np.nan, np.nan],
-    #         ['IDpath2', 'pathway-two', 'm2', 'm3', np.nan, np.nan,np.nan],
-    #         ['IDpath3', 'pathway-three', 'm3', 'm4', 'm5',
-    #             'm7', 'm8']]
-    #
-    #     gmt = pd.DataFrame(data, columns=range(0, 7))
-    #     result = helpers.pull_pathway_ids_name_df(gmt_df=gmt)
-    #     self.assertTrue(result.shape[1] == 2)
-    #     self.assertListEqual(["pathwayId", "pathwayName"],
-    #                          list(result.columns))
-
     def test_gmt_to_piled_form(self):
         data = [
             ['IDpath1', 'pathway-one', 'm1', 'm4', 'm6', np.nan, np.nan],
@@ -96,19 +82,28 @@ class Test(TestCase):
             "KEGG": ["C00232", "C00077", "C09090", "CXXXXYY"]
         })
         result = helpers.gmt_join_mz(gmt_piled, anno_mz_kegg,
-                                     col_molecule_id="KEGG")
-        """
-        result : 
-           path_id    KEGG      mz
-           one        C00232    102.0317
-           one        C09090    588.5665543
-           one        C00077    132.0899
-           two        CXXXXYY   913.821868
-        """
+                                     col_molecule_id="KEGG")        
+        # result : 
+        #    path_id    KEGG      mz
+        #    one        C00232    102.0317
+        #    one        C09090    588.5665543
+        #    one        C00077    132.0899
+        #    two        CXXXXYY   913.821868
         self.assertListEqual(result.iloc[3, :].tolist(),
                              ["two", "CXXXXYY", "913.821868"])
 
-
     def test_gmt_piled_to_dict(self):
-        result = 0
-        self.assertEqual(result, 0)
+        data = [["one", "C00232", "102.0317"],
+                ["one", "C09090", "588.56"],
+                ["one", "C00077", "132.0899"],
+                ["two", "CXXXXYY", "913.821868"]]
+        gmt_piled = pd.DataFrame(data, columns=["path_id", "KEGG", "mz"])        
+
+        result = helpers.gmt_piled_to_dict(gmt_piled, 
+                                           pathway_id="path_id", 
+                                           mz_or_kegg="mz")
+        self.assertListEqual(list(result.keys()),
+                              ["one", "two"])
+        self.assertTrue(np.all(
+            np.array(result["one"]) == np.array(
+                ["102.0317", "588.56", "132.0899"])))

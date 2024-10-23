@@ -9,7 +9,6 @@ from typing import List, Dict, Literal, Optional, Set, Union
 import pandas as pd
 
 import sspa as sspa
-from numba import optional
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra
@@ -17,7 +16,8 @@ from pydantic import Extra
 import zonist.helpers as helpers
 
 from zonist.constants import (supported_mappings,
-                              supported_annotations)
+                              supported_annotations,
+                              columns_ref_map_expected)
 
 
 logger = logging.getLogger(__name__)
@@ -51,20 +51,18 @@ class MetaboliteReferenceMappings(BaseModel, extra=Extra.allow):
         admitted_keys = list(set(supported_mappings).intersection(
             set(list(self.mapping_files.keys()))))
         for map_key in admitted_keys:
-            logger.info(f"  loading {map_key}")
+            logger.info("  loading %s", map_key)
             try:
-                df = pd.read_csv(
-                    os.path.join(
+                df = pd.read_csv(os.path.join(
                         self.data_dir, self.subfolder,
                         self.mapping_files[map_key]),
-                    sep=self.delimiter,
-                    header=0
-                )
+                    sep=self.delimiter, header=0)
             except Exception as e:
-                logger.info(f"Error (read_csv): \n {e}")
+                logger.info("Error (read_csv): \n %s", e)
 
             self.check_expectations_map2(df, map_key)
-            logger.info(f"   your loaded dataframe :\n {df.head(2)}")
+            #logger.info(" your loaded dataframe :\n {}".format(df.head(2)))
+            logger.info(" your loaded dataframe :\n %s", df.head(2))
             df = df.dropna()
             df = df.loc[df["KEGG"] != "", :]
             df = df.loc[df["KEGG"] != "NA", :]
@@ -78,20 +76,20 @@ class MetaboliteReferenceMappings(BaseModel, extra=Extra.allow):
     def check_expectations_map1(self):
         if len(set(list(self.mapping_files.keys())).intersection(
                 set(supported_mappings))) == 0:
-            logger.error(f"Error, none of the mappings is supported,"
-                         f" or the dictionary keys are misspelled. Only: "
-                         f"{supported_mappings}) are supported")
+            logger.error("Error: none of the mappings is supported, "
+                         "or the dictionary keys are misspelled. Only: "
+                         "%s are supported", supported_mappings)
         for k in list(self.mapping_files.keys()):
             if k not in supported_mappings:
-                logger.warning(f"warning: '{k}' mapping is not"
-                               " yet supported and will be ignored")
+                logger.warning("warning: '%s' mapping is not"
+                               " yet supported and will be ignored", k)
 
     def check_expectations_map2(self, df, map_key: str):
         cols = list(df.columns)
         if not np.all(np.array(cols) == np.array([map_key, "KEGG"])):
-            logger.error(f"Error: the columns of this table are not "
-                         f"as expected, they must be exactly : "
-                         f"'{map_key}' and 'KEGG'")
+            logger.error("Error: the columns of this table are not "
+                         "as expected, they must be exactly : "
+                         "'%s' and 'KEGG'", map_key)
 
 
 class MetabolicGmt(BaseModel, extra=Extra.allow):
@@ -103,7 +101,7 @@ class MetabolicGmt(BaseModel, extra=Extra.allow):
     undesired_name_substring: str = " - Homo sapiens (human)" # in names
     col_pathway_id: str = "pathway_id"
     col_pathway_name: str = "pathway_name"
-    col_molecule_ids: str = "KEGG"    #  must be KEGG to match translated annots
+    col_molecule_ids: str = "KEGG"   #  must be KEGG to match joined annots
 
     def preload_official(self):
         if not os.path.exists(os.path.join(
@@ -136,10 +134,11 @@ class MetabolicGmt(BaseModel, extra=Extra.allow):
         except Exception as e:
             logger.error(e)
         first_row = custom_gmt.iloc[0, :]
-        logger.info(f" The first line of your custom gmt file:\n" 
-                    f"  abbreviation: '{first_row.iloc[0]}'; "
-                    f"  name : '{first_row.iloc[1]}';  metabolites"
-                    f"  (first three) : '{first_row.iloc[2:5].tolist()}'.")
+        cus_message = (f" The first line of your custom gmt file:\n"
+                      f"  abbreviation: '{first_row.iloc[0]}'; "
+                      f"  name : '{first_row.iloc[1]}';  metabolites"
+                      f"  (first three) : '{first_row.iloc[2:5].tolist()}'.")
+        logger.info("%s", cus_message)
         self.custom = helpers.clean_gmt(custom_gmt, None)
 
     def load(self):
@@ -155,7 +154,7 @@ class MetabolicGmt(BaseModel, extra=Extra.allow):
 
         self.pathways_ids = id_name_pathways_df
         self.gmt_piled = gmt_piled
-        logger.info("the 'gmt_piled' attribute is a table in piled form")
+        logger.info("success, attributes : gmt_piled, pathways_ids")
 
     def join_mz(self, annotations_df_mz_kegg):
         """adds the mz to the same gmt_piled attr"""
@@ -164,18 +163,21 @@ class MetabolicGmt(BaseModel, extra=Extra.allow):
                                      self.col_molecule_ids)
         self.gmt_piled = joined_df
 
-    def write_to_json(self, mz_or_kegg_choice: str = "mz"):
-        out = helpers.gmt_dict_write_json(self.gmt_piled,
-                                          self.col_pathway_id,
-                                          mz_or_kegg_choice,
-                                          full_path_file_json=os.path.join(
-                self.data_dir, self.subfolder, f"gmt_{mz_or_kegg_choice}.json")) # todo: better handle the json filename
+    def write_to_json(self, dataset_subfolder: str, mz_or_kegg_choice: str = "mz"):
+        full_path_file_json = os.path.join(
+                self.data_dir, dataset_subfolder,
+                f"gmt_{mz_or_kegg_choice}.json")
+        helpers.gmt_dict_write_json(
+            self.gmt_piled, self.col_pathway_id,
+            mz_or_kegg_choice, full_path_file_json)
+        logger.info("saved json file to : %s", full_path_file_json)
+         # TODO: better handle the json filename
 
 
 class MetabolomeAnnotations(Dataset):
     annotation_files : Dict[str, str]
-    delimiter : str = ","  # the metaspace current delimiter is comma
-    col_molecule_ids: str = "moleculeIds"  
+    delimiter : str = ","  # the metaspace delimiter is comma
+    col_molecule_ids: str = "moleculeIds"
     col_mz : str = "mz"
     col_formula : str = "formula"
     col_molecule_names: str = "moleculeNames"
@@ -195,10 +197,10 @@ class MetabolomeAnnotations(Dataset):
                     os.path.join(
                         self.data_dir, self.subfolder, 
                         self.annotation_files[anno_key]),
-                    comment='#',  # override any comment (metaspace comments)
+                    comment='#',  # override any comment (metaspace does)
                     sep=self.delimiter, header=0)
             except Exception as e:
-                logger.info(f"Error (read_csv): \n {e}")
+                logger.info("Error (read_csv): \n %s", e)
 
             self.check_expectations_2(df)
 
@@ -210,44 +212,38 @@ class MetabolomeAnnotations(Dataset):
                 df['database'] = "KEGG"
             dfs_dict[anno_key] = df
 
-            self.annotation_pretable = \
+        preloaded_annots = \
                 helpers.combine_frames_identical_columns(dfs_dict)
 
-            self.annotation_table = helpers.spreadout_annotation_df(
-                self.annotation_pretable, self.col_mz, self.col_formula, 
-                self.col_molecule_ids, self.col_molecule_names
-                )
+        self.annotationtbl = helpers.spreadout_annotation_df(
+                preloaded_annots, self.col_mz, self.col_formula,
+                self.col_molecule_ids, self.col_molecule_names)
 
-    def translate_ids_to_kegg(self,
-                              ref_obj: MetaboliteReferenceMappings):
+    def convert_ids_to_kegg(self, ref_table: pd.DataFrame):
         logger.info('Translating ids in the metabolome annotation'
                     ' table, to KEGG')
-        self.untranslated = self.annotation_table.copy()
+        assert np.all(np.array(list(ref_table.columns)) == np.array(
+                columns_ref_map_expected)), f"Metabolite reference"
+        f" mappings columns must be {columns_ref_map_expected}"
         try:
-            np.all(np.array(list(ref_obj.table.columns)) == np.array(
-                ["not_kegg_id", "KEGG", "database"]))
-        except KeyError:
-            logger.error("Metabolite reference mappings object not loadable, "
-                         "make sure you ran '.load_mappings' without errors")
-        try:
-            rs = helpers.translate_metabo_annots(
-                self.annotation_table, ref_obj.table,
+            converted_df = helpers.convert_metabo_annots_tokegg(
+                self.annotationtbl, ref_table,
                 self.col_molecule_ids, self.col_mz)
         except Exception as e:
-            logger.warning(f"Error: {e}")
-        self.annotation_table = rs  # update the attribute (KEGG col inside)
+            logger.warning("Error: %s", e)
 
-     
+        self.annotationtbl = converted_df  # update the attr
+
     def check_expectations_1(self):
         if len(set(list(self.annotation_files.keys())).intersection(
             set(supported_annotations))) == 0:
-            logger.error(f"Error, none of the annotations is supported," 
-            f" or the dictionary keys are misspelled. Only: " 
-            f"{supported_annotations}) are supported")
+            logger.error("Error, none of the annotations is supported,"
+                " or the dictionary keys are misspelled. Only: " 
+                "%s are supported", supported_annotations)
         for anno_key in list(self.annotation_files.keys()):
             if anno_key not in supported_annotations:
-                logger.warning(f"warning: '{anno_key}' annotation is not" 
-                " yet supported and will be ignored")
+                logger.warning("warning: %s annotation is not" 
+                " yet supported and will be ignored", anno_key)
 
     def check_expectations_2(self, df):
         expected_columns_by_df = [self.col_mz, self.col_formula, 
@@ -255,14 +251,14 @@ class MetabolomeAnnotations(Dataset):
                                   self.col_molecule_names]
 
         if len(list(df.columns)) <= 1:
-            logger.error(f"Error: insuficient columns in annotation dataframe,"
-                         f" field delimiter by default is '{self.delimiter}'" 
-                         f" (you can change it by using .delimiter attribute)")
+            logger.error("Error: insuficient columns in annotation dataframe,"
+                         " field delimiter by default is '%s' (you can change" 
+                         " it by using .delimiter attribute)", self.delimiter)
 
         if len(set(expected_columns_by_df)) != len(set(
             list(df.columns)).intersection(set(expected_columns_by_df))):
-            logger.error(f"one or more columns of in your annotations are missing, "
-                         f"expected ones are exactly {expected_columns_by_df}")
+            logger.error("one or more columns of in your annotations are missing, "
+                         "expected ones are exactly %s", expected_columns_by_df)
 
 
 class MetabolomeSpatialMatrix(Dataset):

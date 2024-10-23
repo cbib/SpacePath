@@ -31,7 +31,7 @@ dependencies:
   - scanpy
   - anndata
   - squidpy
-  - bioconda::gseapy
+  - bioconda::gseapy  # TODO: if never used, delete this line !!! 
   - pip:
     - sspa    
     - pyimzml

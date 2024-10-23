@@ -18,17 +18,17 @@ def reset_log_config(logger):
     logger.addHandler(file_handler)
     logger.setLevel(logging.DEBUG)
     return logger
-    
+
 
 def combine_frames_identical_columns(dfs_dict : Dict[str, pd.DataFrame]
 ) -> pd.DataFrame:
     list_of_frames = []
     for k in dfs_dict.keys():
-         list_of_frames.append(dfs_dict[k])
+        list_of_frames.append(dfs_dict[k])
     df_out = pd.concat(list_of_frames)
 
-    return df_out  
-    
+    return df_out
+
 
 def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str, 
     col_molecule_ids: str, col_molecule_names: str):
@@ -62,7 +62,7 @@ def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str,
     return df_out
 
 
-def translate_metabo_annots(
+def convert_metabo_annots_tokegg(
         annotdf: pd.DataFrame,  mappings_ref_ids: pd.DataFrame,
         col_molecule_ids: str, col_mz: str) -> pd.DataFrame:
     dfs_list = []
@@ -151,25 +151,27 @@ def gmt_join_mz(gmt_piled, anno_mz_kegg, col_molecule_id: str) -> pd.DataFrame:
 
 def gmt_piled_to_dict(gmt_piled_mz, pathway_id: str, mz_or_kegg: str):
     keptdf = gmt_piled_mz[[pathway_id, mz_or_kegg]]
-    # np unique is mandatory
-    pathways_uniqs = keptdf[pathway_id].unique()
+    pathways_uniqs = keptdf[pathway_id].unique().tolist()
+
     out = {}
     for w in pathways_uniqs:
-        items_w = keptdf.loc[keptdf[pathway_id] == w, 1].unique()
+        items_w = keptdf.loc[keptdf[pathway_id] == w, 
+                             mz_or_kegg].astype(str).unique().tolist()
         out[w] = items_w
 
     return out
 
 
 def gmt_dict_write_json(gmt_piled_mz, col_pathway_id, mz_or_kegg: str,
-                        full_path_file_json):
+                        full_path_file_json)-> None:
+    
     a_dict = gmt_piled_to_dict(gmt_piled_mz, col_pathway_id,
                                mz_or_kegg=mz_or_kegg)
-    json_str = json.dumps(a_dict, indent=2)
-
+    
+    #json_str = json.dumps(a_dict, indent=2)
     with open(full_path_file_json, "w") as f:
         json.dump(a_dict, f)
-    return 0
+
 
 
 
