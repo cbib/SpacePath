@@ -24,6 +24,7 @@ dependencies:
   - r-irlba
   - conda-forge::r-biocmanager
   - conda-forge::r-rjson   # new
+  - conda-forge::datatable   # new
   - bioconductor-biocparallel
   - bioconductor-s4vectors
   - bioconductor-delayedarray
