@@ -1,8 +1,0 @@
-
-Time: 20241024-12.00.53
-Loading annotations
-  loading custom_kegg
-Error (read_csv): 
- [Errno 2] No such file or directory: '/home/johanna/spatial_thesis/spatial_metabolomics/data/brain-ellis/brain-ellis_kegg_annot-manually.csv'
-
-Time: 20241024-17.10.33
