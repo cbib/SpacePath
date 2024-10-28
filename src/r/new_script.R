@@ -1,11 +1,11 @@
 # Run the pathways (or sets) scores computation
 # johaGL 2024
 #  -------------
-# Assuming you have already created micromamba 'r_gsfa' environment:
+# Assuming you have already created micromamba 'r_gsva' environment:
 #     micromamba run -n r_gsva Rscript compute_gsva.R DATADIR MATRIX GMT 
 
 # example
-# Rscript zonist/src/r/compute_gsva.R \
+# Rscript zonist/src/r/new_script.R \  # TODO modify when definitive name
 #  ~/spatial_thesis/spatial_metabolomics/data/dummy/ mymx.csv gmt_mz.json 
 
 library("GSVA")
@@ -13,6 +13,8 @@ library("rjson")
 
 
 cat("\nThis script runs GSVA (credits: GSVA authors and R package)\n\n")
+
+# TODO: print a help
 
 # functions
 
@@ -51,7 +53,7 @@ cat(" gmt listing the sets (filename) : ", gmt_file, "\n")
 json_path <- file.path(data_dir_abspath, gmt_file)
 matrix_path <- file.path(data_dir_abspath, q_matrix_file)
 out_file = paste0(unlist(strsplit(x=q_matrix_file, split="\\."))[1], 
-                  "_gsva-result.tsv")   #  output file name is here automatic
+                  "_gsva-resultNEW.tsv")   #  output file name is here automatic :TODO changename
 
 # open files
 cat("\nReading files\n")
@@ -59,11 +61,11 @@ gmt <- fromJSON(file=json_path)
 cat("loaded gmt file with: ", length(gmt), "pathways\n")
 
 cat("loading quantifications...\n")
-df <- read.table(matrix_path, header=TRUE, check.names = FALSE,
+df <- read.table(matrix_path, row.names=1, header=TRUE, check.names = FALSE,
                 sep="\t", comment.char="", 
-                row.names=1, #colClasses="character",
+                 #colClasses="character",
                 stringsAsFactors=FALSE)
-print(df[1:5, 1:5])
+
 X <- as.matrix(df)
 
 colnames(X) = as.character(colnames(X))
@@ -73,29 +75,35 @@ cat("loaded quantifications matrix of shape: ", dim(X), "\n")
 cat("Transpose matrix\n")
 X <- t(X)
 cat("Log transform matrix\n")
-X <- log10(X)
+X <- log10(X + 1)  # +1 to avoid log zero inf
 
 cat("Computing GSVA ...\n")
 
 gsvaPar <- gsvaParam(X, gmt)  # run with defaults
-
+rm(X)
 gsva_scores_matrix <- gsva(gsvaPar, verbose=FALSE)
 
-gsva_scores_matrix <- cbind(
-  data.frame("pathway_id"=rownames(gsva_scores_matrix)), 
-  data.frame(gsva_scores_matrix, row.names=NULL))
+#gsva_scores_matrix <- cbind(
+#  data.frame("pathway_id"=rownames(gsva_scores_matrix)), 
+#  data.frame(gsva_scores_matrix, row.names=NULL))
 
-print(gsva_scores_matrix)
+pathways_ids <- rownames(gsva_scores_matrix) 
+print("first pathway:")
+print(pathways_ids[1])
 
-exitr <- t(as.matrix(gsva_scores_matrix))
-print(exitr)
-extr <- cbind(
+exitr <- t(gsva_scores_matrix)
+
+exitr <- cbind(
   data.frame("pathway_id"=rownames(exitr)),
   data.frame(exitr, row.names=NULL)
 )
+#print(exitr[1:5,1:5])
+saveRDS(exitr, 
+        file.path(data_dir_abspath, paste0(out_file,".RDS")))
+
 write.table(exitr, 
             file=file.path(data_dir_abspath, out_file),
-            sep="\t", row.names=TRUE, col.names=FALSE)
+            sep="\t", row.names=FALSE, col.names=TRUE)
 
 cat("Success ! \n")
 cat("Output tab delimited file saved to: ", 
