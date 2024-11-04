@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 import json
 import anndata as ad
-import scanpy as sc
-import squidpy as sq
+#import scanpy as sc
+#import squidpy as sq
 from tqdm import tqdm
 
 
@@ -61,6 +61,13 @@ def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str,
 
     return df_out
 
+def pull_offsample_info(df, col_mz: str, col_offsample: str):
+    df = df[[col_mz, col_offsample]]
+    df = df.sort_values(by=[col_mz, col_offsample],
+                        ascending=[True, True])
+    df = df.drop_duplicates(subset=[col_mz, col_offsample],
+                            keep='first')
+    return df
 
 def convert_metabo_annots_tokegg(
         annotdf: pd.DataFrame,  mappings_ref_ids: pd.DataFrame,

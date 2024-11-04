@@ -1,21 +1,24 @@
 # Run the pathways (or sets) scores computation
 # johaGL 2024
 #  -------------
-# Assuming you have already created micromamba 'r_gsva' environment:
-#     micromamba run -n r_gsva Rscript compute_gsva.R DATADIR MATRIX GMT
+# usage: run_gsva.R DATADIR MATRIX GMT MINSIZE
+# example:
+# micromamba activate MYMAMBA_OR_CONDA_ENV 
+# Rscript zonist/src/r/run_gsva.R $DIR/data/$PRJ/ MX.csv gmt_mz.json 2 
 
-# ** ACCEPTS TRANSPOSED (tab delim) : m_pixels (rows) x n_features (columns) **
-# TODO : add a help
+# By defaut this script log transforms the input data: (log(X + 1))
+
 library("GSVA")
 library("rjson")
 
 
 cat("\nThis script runs GSVA (credits: GSVA authors and R package)\n\n")
 
+
 # functions
 
 run_minimal_test <- function(){
-  cat("*-*-*\n DEBUG purpose: running fast example\n")
+  cat("*-*-*\n DEBUG purpose: running fast example (as no options specified)\n")
   X = matrix(data=rnorm(10*5), nrow=10, ncol=5)
   rownames(X) = as.character(seq(10))
   colnames(X) = as.character(seq(5))
@@ -24,21 +27,24 @@ run_minimal_test <- function(){
                    "set3"=c("1", "10","7"))
   print(sets_list)
   cat("\n printing the fast example (a matrix of scores per set)\n")
-  gsvaPar <- gsvaParam(X, sets_list)  # defaults
-  gsva_scores_matrix <- gsva(gsvaPar, verbose=FALSE)
+  gsvaPar <- gsvaParam(X, sets_list, minSize=2)  # defaults
+  gsva_scores_matrix <- gsva(gsvaPar, verbose=TRUE)
   print(gsva_scores_matrix)
   cat("\nend of fast example for debug  \n*-*-*\n")
 }
 
 # start
+
 args <- commandArgs(trailingOnly = TRUE)     # Note : args[0] # not usable
-# run_minimal_test()   # un-comment only if debug required
+
+if (is.na(args[1])){run_minimal_test()}
 
 # variables
 
 data_dir_abspath = args[1]     # DATADIR (absolute/path/to/data)
 q_matrix_file = args[2]        # MATRIX  (quantifications)
 gmt_file = args[3]             # GMT (sets lists: a.k.a pathways or signatures)
+minsize_usr = args[4]          # MINSIZE (minimal nb of features, per pathway)
 
 cat("User options for this analysis:\n")
 cat(" data folder (absolute path) : ", data_dir_abspath, "\n")
@@ -48,8 +54,7 @@ cat(" gmt listing the sets (filename) : ", gmt_file, "\n")
 json_path <- file.path(data_dir_abspath, gmt_file)
 matrix_path <- file.path(data_dir_abspath, q_matrix_file)
 out_file = paste0(unlist(strsplit(x=q_matrix_file, split="\\."))[1], 
-                  "_gsva-NOinLOG.tsv")   #  output file name is here automatic
-# TODO: change the output name
+                  "_gsva.tsv")  
 
 # open files
 cat("\nReading files\n")
@@ -57,27 +62,31 @@ gmt <- fromJSON(file=json_path)
 cat("loaded gmt file with: ", length(gmt), "pathways\n")
 
 cat("loading quantifications...\n")
-
-df <- read.table(matrix_path, row.names=1, header=TRUE, 
-                 check.names = FALSE,
-                 sep="\t", comment.char="", 
-                 stringsAsFactors=FALSE)
+df <- read.table(matrix_path, row.names=1, header=TRUE, check.names = FALSE,
+                sep="\t", comment.char="", 
+                stringsAsFactors=FALSE)
 
 X <- as.matrix(df)
-rm(df)
+
 colnames(X) = as.character(colnames(X))
 cat("loaded quantifications matrix of shape: ", dim(X), "\n")
-
 
 # compute
 cat("Transpose matrix\n")
 X <- t(X)
+cat("Log transform matrix\n")
+X <- log10(X + 1)  # +1 to avoid log zero inf
 
 cat("Computing GSVA ...\n")
 
-gsvaPar <- gsvaParam(X, gmt)  # run with defaults
+gsvaPar <- gsvaParam(X, gmt
+                     minSize=minsize_usr)  
 rm(X)
 gsva_scores_matrix <- gsva(gsvaPar, verbose=FALSE)
+
+#gsva_scores_matrix <- cbind(
+#  data.frame("pathway_id"=rownames(gsva_scores_matrix)), 
+#  data.frame(gsva_scores_matrix, row.names=NULL))
 
 pathways_ids <- rownames(gsva_scores_matrix) 
 print("first pathway:")
@@ -90,6 +99,8 @@ exitr <- cbind(
   data.frame(exitr, row.names=NULL)
 )
 #print(exitr[1:5,1:5])
+saveRDS(exitr, 
+        file.path(data_dir_abspath, paste0(out_file,".RDS")))
 
 write.table(exitr, 
             file=file.path(data_dir_abspath, out_file),
