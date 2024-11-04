@@ -23,7 +23,7 @@ DATAPATH=/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data/brain-ell
 MATRIXFILE="brain-ellis-mx-clean-transposed.tsv"
 JSONFILE="gmt_mz.json"
 
-Rscript zonist/src/r/compute_gsva-tr.R $DATAPATH $MATRIXFILE $JSONFILE
+Rscript gsva_NOinLog.R $DATAPATH $MATRIXFILE $JSONFILE
 
 
 

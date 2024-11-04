@@ -26,7 +26,7 @@ MATRIXFILE="brain-ellis-mx-clean-transposed.tsv"
 JSONFILE="gmt_mz.json"
 
 ### running with new_script that does log and then gsva !
-Rscript zonist/src/r/new_script.R $DATAPATH $MATRIXFILE $JSONFILE
+Rscript gsva_YESinLog.R $DATAPATH $MATRIXFILE $JSONFILE
 
 
 
