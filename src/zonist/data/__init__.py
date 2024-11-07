@@ -181,8 +181,7 @@ class MetabolomeAnnotations(Dataset):
     col_mz : str = "mz"
     col_formula : str = "formula"
     col_molecule_names: str = "moleculeNames"
-    offsample_column: str = "rawOffSampleProb"
-    cutoff_prob_out: float = 0.95  # 1: out of the tissue, 0: within tissue
+    offsample_column: str = "offSample"
 
     def load_annotation(self):
         logger.info("Loading annotations")
@@ -217,7 +216,7 @@ class MetabolomeAnnotations(Dataset):
         preloaded_annots = \
                 helpers.combine_frames_identical_columns(dfs_dict)
 
-        self.mz_prob_out = helpers.pull_offsample_info(preloaded_annots,
+        self.features_out = helpers.pull_offsample_info(preloaded_annots,
                                              self.col_mz,
                                              self.offsample_column)
         self.annotationtbl = helpers.spreadout_annotation_df(
@@ -225,9 +224,8 @@ class MetabolomeAnnotations(Dataset):
                 self.col_molecule_ids, self.col_molecule_names)
 
     def discard_out_of_sample_mz(self):
-        mz_keep = self.mz_prob_out.loc[
-            self.mz_prob_out[self.offsample_column] <= self.cutoff_prob_out,
-        self.col_mz].tolist()
+        mz_keep = self.features_out.loc[self.features_out[self.offsample_column] == False,
+                    self.col_mz].tolist()
         updated_df = self.annotationtbl.loc[
             self.annotationtbl[self.col_mz].isin(mz_keep)]
         self.annotationtbl = updated_df

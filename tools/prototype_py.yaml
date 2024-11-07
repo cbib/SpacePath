@@ -36,4 +36,5 @@ dependencies:
   - pip:
     - sspa    
     - pyimzml
+    - metaspace-converter
 
