@@ -63,6 +63,7 @@ def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str,
 
 def pull_offsample_info(df, col_mz: str, col_offsample: str):
     df = df[[col_mz, col_offsample]]
+    df[col_offsample] = df[col_offsample].astype(bool)
     df = df.sort_values(by=[col_mz, col_offsample],
                         ascending=[True, True])
     df = df.drop_duplicates(subset=[col_mz, col_offsample],

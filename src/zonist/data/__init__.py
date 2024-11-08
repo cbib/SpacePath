@@ -120,7 +120,7 @@ class MetabolicGmt(BaseModel, extra=Extra.allow):
                              self.official_file),
                 header=None, sep='\t', index_col=False)
         except Exception as e:
-            logger.error(e)    #KEGG_hsa_pathways_compounds_R110.gmt"),
+            logger.error(e)
 
         self.official = helpers.clean_gmt(
             official_gmt, self.undesired_name_substring)
@@ -181,7 +181,9 @@ class MetabolomeAnnotations(Dataset):
     col_mz : str = "mz"
     col_formula : str = "formula"
     col_molecule_names: str = "moleculeNames"
-    offsample_column: str = "offSample"
+    offsample_column: str = "offSample"  # has bool values in feat_classif df
+    annotationtbl: pd.DataFrame = pd.DataFrame()
+    feat_classif: pd.DataFrame = pd.DataFrame()
 
     def load_annotation(self):
         logger.info("Loading annotations")
@@ -216,19 +218,28 @@ class MetabolomeAnnotations(Dataset):
         preloaded_annots = \
                 helpers.combine_frames_identical_columns(dfs_dict)
 
-        self.features_out = helpers.pull_offsample_info(preloaded_annots,
+        self.feat_classif = helpers.pull_offsample_info(preloaded_annots,
                                              self.col_mz,
                                              self.offsample_column)
         self.annotationtbl = helpers.spreadout_annotation_df(
                 preloaded_annots, self.col_mz, self.col_formula,
                 self.col_molecule_ids, self.col_molecule_names)
 
-    def discard_out_of_sample_mz(self):
-        mz_keep = self.features_out.loc[self.features_out[self.offsample_column] == False,
-                    self.col_mz].tolist()
-        updated_df = self.annotationtbl.loc[
-            self.annotationtbl[self.col_mz].isin(mz_keep)]
-        self.annotationtbl = updated_df
+    # def discard_out_of_sample_mz(self):
+    #     ## this function NO !!! :
+    #     # First use the mz to be "discarded" IN THE QUANTIFICATIONS MX  !!!!
+    #     # TO FIND THE PIXELS THAT ARE RICH IN THOSE MZ-TO-BE-DISCARDED,
+    #     # SO WE CAN DISCARD THOSE PIXELS
+    #     mz_keep = self.feat_classif.loc[self.feat_classif[self.offsample_column] == False,
+    #                 self.col_mz].tolist()
+    #     updated_df = self.annotationtbl.loc[
+    #         self.annotationtbl[self.col_mz].isin(mz_keep)]
+    #     self.annotationtbl = updated_df
+    #     logger.info(' [discard_out_of_sample_mz]> Excluded %s unique '
+    #                 'features that are "out-of-the-tissue". Retained: %s.',
+    #                 len(set(self.feat_classif[
+    #                             self.col_mz].unique()) - set(mz_keep)),
+    #                 len(set(mz_keep)))
 
     def convert_ids_to_kegg(self, ref_table: pd.DataFrame):
         logger.info('Translating ids in the metabolome annotation'

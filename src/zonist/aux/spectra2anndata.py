@@ -13,7 +13,7 @@
 #  ~/spatial_thesis/spatial_metabolomics/tutorial_publicdata/example_data \
 #  example_data ED output/objects
 
-
+# TODO: transfomr this in ----> spectra2matrix -> and save a .tsv file !!!!!
 
 import numpy as np
 import pandas as pd
@@ -56,6 +56,7 @@ def files2blocks(spectra_obj, barcode_prefix ):
             raise ValueError("ERROR: unmatched features across the multiple "
                              "spectra. Better use spectra2annndata_complex")
         # only 2 dimensions:
+        # TODO: instead "barcode_prefix" which is useless, use x00_y00 style
         coord_str_list.append(
             f'{barcode_prefix}_{spectra_obj.coordinates[i][0]}_{spectra_obj.coordinates[i][1]}')  
         coordinates_list.append([spectra_obj.coordinates[i][0],
@@ -96,7 +97,7 @@ def load_run(data_dir, base_filename, prefix, output_dir):
 
 if __name__ == "__main__":
     print("Converts imz+ibd files into anndata object, and saves it to file")
-
+    print("   important: requires aligned and recalibrated spectra")
     print(" data_dir:", sys.argv[1], '\n',
           "base_filename:", sys.argv[2], '\n',
           "prefix:", sys.argv[3], '\n',

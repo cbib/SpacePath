@@ -4,6 +4,10 @@
 #
 # .py $DATADIR $KEGGpixels $Lipidmaps_pixels $PREFIX $OUTDIR
 
+# TODO: reuse chunks as needed and DELETE ALL this entire script !!!!!!!
+
+
+
 import numpy as np
 import pandas as pd
 import anndata as ad
