@@ -3,3 +3,5 @@ src/__pycache__/
 howto-run-in-bb8/.ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
 src/.ipynb_checkpoints/
+.idea
+.idea/

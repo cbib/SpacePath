@@ -1,3 +1,6 @@
+# johaGL
+# Get the aligned & recalibrated matrix of all pixels spectra from Metaspace
+# (preferred if the given raw imzML+ibd are unaligned & not-recalibrated)
 import os
 from typing import List
 
@@ -5,8 +8,11 @@ from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
+import anndata as ad
 
 from metaspace_converter import metaspace_to_anndata
+from scipy.sparse import csr_matrix
+
 
 
 def build_coord_names(df):
@@ -49,10 +55,10 @@ def homogenize_rows_order_mx_dfs(mx_dfs):
 
 
 def yield_matrix_dataframe_united(ordered_unique_mzs, matrices_dfs_list):
-    """yields matrix-dataframe with shape features x coordinates"""
-    foo = {}
+    """yields matrix-dataframe with shape: coordinates x features"""
+    united_mx_df = {}
     for mz in tqdm(ordered_unique_mzs):
-        if not mz in foo.keys():
+        if not mz in united_mx_df.keys():
             found = False
             n = 0
             while (n < len(matrices_dfs_list)) and (found != True):
@@ -63,31 +69,72 @@ def yield_matrix_dataframe_united(ordered_unique_mzs, matrices_dfs_list):
                     pass
                 n += 1
             # end while
-            foo[mz] = found_mz
+            united_mx_df[mz] = found_mz
         # end if
     # end for
-    # yield features (rows) x coords (cols) as Metaspace's Intensities mx
-    out_df = pd.DataFrame(foo)
+    out_df = pd.DataFrame(united_mx_df)
     out_df.index = matrices_dfs_list[0].index.tolist()
     out_df = out_df.T
     out_df.index.name = "mz"
 
-    return out_df
+    return out_df.T
+
+
+def steps_get_united_df(metaspace_registry: str, api_versions: dict,
+         api_fdr: float) -> pd.DataFrame:
+    """returns a df with shape: coordinates (rows) x features (columns)"""
+    print("fetching data with metaspace-converter (T Alexandrov lab package)")
+    unique_mzs, matrices_dfs_list = adatas_to_matrices_list(
+        metaspace_registry, api_versions, api_fdr)
+
+    matrices_dfs_list = homogenize_rows_order_mx_dfs(matrices_dfs_list)
+    ordered_unique_mzs = sorted(list(unique_mzs))
+
+    outdf = yield_matrix_dataframe_united(ordered_unique_mzs,
+                                          matrices_dfs_list)
+    return outdf
+
+
+def save_quantifications_anndata(outdf, outfile) -> None:
+    print(f"saving to anndata file, with .X sparse matrix of shape: "
+          f"({outdf.shape[0]} rows x {outdf.shape[1]} columns)")
+    out_obj = ad.AnnData(X=csr_matrix(outdf),
+                         obs=pd.DataFrame({"obs":outdf.index.tolist()},
+                                          index=outdf.index.tolist()),
+                         var=pd.DataFrame({"var": outdf.columns.tolist()},
+                                          index=outdf.columns.tolist()))
+    outfile = outfile + ".h5ad"
+    out_obj.write(outfile, compression=None, compression_opts=None)
+    print(f"End: file saved to '{outfile}'")
+
+
+def save_quantifications_to_tsv(outdf, outfile) -> None:
+    """slow, use instead save anndata above"""
+    print(f"saving to tab delimited file of shape: ({outdf.shape[0]} rows x"
+          f" {outdf.shape[1]} columns)")
+    outfile = outfile + ".tsv"
+    outdf.to_csv(outfile, sep='\t', index=True, header=True )
+    print(f"End: file saved to '{outfile}'")
 
 
 def write_united_matrix_to_file(ordered_unique_mzs,
                                 matrices_dfs_list, out_file) -> None:
     """
-    instead loading a matrix-df in memory, saves each row to file:
+    DEPRECATED
+       Deprecated because opening a file with 170K columns is not efficient
+
+    instead saving matrix-df pandas (time consuming), saves each row to file:
     mx  x0_y0  x0_y1  x ....
     33.333  0  0  0 ...
+    Output: None
+        but writes matrix of shape: features (rows) x coords (cols)
     """
     taken = []
     f = open(out_file, "a")
     firstline = ["mz"] + matrices_dfs_list[0].index.tolist()
-    f.write("\t".join(firstline) + "\n")
+    f.write('\t'.join(firstline) + "\n")
     for mz in tqdm(ordered_unique_mzs):
-        if not mz in taken:#foo.keys():
+        if not mz in taken: # united_mx_df.keys():
             found = False
             n = 0
             while (n < len(matrices_dfs_list)) and (found != True):
@@ -100,32 +147,10 @@ def write_united_matrix_to_file(ordered_unique_mzs,
             # end while
             taken.append(mz)
             iline = [str(mz)] + [str(x) for x in found_mz]
-            f.write("\t".join(iline) + "\n")
+            f.write('\t'.join(iline) + "\n")
         # end if
     # end for
-    # yield features (rows) x coords (cols) as Metaspace's Intensities mx
     f.close()
-
-def run_mx_from_metaspace_converter(metaspace_registry, api_versions, api_fdr,
-                                    out_file) -> None:
-    print("fetching data with metaspace-converter (T Alexandrov lab package)")
-    unique_mzs, matrices_dfs_list = adatas_to_matrices_list(
-        metaspace_registry, api_versions, api_fdr)
-
-    matrices_dfs_list = homogenize_rows_order_mx_dfs(matrices_dfs_list)
-    ordered_unique_mzs = sorted(list(unique_mzs))
-
-    print(f"writing quantifications (==intensities) matrix to tsv file "
-          f"({len(ordered_unique_mzs)} rows x"
-          f" {matrices_dfs_list[0].shape[0]} columns)")
-    write_united_matrix_to_file(ordered_unique_mzs,
-                                matrices_dfs_list, out_file)
-    # # NOTE: saving with pandas takes a long long long time.
-    # # so keep the following lines commented (not active) :
-    # cool = yield_matrix_dataframe_united(ordered_unique_mzs, matrices_dfs_list)
-    # print(f"saving to tsv file ({cool.shape[0]} rows x {cool.shape[1]} columns)")
-    # cool.to_csv(out_file, sep='\t', index=True, header=True )
-    print("end")
 
 
 if __name__ == "__main__":
@@ -135,18 +160,11 @@ if __name__ == "__main__":
                    'LipidMaps': ("LipidMaps", "2017-12-12")}
     api_fdr = 0.5
     out_dir = "~/spatial_thesis/spatial_metabolomics/data/whole-ellis/"
-    filename = "whole-ellis_mx.tsv"
+    filename = "whole-ellis_mx" # no extension
 
-    # start !
     out_file = os.path.join(os.path.expanduser(out_dir),
                             filename)
-    run_mx_from_metaspace_converter(metaspace_registry, api_versions, api_fdr,
-                                    out_file)
-
-
-
-
-
-
-
-
+    # start
+    out_df = steps_get_united_df(metaspace_registry, api_versions, api_fdr)
+    #save_quantifications_to_tsv(out_df, out_file)  # is slow
+    save_quantifications_anndata(out_df, out_file)

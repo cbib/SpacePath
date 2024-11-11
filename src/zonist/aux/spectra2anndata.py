@@ -1,4 +1,6 @@
 # johaGL 2024
+# NOTE: requires imzML+ibd spectra already aligned & recalibrated
+#       if data is unaligned use 'matrix_from_metaspace' script
 # usage:
 #   spectra2anndata-v2.py $DATADIR $FILE_BASENAME $PREFIX $OUTDIR
 # where:
@@ -13,7 +15,7 @@
 #  ~/spatial_thesis/spatial_metabolomics/tutorial_publicdata/example_data \
 #  example_data ED output/objects
 
-# TODO: transfomr this in ----> spectra2matrix -> and save a .tsv file !!!!!
+# TODO: transfomr this in ----> spectra2matrix -> and save a .h5ad file !!!!!
 
 import numpy as np
 import pandas as pd
@@ -97,7 +99,7 @@ def load_run(data_dir, base_filename, prefix, output_dir):
 
 if __name__ == "__main__":
     print("Converts imz+ibd files into anndata object, and saves it to file")
-    print("   important: requires aligned and recalibrated spectra")
+    print("   important: requires aligned and recalibrated spectra (otherwise, use 'matrix_from_metaspace')")
     print(" data_dir:", sys.argv[1], '\n',
           "base_filename:", sys.argv[2], '\n',
           "prefix:", sys.argv[3], '\n',

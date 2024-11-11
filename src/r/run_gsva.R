@@ -27,7 +27,7 @@ run_minimal_test <- function(){
                    "set3"=c("1", "10","7"))
   print(sets_list)
   cat("\n printing the fast example (a matrix of scores per set)\n")
-  gsvaPar <- gsvaParam(X, sets_list, minSize=2)  # defaults
+  gsvaPar <- gsvaParam(X, sets_list, minSize=2)  
   gsva_scores_matrix <- gsva(gsvaPar, verbose=TRUE)
   print(gsva_scores_matrix)
   cat("\nend of fast example for debug  \n*-*-*\n")
@@ -79,7 +79,7 @@ X <- log10(X + 1)  # +1 to avoid log zero inf
 
 cat("Computing GSVA ...\n")
 
-gsvaPar <- gsvaParam(X, gmt
+gsvaPar <- gsvaParam(X, gmt,
                      minSize=minsize_usr)  
 rm(X)
 gsva_scores_matrix <- gsva(gsvaPar, verbose=FALSE)

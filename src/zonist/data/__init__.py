@@ -209,6 +209,7 @@ class MetabolomeAnnotations(Dataset):
 
             df = df[[self.col_mz, self.col_formula, self.col_molecule_ids,
                      self.col_molecule_names, self.offsample_column]]
+            df[self.col_mz] = np.around(df[self.col_mz].to_numpy(), decimals=9)
             df = df.dropna()
             df['database'] = anno_key
             if anno_key == "custom_kegg":
@@ -225,21 +226,22 @@ class MetabolomeAnnotations(Dataset):
                 preloaded_annots, self.col_mz, self.col_formula,
                 self.col_molecule_ids, self.col_molecule_names)
 
-    # def discard_out_of_sample_mz(self):
-    #     ## this function NO !!! :
-    #     # First use the mz to be "discarded" IN THE QUANTIFICATIONS MX  !!!!
-    #     # TO FIND THE PIXELS THAT ARE RICH IN THOSE MZ-TO-BE-DISCARDED,
-    #     # SO WE CAN DISCARD THOSE PIXELS
-    #     mz_keep = self.feat_classif.loc[self.feat_classif[self.offsample_column] == False,
-    #                 self.col_mz].tolist()
-    #     updated_df = self.annotationtbl.loc[
-    #         self.annotationtbl[self.col_mz].isin(mz_keep)]
-    #     self.annotationtbl = updated_df
-    #     logger.info(' [discard_out_of_sample_mz]> Excluded %s unique '
-    #                 'features that are "out-of-the-tissue". Retained: %s.',
-    #                 len(set(self.feat_classif[
-    #                             self.col_mz].unique()) - set(mz_keep)),
-    #                 len(set(mz_keep)))
+        self.annotationtbl[self.col_mz] = np.around(
+            self.annotationtbl[self.col_mz].to_numpy(), decimals=9)
+
+    def discard_out_of_sample_mz(self):
+        """optional, to discard the mz that are out-of-tissue"""
+         # Tested in 'user-pipeline/drafts': it is NOT possible TO FIND THE PIXELS THAT ARE RICH IN THOSE MZ-TO-BE-DISCARDED SO WE CAN DISCARD THOSE PIXELS
+        mz_keep = self.feat_classif.loc[self.feat_classif[self.offsample_column] == False,
+                    self.col_mz].tolist()
+        updated_df = self.annotationtbl.loc[
+            self.annotationtbl[self.col_mz].isin(mz_keep)]
+        self.annotationtbl = updated_df
+        logger.info(' [discard_out_of_sample_mz]> Excluded %s unique '
+                    'features that are "out-of-the-tissue". Retained: %s.',
+                    len(set(self.feat_classif[
+                                self.col_mz].unique()) - set(mz_keep)),
+                    len(set(mz_keep)))
 
     def convert_ids_to_kegg(self, ref_table: pd.DataFrame):
         logger.info('Translating ids in the metabolome annotation'
