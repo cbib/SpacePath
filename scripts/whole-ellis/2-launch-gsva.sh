@@ -22,7 +22,7 @@ conda activate r_gsva
 cd /mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/
 
 DATAPATH=/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data/whole-ellis
-MATRIXFILE="whole-ellis-mx-mz.tsv"
+MATRIXFILE="whole-ellis_mx_f2.tsv"
 JSONFILE="gmt_mz.json"
 
 ### running with script that does log and then gsva !
