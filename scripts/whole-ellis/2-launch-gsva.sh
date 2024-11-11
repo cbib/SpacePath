@@ -24,9 +24,10 @@ cd /mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/
 DATAPATH=/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data/whole-ellis
 MATRIXFILE="whole-ellis_mx_f2.tsv"
 JSONFILE="gmt_mz.json"
+MINSIZE=2
 
 ### running with script that does log and then gsva !
-Rscript zonist/src/r/run_gsva.R $DATAPATH $MATRIXFILE $JSONFILE
+Rscript zonist/src/r/run_gsva.R $DATAPATH $MATRIXFILE $JSONFILE $MINSIZE
 
 
 
