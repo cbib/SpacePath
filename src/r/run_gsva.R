@@ -80,7 +80,7 @@ X <- log10(X + 1)  # +1 to avoid log zero inf
 cat("Computing GSVA ...\n")
 
 gsvaPar <- gsvaParam(X, gmt,
-                     minSize=int(minsize_usr))  
+                     minSize=as.integer(minsize_usr))  
 rm(X)
 gsva_scores_matrix <- gsva(gsvaPar, verbose=FALSE)
 
