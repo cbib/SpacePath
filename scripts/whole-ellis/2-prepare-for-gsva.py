@@ -1,16 +1,7 @@
 import os
 import numpy as np
-import pandas as pd
-import csv as csv
 import zonist.data as zd
 import anndata as ad
-import scanpy as sc
-import squidpy as sq
-
-from sklearn.utils import sparsefuncs
-
-import matplotlib.pyplot as plt
-from sphinx.addnodes import not_smartquotable
 
 
 # for the whole-ellis dataset
