@@ -50,6 +50,7 @@ cat("User options for this analysis:\n")
 cat(" data folder (absolute path) : ", data_dir_abspath, "\n")
 cat(" quantifications matrix (filename) : ", q_matrix_file, "\n")
 cat(" gmt listing the sets (filename) : ", gmt_file, "\n")
+cat(" minimal nb of features, per pathway : ", minsize_usr, "\n")
 
 json_path <- file.path(data_dir_abspath, gmt_file)
 matrix_path <- file.path(data_dir_abspath, q_matrix_file)
