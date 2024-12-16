@@ -167,9 +167,10 @@ class MetabolicGmt(BaseModel, extra=Extra.allow):
         full_path_file_json = os.path.join(
                 self.data_dir, dataset_subfolder,
                 f"gmt_{mz_or_kegg_choice}.json")
-        helpers.gmt_dict_write_json(
+        gmt_dict = helpers.gmt_dict_write_json(
             self.gmt_piled, self.col_pathway_id,
             mz_or_kegg_choice, full_path_file_json)
+        self.gmt_dict = gmt_dict
         logger.info("saved json file to : %s", full_path_file_json)
          # TODO: better handle the json filename
 
@@ -207,8 +208,12 @@ class MetabolomeAnnotations(Dataset):
 
             self.check_expectations_2(df)
 
-            df = df[[self.col_mz, self.col_formula, self.col_molecule_ids,
-                     self.col_molecule_names, self.offsample_column]]
+            try:
+                df = df[[self.col_mz, self.col_formula, self.col_molecule_ids,
+                         self.col_molecule_names, self.offsample_column]]
+            except KeyError:
+                df = df[[self.col_mz, self.col_formula, self.col_molecule_ids,
+                         self.col_molecule_names]]
             df[self.col_mz] = np.around(df[self.col_mz].to_numpy(), decimals=9)
             df = df.dropna()
             df['database'] = anno_key
@@ -219,15 +224,18 @@ class MetabolomeAnnotations(Dataset):
         preloaded_annots = \
                 helpers.combine_frames_identical_columns(dfs_dict)
 
-        self.feat_classif = helpers.pull_offsample_info(preloaded_annots,
-                                             self.col_mz,
-                                             self.offsample_column)
         self.annotationtbl = helpers.spreadout_annotation_df(
                 preloaded_annots, self.col_mz, self.col_formula,
                 self.col_molecule_ids, self.col_molecule_names)
 
         self.annotationtbl[self.col_mz] = np.around(
             self.annotationtbl[self.col_mz].to_numpy(), decimals=9)
+
+    def run_feat_classif(self):
+        """optional, if offsample column exists"""
+        self.feat_classif = helpers.pull_offsample_info(preloaded_annots,
+                                                        self.col_mz,
+                                                        self.offsample_column)
 
     def discard_out_of_sample_mz(self):
         """optional, to discard the mz that are out-of-tissue"""
@@ -293,10 +301,14 @@ class MetabolomeSpatialMatrix(Dataset):
         'metaspace' : "xR_yS where R and S are integers"}
 
     def preload(self):
-        print("loading")
+        print("not yet supported")
+        # TODO
+        #print("loading")
     
     def check_expectations(self):
-        print("checking")
+        print("not yet supported")
+        # TODO
+        # print("checking")
 
 
 class MetabolomeImzmlIbd(Dataset): # TODO think if needed ....

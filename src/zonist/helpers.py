@@ -171,14 +171,14 @@ def gmt_piled_to_dict(gmt_piled_mz, pathway_id: str, mz_or_kegg: str):
 
 
 def gmt_dict_write_json(gmt_piled_mz, col_pathway_id, mz_or_kegg: str,
-                        full_path_file_json)-> None:
+                        full_path_file_json) -> Dict[str, List[str]]:
     
     a_dict = gmt_piled_to_dict(gmt_piled_mz, col_pathway_id,
                                mz_or_kegg=mz_or_kegg)
-    
     #json_str = json.dumps(a_dict, indent=2)
     with open(full_path_file_json, "w") as f:
         json.dump(a_dict, f)
+    return a_dict
 
 
 
