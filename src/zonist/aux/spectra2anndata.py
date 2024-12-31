@@ -49,14 +49,18 @@ def files2blocks(spectra_obj, barcode_prefix ):
     # coord_str_list = [f'{barcode_prefix}_{spectra_obj.coordinates[0][0]}_{spectra_obj.coordinates[0][1]}']
     # intensities_mx = np.array(intensities)
     intensities_list = list()
+
+    unwarped_data_message = ("ERROR: unaligned features (please perform data "
+                             "correction and warping before using this tool)")
+
     print("Assembling intensities arrays into 2D array. Parsing",
           len(spectra_obj.coordinates), "pixels")
     for i in tqdm(range(0, len(spectra_obj.coordinates))):  # 
-        mzs, intensities = spectra_obj.getspectrum(i)    
-        
-        if not np.all(np.array(mzs) == np.array(mzs0)):
-            raise ValueError("ERROR: unmatched features across the multiple "
-                             "spectra. Better use spectra2annndata_complex")
+        mzs, intensities = spectra_obj.getspectrum(i)
+        assert len(np.array(mzs)) == len(np.array(mzs0)), (
+            unwarped_data_message)
+        assert np.all(np.array(mzs) == np.array(mzs0)), (
+            unwarped_data_message)
         # only 2 dimensions:
         # TODO: instead "barcode_prefix" which is useless, use x00_y00 style
         coord_str_list.append(
