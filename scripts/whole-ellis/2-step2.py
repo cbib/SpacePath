@@ -25,7 +25,7 @@ me_annots = zd.MetabolomeAnnotations(name="demo",
 me_annots.load()
 
 ## reference mappings to get KEGG ids from HMDB and LipidMaps identifiers
-me_refmap = zd.MetaboliteReferenceMappings(
+me_refmap = zd.MetaboliteIdsMappings(
     data_dir=mydata_dir,
     subfolder="metabolites-mappings",
     mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
@@ -51,13 +51,21 @@ if bool_equal:
 else:
     raise ValueError("FATAL: mz do not match between adata_mz and annotation table")
 
-me_annots.purge(adata_mz)
-lala = 33
-jojo = 8
+me_annots.treat_mz_multiplets(adata_mz)
+
 print(len(me_annots.df["KEGG"].to_list()))
 print(len(me_annots.df["KEGG"].unique()))
 
-print("magnifico")
+me_gmt = zd.MetabolicPathways(
+    data_dir=mydata_dir,
+    subfolder="metabolites-mappings",
+    official_file="KEGG_hsa_pathways_compounds_R110.gmt",
+)
+
+me_gmt.load()
+me_gmt.intersect_with_annotations(me_annots)
+
+print("ok")
 
 
 
