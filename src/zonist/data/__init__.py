@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, Dict, Literal, Optional, Set, Union
 
 import pandas as pd
-
+import anndata as ad
 import sspa as sspa
 
 from pydantic import BaseModel as PydanticBaseModel
@@ -42,7 +42,7 @@ class MetaboliteReferenceMappings(BaseModel, extra=Extra.allow):
     delimiter: str = '\t'  # we provide tab delimited .tsv viles
     mapping_files: Dict[str, str]  # list with basename.extension
 
-    def load_mappings(self):
+    def load(self):
         logger.info(
             "Loading reference files for mapping compounds identifiers")
         self.check_expectations_map1()
@@ -183,10 +183,10 @@ class MetabolomeAnnotations(Dataset):
     col_formula : str = "formula"
     col_molecule_names: str = "moleculeNames"
     offsample_column: str = "offSample"  # has bool values in feat_classif df
-    annotationtbl: pd.DataFrame = pd.DataFrame()
+    unfiltered: pd.DataFrame = pd.DataFrame()
     feat_classif: pd.DataFrame = pd.DataFrame()
 
-    def load_annotation(self):
+    def load(self):
         logger.info("Loading annotations")
 
         self.check_expectations_1()
@@ -224,12 +224,12 @@ class MetabolomeAnnotations(Dataset):
         preloaded_annots = \
                 helpers.combine_frames_identical_columns(dfs_dict)
 
-        self.annotationtbl = helpers.spreadout_annotation_df(
+        self.unfiltered = helpers.spreadout_annotation_df(
                 preloaded_annots, self.col_mz, self.col_formula,
                 self.col_molecule_ids, self.col_molecule_names)
 
-        self.annotationtbl[self.col_mz] = np.around(
-            self.annotationtbl[self.col_mz].to_numpy(), decimals=9)
+        self.unfiltered[self.col_mz] = np.around(
+            self.unfiltered[self.col_mz].to_numpy(), decimals=9)
 
     def run_feat_classif(self):
         """optional, if offsample column exists"""
@@ -242,9 +242,9 @@ class MetabolomeAnnotations(Dataset):
          # Tested in 'user-pipeline/drafts': it is NOT possible TO FIND THE PIXELS THAT ARE RICH IN THOSE MZ-TO-BE-DISCARDED SO WE CAN DISCARD THOSE PIXELS
         mz_keep = self.feat_classif.loc[self.feat_classif[self.offsample_column] == False,
                     self.col_mz].tolist()
-        updated_df = self.annotationtbl.loc[
-            self.annotationtbl[self.col_mz].isin(mz_keep)]
-        self.annotationtbl = updated_df
+        updated_df = self.unfiltered.loc[
+            self.unfiltered[self.col_mz].isin(mz_keep)]
+        self.unfiltered = updated_df
         logger.info(' [discard_out_of_sample_mz]> Excluded %s unique '
                     'features that are "out-of-the-tissue". Retained: %s.',
                     len(set(self.feat_classif[
@@ -258,13 +258,24 @@ class MetabolomeAnnotations(Dataset):
                 columns_ref_map_expected)), f"Metabolite reference"
         f" mappings columns must be {columns_ref_map_expected}"
         try:
-            converted_df = helpers.convert_metabo_annots_tokegg(
-                self.annotationtbl, ref_table,
+            self.df = helpers.convert_metabo_annots_tokegg(
+                self.unfiltered, ref_table,
                 self.col_molecule_ids, self.col_mz)
+            multi_cases: bool = helpers.identify_inconvenient_mz(
+                self.df,  self.col_mz)
+            if multi_cases:
+                message_multimz = (
+                    "Identified 'multi m/z to one KEGGid' cases!: "
+                    "Please run '<object>.purge(anndata_mz)' to remove them.")
+                logger.warning(message_multimz)
+                print(message_multimz)
         except Exception as e:
             logger.warning("Error: %s", e)
 
-        self.annotationtbl = converted_df  # update the attr
+    def purge(self, adata_mz: ad.AnnData):
+        ## TODO : add a check to see if the adata_mz has the same mz values as the ones in the annotation
+        logger.info('Running purge method on the metabolome annotation')
+        self.df = helpers.purge_bad_mz(self.df, adata_mz, self.col_mz)
 
     def check_expectations_1(self):
         if len(set(list(self.annotation_files.keys())).intersection(
@@ -278,9 +289,9 @@ class MetabolomeAnnotations(Dataset):
                 " yet supported and will be ignored", anno_key)
 
     def check_expectations_2(self, df):
-        expected_columns_by_df = [self.col_mz, self.col_formula, 
-                                  self.col_molecule_ids, 
-                                  self.col_molecule_names]
+        expected_columns_by_df = [
+            self.col_mz, self.col_formula,
+           self.col_molecule_ids, self.col_molecule_names]
 
         if len(list(df.columns)) <= 1:
             logger.error("Error: insuficient columns in annotation dataframe,"
@@ -294,11 +305,12 @@ class MetabolomeAnnotations(Dataset):
 
 
 class MetabolomeSpatialMatrix(Dataset):
-    matrix_filename: str  # one only
-    col_mz : str = "mz"
-    style_coordinates_names: str = "metaspace"
-    style_coordinates_explanation: Dict[str, str] = {
-        'metaspace' : "xR_yS where R and S are integers"}
+    # TODO : is this class is useful? or use adata object directly instead ?
+    adata_filename: str  # one only
+    # col_mz : str = "mz"
+    #style_coordinates_names: str = "metaspace"
+    #style_coordinates_explanation: Dict[str, str] = {
+    #    'metaspace' : "xR_yS where R and S are integers"}
 
     def preload(self):
         print("not yet supported")
@@ -311,9 +323,6 @@ class MetabolomeSpatialMatrix(Dataset):
         # print("checking")
 
 
-class MetabolomeImzmlIbd(Dataset): # TODO think if needed ....
-    data_imz_ibd_basename : str # one
-    # TODO: complete? or simply create external code to produce the matrix directly?
 
 
 

@@ -8,7 +8,7 @@ import anndata as ad
 #import scanpy as sc
 #import squidpy as sq
 from tqdm import tqdm
-
+from sklearn.utils import sparsefuncs
 
 def reset_log_config(logger):
     """parameters for the log file"""
@@ -98,6 +98,61 @@ def convert_metabo_annots_tokegg(
 
     return final
 
+def identify_inconvenient_mz(annotdf: pd.DataFrame,
+                             col_mz: str) -> bool:
+    """identifies multiple mz for one KEGG id in the annotation table"""
+    out_bool = False
+    df2 = annotdf[[col_mz, "KEGG"]]
+    df2 = df2.drop_duplicates()
+    df2 = df2.groupby("KEGG", as_index=False).size()
+    df2 = df2.loc[df2['size'] >= 2, :].head()
+    if df2.shape[0] > 0:
+        out_bool = True
+    return out_bool
+
+
+def resolve_mz_multi_kegg(adata: ad.AnnData, df: pd.DataFrame) -> List[tuple]:
+    """
+    HMDB curators do efforts to map one-to-one, to KEGG ids.
+    However, still many HMDB ids match to one single KEGG id, yielding
+    multiple m/z <> repeated KEGG id in our piled table of annotations.
+    To resolve such multi-m/z > 1 KEGG group, this function keeps the
+    m/z (of such group) that has the highest variance of the quantifications.
+    output: List[tuple] a list of tuples: (mz (float), kegg (str))
+    """
+    mean_arr, v_arr = sparsefuncs.mean_variance_axis(adata.X, axis=0)
+    adata.var['variance'] = v_arr
+    df2 = df.groupby("KEGG", as_index=False).size()
+    unique_kegg_ids = df2.loc[df2['size'] == 1, "KEGG"].tolist()
+    ok_mz_kegg_tuples = [tuple(t) for t in df.loc[
+        df['KEGG'].isin(unique_kegg_ids), ["mz", "KEGG"]].to_numpy()]
+    repeated_kegg_ids = df2.loc[df2['size'] >= 2, "KEGG"].tolist()
+    for a_kegg in repeated_kegg_ids:
+        multi_annot_df = df.loc[df["KEGG"] == a_kegg, :]
+        df_with_v_metric = adata.var.loc[
+               adata.var['mz'].isin(multi_annot_df["mz"].tolist()),:]
+        df_with_v_metric = df_with_v_metric.sort_values(
+            by='variance', ascending=False)
+        mz_here = df_with_v_metric["mz"].tolist()[0] # first item mz
+        ok_mz_kegg_tuples.append([mz_here, a_kegg])
+        # end for
+    return ok_mz_kegg_tuples
+
+
+def purge_bad_mz(annotdf: pd.DataFrame, adata_mz: ad.AnnData,
+                 col_mz: str) -> pd.DataFrame:
+    ok_mz_kegg_tuples = resolve_mz_multi_kegg(adata_mz, annotdf)
+    annotdf["keep"] = 0
+    for tup in ok_mz_kegg_tuples:
+        mz_i = tup[0]
+        keggid = tup[1]
+        annotdf.loc[(annotdf["mz"] == mz_i) & (
+                    annotdf["KEGG"] == keggid), "keep"] = 1
+
+    annotdf = annotdf.loc[annotdf["keep"] == 1]
+    annotdf = annotdf.drop(columns=["keep"])
+
+    return annotdf
 
 def clean_gmt(gmt_df, undesired_name_substring: Union[str, None]):
     gmt_df["to_delete"] = 0
