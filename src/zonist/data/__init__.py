@@ -144,6 +144,8 @@ class MetabolomeAnnotations(Dataset):
         preloaded_annots = \
                 helpers.combine_frames_identical_columns(dfs_dict)
 
+        self.preloaded = preloaded_annots
+
         self.unfiltered = helpers.spreadout_annotation_df(
                 preloaded_annots, self.col_mz, self.col_formula,
                 self.col_molecule_ids, self.col_molecule_names)
@@ -153,13 +155,13 @@ class MetabolomeAnnotations(Dataset):
 
     def run_feat_classif(self):
         """optional, if offsample column exists"""
-        self.feat_classif = helpers.pull_offsample_info(preloaded_annots,
+        self.feat_classif = helpers.pull_offsample_info(self.preloaded,
                                                         self.col_mz,
                                                         self.offsample_column)
 
     def discard_out_of_sample_mz(self):
         """optional, to discard the mz that are out-of-tissue"""
-         # Tested in 'user-pipeline/drafts': it is NOT possible TO FIND THE PIXELS THAT ARE RICH IN THOSE MZ-TO-BE-DISCARDED SO WE CAN DISCARD THOSE PIXELS
+         # Tested in 'user-pipeline/drafts': it is NOT possible TO FIND THE PIXELS THAT ARE RICH IN THOSE MZ-TO-BE-DISCARDED unfortunately
         mz_keep = self.feat_classif.loc[self.feat_classif[self.offsample_column] == False,
                     self.col_mz].tolist()
         updated_df = self.unfiltered.loc[

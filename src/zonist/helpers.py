@@ -127,15 +127,15 @@ def resolve_mz_multi_kegg(adata: ad.AnnData, df: pd.DataFrame) -> List[tuple]:
     unique_kegg_ids = df2.loc[df2['size'] == 1, "KEGG"].tolist()
     ok_mz_kegg_tuples = [tuple(t) for t in df.loc[
         df['KEGG'].isin(unique_kegg_ids), ["mz", "KEGG"]].to_numpy()]
-    repeated_kegg_ids = df2.loc[df2['size'] >= 2, "KEGG"].tolist()
+    repeated_kegg_ids = df2.loc[df2['size'] >= 2, "KEGG"].unique()
     for a_kegg in repeated_kegg_ids:
         multi_annot_df = df.loc[df["KEGG"] == a_kegg, :]
         df_with_v_metric = adata.var.loc[
                adata.var['mz'].isin(multi_annot_df["mz"].tolist()),:]
         df_with_v_metric = df_with_v_metric.sort_values(
             by='variance', ascending=False)
-        mz_here = df_with_v_metric["mz"].tolist()[0] # first item mz
-        ok_mz_kegg_tuples.append([mz_here, a_kegg])
+        mz_best = df_with_v_metric["mz"].tolist()[0] # first item mz
+        ok_mz_kegg_tuples.append([mz_best, a_kegg])
         # end for
     return ok_mz_kegg_tuples
 
