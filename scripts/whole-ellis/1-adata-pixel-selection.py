@@ -60,10 +60,10 @@ adata.uns['spatial'] = {
 print("\nGet rid of pixels that are not part of the tissue:")
 #  use Spatial domains as in https://www.sc-best-practices.org/spatial/domains.html
 print("  using most variable features for dimensional reduction+clustering")
-means_vars, variances_vars = sparsefuncs.mean_variance_axis(adata.X, axis=0)
-adata.var["variance"] = variances_vars
+means_vars, variance_computed = sparsefuncs.mean_variance_axis(adata.X, axis=0)
+adata.var['variance'] = variance_computed
 
-tmp = adata.var.sort_values(by="variance", ascending=False)
+tmp = adata.var.sort_values(by='variance', ascending=False)
 sampled_features = tmp.head(500)["mz"].astype(str).tolist()
 del tmp
 miniadata = adata[:, sampled_features].copy()

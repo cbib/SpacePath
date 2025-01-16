@@ -8424,7 +8424,7 @@ INFO:zonist.data:Translating ids in the metabolome annotation table, to KEGG
 <div class="jp-InputPrompt jp-InputArea-prompt">In [48]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">means_vars</span><span class="p">,</span> <span class="n">variances_vars</span> <span class="o">=</span> <span class="n">sparsefuncs</span><span class="o">.</span><span class="n">mean_variance_axis</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">means_vars</span><span class="p">,</span> <span class="n">variance_computed</span> <span class="o">=</span> <span class="n">sparsefuncs</span><span class="o">.</span><span class="n">mean_variance_axis</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8438,7 +8438,7 @@ INFO:zonist.data:Translating ids in the metabolome annotation table, to KEGG
 <div class="jp-InputPrompt jp-InputArea-prompt">In [63]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">adata1</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'variances'</span><span class="p">]</span> <span class="o">=</span> <span class="n">variances_vars</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">adata1</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'variance'</span><span class="p">]</span> <span class="o">=</span> <span class="n">variance_computed</span>
 <span class="n">adata1</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'means'</span><span class="p">]</span> <span class="o">=</span> <span class="n">means_vars</span>
 </pre></div>
 </div>
@@ -8566,7 +8566,7 @@ INFO:zonist.data:Translating ids in the metabolome annotation table, to KEGG
 </div>
 </div>
 </div>unk = np.array([1 if x &gt; np.percentile(
-    adata1.var['variances'], 70) else 0 for x in adata1.var['variances'
+    adata1.var['variance'], 70) else 0 for x in adata1.var['variance'
                                 ].to_numpy() ])<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=f34c1dda-c9cd-4b4a-9c62-090061782606">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
