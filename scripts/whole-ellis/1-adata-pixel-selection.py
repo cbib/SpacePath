@@ -47,7 +47,7 @@ coordinates_arr = generate_coordinates(adata.obs["obs"].tolist())
 adata = ad.AnnData(adata.X,
                     obs = adata.obs, var= adata.var,
                     obsm = {"spatial": coordinates_arr},
-                    varm = {"metabolites": adata.var["var"].to_numpy()}
+                    varm = {"metabolites": adata.var["mz"].to_numpy()}
                     )
 
 adata.uns['spatial'] = {
@@ -64,7 +64,7 @@ means_vars, variances_vars = sparsefuncs.mean_variance_axis(adata.X, axis=0)
 adata.var["variance"] = variances_vars
 
 tmp = adata.var.sort_values(by="variance", ascending=False)
-sampled_features = tmp.head(500)["var"].astype(str).tolist()
+sampled_features = tmp.head(500)["mz"].astype(str).tolist()
 del tmp
 miniadata = adata[:, sampled_features].copy()
 

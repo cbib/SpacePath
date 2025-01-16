@@ -40,7 +40,7 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subdir, quantif_file))
 bool_equal = np.all(np.array(
     sorted(me_annots.annotationtbl["mz"].unique())) == np.array(
-    sorted(adata_mz.var["var"].tolist())))
+    sorted(adata_mz.var["mz"].tolist())))
 print(f"perfect match between mz in me_a.annotationtbl "
       f"and adata.X: {bool_equal}")
 
@@ -74,10 +74,10 @@ def resolve_mz_multi_kegg(adata, me_annots: zd.MetabolomeAnnotations):
         multi_annot_df = me_annots.annotationtbl.loc[
                 me_annots.annotationtbl["KEGG"] == a_kegg, :]
         df_with_variances = adata.var.loc[
-               adata.var['var'].isin(multi_annot_df["mz"].tolist()),:]
+               adata.var['mz'].isin(multi_annot_df["mz"].tolist()),:]
         df_with_variances = df_with_variances.sort_values(
             by='variances', ascending=False)
-        mz_here = df_with_variances["var"].tolist()[0] # first item mz
+        mz_here = df_with_variances["mz"].tolist()[0] # first item mz
         ok_mz_kegg_tuples.append([mz_here, a_kegg])
         # end for
     return ok_mz_kegg_tuples

@@ -60,7 +60,7 @@ adata = ad.read_h5ad(filename=os.path.join(
 print(adata)
 bool_equal = np.all(np.array(
     sorted(me_annots.annotationtbl["mz"].unique())) == np.array(
-    sorted(adata.var["var"].tolist())))
+    sorted(adata.var["mz"].tolist())))
 print(f"perfect match between mz in me_a.annotationtbl "
       f"and adata.X: {bool_equal}")
 
@@ -72,7 +72,7 @@ coordinates_arr = generate_coordinates(adata.obs["obs"].tolist())
 adata = ad.AnnData(adata.X,
                     obs = adata.obs, var= adata.var,
                     obsm = {"spatial": coordinates_arr},
-                    varm = {"metabolites": adata.var["var"].to_numpy()}
+                    varm = {"metabolites": adata.var["mz"].to_numpy()}
                     )
 
 adata.uns['spatial'] = { 'MY_SLICE7_NAME' : { 'scalefactors': {'fiducial_diameter_fullres': 100,#144.48769000651953,

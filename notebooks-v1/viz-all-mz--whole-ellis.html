@@ -7658,7 +7658,7 @@ Time: 20250106-20.52.03
     <span class="n">mydata_dir</span><span class="p">,</span> <span class="n">subdir</span><span class="p">,</span> <span class="n">quantif_file</span><span class="p">))</span>
 <span class="n">bool_equal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
     <span class="nb">sorted</span><span class="p">(</span><span class="n">me_annots</span><span class="o">.</span><span class="n">annotationtbl</span><span class="p">[</span><span class="s2">"mz"</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()))</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-    <span class="nb">sorted</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s2">"var"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())))</span>
+    <span class="nb">sorted</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s2">"mz"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())))</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"perfect match between mz in me_a.annotationtbl "</span>
       <span class="sa">f</span><span class="s2">"and adata.X: </span><span class="si">{</span><span class="n">bool_equal</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
@@ -8238,7 +8238,7 @@ INFO:zonist.data:Translating ids in the metabolome annotation table, to KEGG
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>AnnData object with n_obs × n_vars = 133444 × 2930
     obs: 'obs', 'spatial_domain'
-    var: 'var', 'variance'
+    var: 'mz', 'variance'
     uns: 'spatial', 'spatial_domain_colors'
     obsm: 'spatial'
     varm: 'metabolites'</pre>
@@ -8330,7 +8330,7 @@ INFO:zonist.data:Translating ids in the metabolome annotation table, to KEGG
 <div class="jp-InputPrompt jp-InputArea-prompt">In [35]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'var'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'mz'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
