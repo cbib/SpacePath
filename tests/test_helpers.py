@@ -50,7 +50,7 @@ class Test(TestCase):
              np.nan, np.nan]]
 
         gmt = pd.DataFrame(data, columns=range(0, 7))
-        result = helpers.clean_gmt(gmt_df=gmt, undesired_name_substring='-!?')
+        result = helpers.prettify_gmt(gmt_df=gmt, undesired_name_substring='-!?')
         self.assertTrue('IDpath4' not in result.iloc[:, 0].tolist())
         self.assertListEqual(['IDpath1', 'IDpath2', 'IDpath3'],
                              result.iloc[:, 0].tolist())
@@ -81,8 +81,8 @@ class Test(TestCase):
             "mz": ["102.0317", "132.0899", "588.5665543", "913.821868"],
             "KEGG": ["C00232", "C00077", "C09090", "CXXXXYY"]
         })
-        result = helpers.gmt_join_mz(gmt_piled, anno_mz_kegg,
-                                     col_molecule_id="KEGG")        
+        result = helpers.pathways_and_annots_inner_join(gmt_piled, anno_mz_kegg,
+                                                        col_molecule_id="KEGG")
         # result : 
         #    path_id    KEGG      mz
         #    one        C00232    102.0317

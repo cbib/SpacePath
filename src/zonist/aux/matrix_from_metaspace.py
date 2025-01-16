@@ -101,7 +101,7 @@ def save_quantifications_anndata(outdf, outfile) -> None:
     out_obj = ad.AnnData(X=csr_matrix(outdf),
                          obs=pd.DataFrame({"obs":outdf.index.tolist()},
                                           index=outdf.index.tolist()),
-                         var=pd.DataFrame({"var": outdf.columns.tolist()},
+                         var=pd.DataFrame({"mz": outdf.columns.tolist()},
                                           index=outdf.columns.tolist()))
     outfile = outfile + ".h5ad"
     out_obj.write(outfile, compression=None, compression_opts=None)

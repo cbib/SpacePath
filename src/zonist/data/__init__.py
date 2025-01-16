@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, Dict, Literal, Optional, Set, Union
 
 import pandas as pd
-
+import anndata as ad
 import sspa as sspa
 
 from pydantic import BaseModel as PydanticBaseModel
@@ -33,16 +33,18 @@ class BaseModel(PydanticBaseModel):
 class Dataset(BaseModel, extra=Extra.allow):
     name : str
     data_dir: str  # /m/n/o/prj/st/spatial_metabo/data    
-    subfolder: str  # where either imzml+ibd files, or spatialmatrix  ! 
+    subfolder: str  # where either imzml+ibd files, or spatialmatrix  !
 
 
-class MetaboliteReferenceMappings(BaseModel, extra=Extra.allow):
+
+class MetaboliteIdsMappings(BaseModel, extra=Extra.allow):
     data_dir: str
     subfolder: str
     delimiter: str = '\t'  # we provide tab delimited .tsv viles
     mapping_files: Dict[str, str]  # list with basename.extension
+    table: pd.DataFrame = pd.DataFrame()
 
-    def load_mappings(self):
+    def load(self):
         logger.info(
             "Loading reference files for mapping compounds identifiers")
         self.check_expectations_map1()
@@ -92,89 +94,6 @@ class MetaboliteReferenceMappings(BaseModel, extra=Extra.allow):
                          "'%s' and 'KEGG'", map_key)
 
 
-class MetabolicGmt(BaseModel, extra=Extra.allow):
-    data_dir: str
-    subfolder: str
-    official_file: str
-    custom_file: Optional[str] = ''
-    gmt_type: str = "sspa"  # the official
-    undesired_name_substring: str = " - Homo sapiens (human)" # in names
-    col_pathway_id: str = "pathway_id"
-    col_pathway_name: str = "pathway_name"
-    col_molecule_ids: str = "KEGG"   #  must be KEGG to match joined annots
-
-    def preload_official(self):
-        if not os.path.exists(os.path.join(
-                self.data_dir, self.subfolder, self.official_file)):
-            if self.gmt_type == "sspa":
-                logger.info("writing sspa official gmt to data dir, wait ...")
-                sspa.process_pathways.process_kegg(
-                    organism="hsa", infile=None, download_latest=True,
-                    filepath=os.path.join(self.data_dir, self.subfolder))
-                logger.info("saved!")
-            else:
-                logger.info("only 'sspa' as gmt_type (official) is supported")
-        try:
-            official_gmt = pd.read_csv(
-                os.path.join(self.data_dir, self.subfolder,
-                             self.official_file),
-                header=None, sep='\t', index_col=False)
-        except Exception as e:
-            logger.error(e)
-
-        self.official = helpers.clean_gmt(
-            official_gmt, self.undesired_name_substring)
-
-    def preload_custom(self):
-        try:
-            custom_gmt = pd.read_csv(
-                os.path.join(self.data_dir, self.subfolder, 
-                             self.custom_file),
-                header=None, sep='\t', index_col=False)
-        except Exception as e:
-            logger.error(e)
-        first_row = custom_gmt.iloc[0, :]
-        cus_message = (f" The first line of your custom gmt file:\n"
-                      f"  abbreviation: '{first_row.iloc[0]}'; "
-                      f"  name : '{first_row.iloc[1]}';  metabolites"
-                      f"  (first three) : '{first_row.iloc[2:5].tolist()}'.")
-        logger.info("%s", cus_message)
-        self.custom = helpers.clean_gmt(custom_gmt, None)
-
-    def load(self):
-        self.preload_official()
-        dfs_dict = {'official': self.official}
-        if self.custom_file != '':
-            self.preload_custom()
-            dfs_dict['custom'] = self.custom
-
-        id_name_pathways_df, gmt_piled = helpers.gmts_merge_pile_splitid(
-            dfs_dict, self.col_pathway_id, self.col_pathway_name,
-            self.col_molecule_ids)
-
-        self.pathways_ids = id_name_pathways_df
-        self.gmt_piled = gmt_piled
-        logger.info("success, attributes : gmt_piled, pathways_ids")
-
-    def join_mz(self, annotations_df_mz_kegg):
-        """adds the mz to the same gmt_piled attr"""
-        joined_df = helpers.gmt_join_mz(self.gmt_piled,
-                                     annotations_df_mz_kegg,
-                                     self.col_molecule_ids)
-        self.gmt_piled = joined_df
-
-    def write_to_json(self, dataset_subfolder: str, mz_or_kegg_choice: str = "mz"):
-        full_path_file_json = os.path.join(
-                self.data_dir, dataset_subfolder,
-                f"gmt_{mz_or_kegg_choice}.json")
-        gmt_dict = helpers.gmt_dict_write_json(
-            self.gmt_piled, self.col_pathway_id,
-            mz_or_kegg_choice, full_path_file_json)
-        self.gmt_dict = gmt_dict
-        logger.info("saved json file to : %s", full_path_file_json)
-         # TODO: better handle the json filename
-
-
 class MetabolomeAnnotations(Dataset):
     annotation_files : Dict[str, str]
     delimiter : str = ","  # the metaspace delimiter is comma
@@ -183,10 +102,11 @@ class MetabolomeAnnotations(Dataset):
     col_formula : str = "formula"
     col_molecule_names: str = "moleculeNames"
     offsample_column: str = "offSample"  # has bool values in feat_classif df
-    annotationtbl: pd.DataFrame = pd.DataFrame()
+    unfiltered: pd.DataFrame = pd.DataFrame()
+    df: pd.DataFrame = pd.DataFrame()
     feat_classif: pd.DataFrame = pd.DataFrame()
 
-    def load_annotation(self):
+    def load(self):
         logger.info("Loading annotations")
 
         self.check_expectations_1()
@@ -224,12 +144,12 @@ class MetabolomeAnnotations(Dataset):
         preloaded_annots = \
                 helpers.combine_frames_identical_columns(dfs_dict)
 
-        self.annotationtbl = helpers.spreadout_annotation_df(
+        self.unfiltered = helpers.spreadout_annotation_df(
                 preloaded_annots, self.col_mz, self.col_formula,
                 self.col_molecule_ids, self.col_molecule_names)
 
-        self.annotationtbl[self.col_mz] = np.around(
-            self.annotationtbl[self.col_mz].to_numpy(), decimals=9)
+        self.unfiltered[self.col_mz] = np.around(
+            self.unfiltered[self.col_mz].to_numpy(), decimals=9)
 
     def run_feat_classif(self):
         """optional, if offsample column exists"""
@@ -242,9 +162,9 @@ class MetabolomeAnnotations(Dataset):
          # Tested in 'user-pipeline/drafts': it is NOT possible TO FIND THE PIXELS THAT ARE RICH IN THOSE MZ-TO-BE-DISCARDED SO WE CAN DISCARD THOSE PIXELS
         mz_keep = self.feat_classif.loc[self.feat_classif[self.offsample_column] == False,
                     self.col_mz].tolist()
-        updated_df = self.annotationtbl.loc[
-            self.annotationtbl[self.col_mz].isin(mz_keep)]
-        self.annotationtbl = updated_df
+        updated_df = self.unfiltered.loc[
+            self.unfiltered[self.col_mz].isin(mz_keep)]
+        self.unfiltered = updated_df
         logger.info(' [discard_out_of_sample_mz]> Excluded %s unique '
                     'features that are "out-of-the-tissue". Retained: %s.',
                     len(set(self.feat_classif[
@@ -258,13 +178,26 @@ class MetabolomeAnnotations(Dataset):
                 columns_ref_map_expected)), f"Metabolite reference"
         f" mappings columns must be {columns_ref_map_expected}"
         try:
-            converted_df = helpers.convert_metabo_annots_tokegg(
-                self.annotationtbl, ref_table,
+            self.df = helpers.convert_metabo_annots_tokegg(
+                self.unfiltered, ref_table,
                 self.col_molecule_ids, self.col_mz)
+            excess_mz_bool: bool = helpers.identify_multi_mz_to_one_kegg(
+                self.df,  self.col_mz)
+            if excess_mz_bool:
+                message_multimz = (
+                    "Identified 'multi m/z to one KEGGid' cases!: Please run "
+                    "'<obj>.treat_mz_multiplets(anndata_mz)'.")
+                logger.warning(message_multimz)
+                print(message_multimz)
         except Exception as e:
             logger.warning("Error: %s", e)
 
-        self.annotationtbl = converted_df  # update the attr
+    def treat_mz_multiplets(self, adata_mz: ad.AnnData):
+        ## TODO : add a check to see if the adata_mz has the same mz values as the ones in the annotation
+        logger.info('[treat_mz_multiplets]: if "multi m/z to one KEGGid", for'
+                    ' such KEGGid, the m/z with the top variance is kept.')
+        self.df = helpers.compute_one_to_one_mz_keggid_df(
+            self.df, adata_mz, self.col_mz)
 
     def check_expectations_1(self):
         if len(set(list(self.annotation_files.keys())).intersection(
@@ -278,9 +211,9 @@ class MetabolomeAnnotations(Dataset):
                 " yet supported and will be ignored", anno_key)
 
     def check_expectations_2(self, df):
-        expected_columns_by_df = [self.col_mz, self.col_formula, 
-                                  self.col_molecule_ids, 
-                                  self.col_molecule_names]
+        expected_columns_by_df = [
+            self.col_mz, self.col_formula,
+           self.col_molecule_ids, self.col_molecule_names]
 
         if len(list(df.columns)) <= 1:
             logger.error("Error: insuficient columns in annotation dataframe,"
@@ -293,12 +226,103 @@ class MetabolomeAnnotations(Dataset):
                          "expected ones are exactly %s", expected_columns_by_df)
 
 
+class MetabolicPathways(BaseModel, extra=Extra.allow):
+    data_dir: str
+    subfolder: str
+    official_file: str
+    custom_file: Optional[str] = ''
+    file_style: str = "gmt-sspa"  #  official and custom must be same style
+    undesired_name_substring: str = " - Homo sapiens (human)" # in names
+    col_pathway_id: str = "pathway_id"
+    col_pathway_name: str = "pathway_name"
+    col_molecule_ids: str = "KEGG"   #  must be KEGG to match joined annots
+    piled: pd.DataFrame = pd.DataFrame()
+    pathways: Dict[str, List[str]] =  dict()
+
+    def preload_official(self):
+        if not os.path.exists(os.path.join(
+                self.data_dir, self.subfolder, self.official_file)):
+            if self.file_style == "gmt-sspa":
+                logger.info("writing sspa official gmt to data dir, wait ...")
+                sspa.process_pathways.process_kegg(
+                    organism="hsa", infile=None, download_latest=True,
+                    filepath=os.path.join(self.data_dir, self.subfolder))
+                logger.info("saved!")
+            else:
+                logger.info("only 'gmt-sspa' file_style is currently supported")
+        try:
+            official_gmt = pd.read_csv(
+                os.path.join(self.data_dir, self.subfolder,
+                             self.official_file),
+                header=None, sep='\t', index_col=False)
+        except Exception as e:
+            logger.error(e)
+
+        self.official = helpers.prettify_gmt(
+            official_gmt, self.undesired_name_substring)
+
+    def preload_custom(self):
+        try:
+            custom_gmt = pd.read_csv(
+                os.path.join(self.data_dir, self.subfolder,
+                             self.custom_file),
+                header=None, sep='\t', index_col=False)
+        except Exception as e:
+            logger.error(e)
+        first_row = custom_gmt.iloc[0, :]
+        cus_message = (f" The first line of your custom gmt file:\n"
+                      f"  abbreviation: '{first_row.iloc[0]}'; "
+                      f"  name : '{first_row.iloc[1]}';  metabolites"
+                      f"  (first three) : '{first_row.iloc[2:5].tolist()}'.")
+        logger.info("%s", cus_message)
+        self.custom = helpers.prettify_gmt(custom_gmt, None)
+
+    def load(self):
+        self.preload_official()
+        dfs_dict = {'official': self.official}
+        if self.custom_file != '':
+            self.preload_custom()
+            dfs_dict['custom'] = self.custom
+
+        id_name_pathways_df, gmt_piled = helpers.gmts_merge_pile_splitid(
+            dfs_dict, self.col_pathway_id, self.col_pathway_name,
+            self.col_molecule_ids)
+
+        self.pathways_ids = id_name_pathways_df
+        self.piled = gmt_piled
+
+        logger.info("success, attributes : piled, pathways_ids")
+
+    def intersect_with_annotations(self, annots_obj: MetabolomeAnnotations):  # pd.DataFrame
+        """adds:
+         - the mz column to the same .piled dataframe
+         - the attribute .pathways, a dictionary with pathway_id as key"""
+        annotations_df_mz_kegg =  annots_obj.df[[annots_obj.col_mz, "KEGG"]]
+        self.piled = helpers.pathways_and_annots_inner_join(
+            self.piled, annotations_df_mz_kegg, self.col_molecule_ids)
+
+        self.pathways = helpers.gmt_piled_to_dict(
+            self.piled, self.col_pathway_id, mz_or_kegg=self.col_molecule_ids)
+
+    # def write_to_json(self, dataset_subfolder: str, mz_or_kegg_choice: str = "mz"):
+    #     full_path_file_json = os.path.join(
+    #             self.data_dir, dataset_subfolder,
+    #             f"gmt_{mz_or_kegg_choice}.json")
+    #
+    #     gmt_dict = helpers.gmt_dict_write_json(
+    #         self.piled, self.col_pathway_id,
+    #         mz_or_kegg_choice, full_path_file_json)
+    #     self.gmt_dict = gmt_dict
+    #     logger.info("saved json file to : %s", full_path_file_json)
+
+
 class MetabolomeSpatialMatrix(Dataset):
-    matrix_filename: str  # one only
-    col_mz : str = "mz"
-    style_coordinates_names: str = "metaspace"
-    style_coordinates_explanation: Dict[str, str] = {
-        'metaspace' : "xR_yS where R and S are integers"}
+    # TODO : is this class is useful? or use adata object directly instead ?
+    adata_filename: str  # one only
+    # col_mz : str = "mz"
+    #style_coordinates_names: str = "metaspace"
+    #style_coordinates_explanation: Dict[str, str] = {
+    #    'metaspace' : "xR_yS where R and S are integers"}
 
     def preload(self):
         print("not yet supported")
@@ -311,9 +335,6 @@ class MetabolomeSpatialMatrix(Dataset):
         # print("checking")
 
 
-class MetabolomeImzmlIbd(Dataset): # TODO think if needed ....
-    data_imz_ibd_basename : str # one
-    # TODO: complete? or simply create external code to produce the matrix directly?
 
 
 
