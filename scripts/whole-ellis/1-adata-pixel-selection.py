@@ -8,6 +8,10 @@ from sklearn.utils import sparsefuncs
 
 import matplotlib.pyplot as plt
 
+"""
+Custom script to discard the pixels that do not fall
+in the tissue, but in the background.
+"""
 
 def generate_coordinates(pixels_names):
     coord_l = list()
@@ -35,8 +39,6 @@ out_file =  "whole-ellis_mx_f1.h5ad"
 print("Opening the quantifications")
 adata = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subdir, quantif_file))
-
-
 
 
 ##  add attributes to be spatially plottable
