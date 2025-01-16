@@ -7686,7 +7686,7 @@ Time: 20250114-07.06.12
     <span class="n">mydata_dir</span><span class="p">,</span> <span class="n">subdir</span><span class="p">,</span> <span class="n">quantif_file</span><span class="p">))</span>
 <span class="n">bool_equal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
     <span class="nb">sorted</span><span class="p">(</span><span class="n">me_annots</span><span class="o">.</span><span class="n">annotationtbl</span><span class="p">[</span><span class="s2">"mz"</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()))</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-    <span class="nb">sorted</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s2">"var"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())))</span>
+    <span class="nb">sorted</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s2">"mz"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())))</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"perfect match between mz in me_a.annotationtbl "</span>
       <span class="sa">f</span><span class="s2">"and adata.X: </span><span class="si">{</span><span class="n">bool_equal</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
@@ -8163,11 +8163,11 @@ INFO:zonist.data:Translating ids in the metabolome annotation table, to KEGG
     <span class="k">for</span> <span class="n">a_kegg</span> <span class="ow">in</span> <span class="n">repeated_kegg_ids</span><span class="p">:</span>
         <span class="n">multi_annot_df</span> <span class="o">=</span> <span class="n">me_annots</span><span class="o">.</span><span class="n">annotationtbl</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
                 <span class="n">me_annots</span><span class="o">.</span><span class="n">annotationtbl</span><span class="p">[</span><span class="s2">"KEGG"</span><span class="p">]</span> <span class="o">==</span> <span class="n">a_kegg</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">df_with_variances</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-               <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'var'</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">multi_annot_df</span><span class="p">[</span><span class="s2">"mz"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()),:]</span>
-        <span class="n">df_with_variances</span> <span class="o">=</span> <span class="n">df_with_variances</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+        <span class="n">df_with_v_metric</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+               <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'mz'</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">multi_annot_df</span><span class="p">[</span><span class="s2">"mz"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()),:]</span>
+        <span class="n">df_with_v_metric</span> <span class="o">=</span> <span class="n">df_with_v_metric</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
             <span class="n">by</span><span class="o">=</span><span class="s1">'variances'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">mz_here</span> <span class="o">=</span> <span class="n">df_with_variances</span><span class="p">[</span><span class="s2">"var"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># first item mz</span>
+        <span class="n">mz_here</span> <span class="o">=</span> <span class="n">df_with_v_metric</span><span class="p">[</span><span class="s2">"mz"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># first item mz</span>
         <span class="n">ok_mz_kegg_tuples</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">mz_here</span><span class="p">,</span> <span class="n">a_kegg</span><span class="p">])</span>
         <span class="c1"># end for    </span>
     <span class="k">return</span> <span class="n">ok_mz_kegg_tuples</span>
@@ -9180,7 +9180,7 @@ adata.X = adataXrawsparse<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>AnnData object with n_obs × n_vars = 133444 × 32
     obs: 'obs', 'spatial_domain'
-    var: 'var', 'variance'
+    var: 'mz', 'variance'
     uns: 'spatial', 'spatial_domain_colors'
     obsm: 'spatial'
     varm: 'metabolites'</pre>
@@ -9282,7 +9282,7 @@ adata.X = adataXrawsparse<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>AnnData object with n_obs × n_vars = 133444 × 32
     obs: 'obs', 'spatial_domain'
-    var: 'var', 'variance', 'highly_variable', 'highly_variable_rank', 'means', 'variances', 'variances_norm'
+    var: 'mz', 'variance', 'highly_variable', 'highly_variable_rank', 'means', 'variances', 'variances_norm'
     uns: 'spatial', 'spatial_domain_colors', 'hvg'
     obsm: 'spatial'
     varm: 'metabolites'</pre>
@@ -10374,7 +10374,7 @@ adata.X = adataXrawsparse<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>AnnData object with n_obs × n_vars = 3 × 7
     obs: 'obs', 'spatial_domain', 'kmeans12'
-    var: 'var', 'variance', 'highly_variable', 'highly_variable_rank', 'means', 'variances', 'variances_norm'
+    var: 'mz', 'variance', 'highly_variable', 'highly_variable_rank', 'means', 'variances', 'variances_norm'
     uns: 'spatial', 'spatial_domain_colors', 'hvg', 'pca', 'kmeans12_colors', 'spatial_neighbors', 'moranI'
     obsm: 'spatial', 'X_pca'
     varm: 'metabolites', 'PCs'
@@ -10402,7 +10402,7 @@ adata.X = adataXrawsparse<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod
 <div class="jp-InputPrompt jp-InputArea-prompt">In [84]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">minimd</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'mz_str'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">minimd</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'var'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()]</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">minimd</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'mz_str'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">minimd</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'mz'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()]</span>
 </pre></div>
 </div>
 </div>
@@ -11977,7 +11977,7 @@ adata.X = adataXrawsparse<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod
 <div class="jp-InputPrompt jp-InputArea-prompt">In [109]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">testit</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'mz_str'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">testit</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'var'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()]</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">testit</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'mz_str'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">testit</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'mz'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()]</span>
 </pre></div>
 </div>
 </div>
@@ -12134,7 +12134,7 @@ adata.X = adataXrawsparse<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">kegg_twin_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Wplus</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
 <span class="n">testit_twin</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">AnnData</span><span class="p">(</span>
     <span class="n">X</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Wplus</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">testit</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span> 
-    <span class="n">var</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"var"</span><span class="p">:</span><span class="n">kegg_twin_list</span> <span class="p">},</span> <span class="n">index</span> <span class="o">=</span> <span class="n">kegg_twin_list</span><span class="p">),</span>
+    <span class="n">var</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"mz"</span><span class="p">:</span><span class="n">kegg_twin_list</span> <span class="p">},</span> <span class="n">index</span> <span class="o">=</span> <span class="n">kegg_twin_list</span><span class="p">),</span>
     <span class="n">obsm</span><span class="o">=</span><span class="n">testit</span><span class="o">.</span><span class="n">obsm</span><span class="p">,</span> <span class="n">uns</span><span class="o">=</span><span class="n">testit</span><span class="o">.</span><span class="n">uns</span>
 <span class="p">)</span>
 </pre></div>
@@ -12165,7 +12165,7 @@ adata.X = adataXrawsparse<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>AnnData object with n_obs × n_vars = 11972 × 10
     obs: 'obs', 'spatial_domain', 'kmeans12'
-    var: 'var'
+    var: 'mz'
     uns: 'spatial', 'spatial_domain_colors', 'hvg', 'pca', 'kmeans12_colors', 'spatial_neighbors', 'moranI'
     obsm: 'spatial', 'X_pca'</pre>
 </div>

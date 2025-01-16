@@ -32,7 +32,7 @@ adata = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subdir, quantif_file))
 bool_equal = np.all(np.array(
     sorted(me_annots.annotationtbl["mz"].unique())) == np.array(
-    sorted(adata.var["var"].tolist())))
+    sorted(adata.var["mz"].tolist())))
 print(f"perfect match between mz in me_a.annotationtbl "
       f"and adata.X: {bool_equal}")
 
