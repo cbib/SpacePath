@@ -23,7 +23,6 @@ me_annots = zd.MetabolomeAnnotations(name="demo",
                             subfolder=subdir,
                             annotation_files=anno_dict)
 me_annots.load()
-k = 77
 
 ## reference mappings to get KEGG ids from HMDB and LipidMaps identifiers
 me_refmap = zd.MetaboliteIdsMappings(
@@ -45,7 +44,6 @@ print(f"perfect match between mz in me_a.df "
       f"and adata.X: => {bool_equal} <=")
 
 
-
 if bool_equal:
     me_annots.convert_ids_to_kegg(me_refmap.table)
 else:
@@ -58,7 +56,12 @@ print(len(me_annots.df["KEGG"].to_list()))
 print(len(me_annots.df["KEGG"].unique()))
 print("ok up to here")
 
+print("subset adata_mz for only mz mapping to a KEGG metabolite identifier")
+adata_mz = adata_mz[:, me_annots.df["mz"].astype(str).unique()].copy()
+print(adata_mz)
 
+
+## pathways
 me_gmt = zd.MetabolicPathways(
     data_dir=mydata_dir,
     subfolder="metabolites-mappings",
@@ -71,34 +74,39 @@ me_gmt.intersect_with_annotations(me_annots)
 
 ## exclude pathways that only have 1 metabolite KEGG:
 tdf = me_gmt.piled.copy()
-no_pathway_score_possible = list()
-for pw in  tdf["pathway_id"].unique():
-    subdf = tdf.loc[tdf["pathway_id"] == pw, :]
-    if len(subdf["KEGG"].unique()) == 1:
-        no_pathway_score_possible.append(pw)
 
-tdf = tdf.loc[~tdf["pathway_id"].isin(no_pathway_score_possible), :]
-amount_useful_pathways = len(tdf["pathway_id"].unique())
+# ## subset adata for useful mz
+# no_pathway_score_possible = list()
+# for pw in  tdf["pathway_id"].unique():
+#     subdf = tdf.loc[tdf["pathway_id"] == pw, :]
+#     if len(subdf["KEGG"].unique()) == 1:
+#         no_pathway_score_possible.append(pw)
+#
+# tdf = tdf.loc[~tdf["pathway_id"].isin(no_pathway_score_possible), :]
+# unused_v = len(tdf["pathway_id"].unique())
 
-def get_mz_with_good_moran(adata_mz):
-    """
-    Given the adata_mz object, returns the mz values that have a bad Moran's I score.
-    """
-    adata_mz = adata_mz.copy()
-    sc.pp.highly_variable_genes(adata_mz,
-                                flavor="seurat_v3",
-                                check_values=False)
-    sq.gr.spatial_neighbors(adata_mz, n_neighs=3)
-    sq.gr.spatial_autocorr(adata_mz, mode="moran", n_perms=100, n_jobs=1)
-    good_mz_str = list(adata_mz.uns['moranI'].loc[
-        adata_mz.uns['moranI']['pval_norm_fdr_bh'] <= 0.05,:].index)
 
-    return good_mz_str
+# def get_mz_with_good_moran(adata_mz):
+#     """
+#     Given the adata_mz object, returns the mz values that have a bad Moran's I score.
+#     """
+#     sc.pp.highly_variable_genes(adata_mz,
+#                                 flavor="seurat_v3",
+#                                 check_values=False)
+#     sq.gr.spatial_neighbors(adata_mz, n_neighs=3)
+#     print("Computing Moran's I")
+#     sq.gr.spatial_autocorr(adata_mz, mode="moran", n_perms=100, n_jobs=1)
+#     good_mz_str = list(adata_mz.uns['moranI'].loc[
+#         adata_mz.uns['moranI']['pval_norm_fdr_bh'] <= 0.05,:].index)
+#
+#     return good_mz_str
+#
+#
+# good_moran_i_mz_str = get_mz_with_good_moran(adata_mz)
+# tdf["mz_str"] = tdf["mz"].astype(str)
+# tdf = tdf.loc[tdf["mz_str"].isin(good_moran_i_mz_str), :]
+# tdf = tdf.drop(columns=["mz_str"])
 
-good_moran_i_mz_str = get_mz_with_good_moran(adata_mz)
-tdf["mz_str"] = tdf["mz"].astype(str)
-tdf = tdf.loc[tdf["mz_str"].isin(good_moran_i_mz_str), :]
-tdf = tdf.drop(columns=["mz_str"])
 
 ### complex cases study
 def get_target_mz_pathway(subdf):
@@ -127,6 +135,7 @@ def get_target_mz_pathway(subdf):
                 if len(a) > 0 and len(b) > 0:
                     outdict[(k,h)] = {k: list(a), h: list(b)}
     return outdict
+
 
 one_kegg_one_pathway = 0
 one_kegg_multiple_pathways = 0
@@ -160,8 +169,7 @@ print("one_kegg_one_pathway: ", one_kegg_one_pathway)
 print("one_kegg_multiple_pathways: ", one_kegg_multiple_pathways)
 print("multiple_kegg_one_pathway: ", multiple_kegg_one_pathway)
 print("susceptible_of_refinement: ", susceptible_of_refinement)
-heh = 55
-oho = False
+
 print("ok")
 
 
