@@ -135,7 +135,7 @@ class MetabolomeAnnotations(Dataset):
                 df = df[[self.col_mz, self.col_formula, self.col_molecule_ids,
                          self.col_molecule_names]]
             df[self.col_mz] = np.around(df[self.col_mz].to_numpy(), decimals=9)
-            df = df.dropna()
+            df = df.dropna(how="all")
             df['database'] = anno_key
             if anno_key == "custom_kegg":
                 df['database'] = "KEGG"
@@ -239,6 +239,7 @@ class MetabolicPathways(BaseModel, extra=Extra.allow):
     col_pathway_name: str = "pathway_name"
     col_molecule_ids: str = "KEGG"   #  must be KEGG to match joined annots
     piled: pd.DataFrame = pd.DataFrame()
+    pathways_ids: pd.DataFrame = pd.DataFrame()
     pathways: Dict[str, List[str]] =  dict()
 
     def preload_official(self):
