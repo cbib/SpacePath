@@ -5,9 +5,12 @@ import squidpy as sq
 import scanpy as sc
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
-### complex cases study
+from sklearn.utils import sparsefuncs
+
+
 
 def verification(adata_mz, me_annots):
     print("verifying mz match")
@@ -36,28 +39,45 @@ def fix_annotation_to_adata_mz(gathered_annots, adata_mz):
     return me_annots
 
 
-def spatial_standard_computations(adata_mz, pca_ncomps=20,
+def get_rid_of_poor_var_mz(adata_mz):
+    print("Excluding mz features with extremely low variance")
+    means_vars, variance_computed = sparsefuncs.mean_variance_axis(
+        adata_mz.X, axis=0)
+    #print(pd.DataFrame(variance_computed).describe())
+    min_accept_tile = np.percentile(variance_computed, 5)
+    #low_variance = variance_computed[variance_computed >= min_accept_centile]
+    adata_mz.var["computed_var"] = variance_computed
+    good_mz = adata_mz.var.loc[adata_mz.var["computed_var"
+                     ] > min_accept_tile, "mz"].to_numpy()
+    adata_mz = adata_mz[:, [str(i) for i in good_mz]]
+
+    return adata_mz
+
+
+def spatial_standard_computations(adata, pca_ncomps=20,
                                   plot_folder=None, prefix='sample'):
     #Xorigin = adata_mz.X.copy()
     # compute metrics
     print("computing variable metrics with squidy")
-    sc.pp.highly_variable_genes(adata_mz,
+    try:
+        sc.pp.highly_variable_genes(adata,
                                     flavor="seurat_v3",
                                     check_values=False)
+    except ValueError:
+        pass  # TODO :: add by hand variances and means ?
     print("computing pca")
-    sc.pp.pca(adata_mz, n_comps=pca_ncomps)
+    sc.pp.pca(adata, n_comps=pca_ncomps)
 
     kmeans = KMeans(n_clusters=pca_ncomps, n_init=10, random_state=0).fit(
-        adata_mz.obsm['X_pca'])
-    adata_mz.obs[f'kmeans{pca_ncomps}'] = kmeans.labels_.astype(str)
+        adata.obsm['X_pca'])
+    adata.obs[f'kmeans{pca_ncomps}'] = kmeans.labels_.astype(str)
     if plot_folder is not None:
         tmpstr = os.path.join(plot_folder, f'{prefix}--Kmeans-{pca_ncomps}.png')
-        sq.pl.spatial_scatter(adata_mz, color=[f'kmeans{pca_ncomps}'],
+        sq.pl.spatial_scatter(adata, color=[f'kmeans{pca_ncomps}'],
                               img=False, title=f"Kmeans (k={pca_ncomps})",
-                              save=tmpstr
-                              )
+                              save=os.path.abspath(tmpstr))
 
-    return adata_mz
+    return adata
 
 
 def compute_moran_i(adata_mz, n_neighs=10):
@@ -136,3 +156,47 @@ def ugly_long_function(tdf) -> None:
 
     return susceptible_of_refinement_list
 
+
+def assemble_adata_from_scores_result(adatakegg, scores_df):
+    adata_scores = ad.AnnData(
+            X=csr_matrix(scores_df),
+            var=pd.DataFrame(
+                {'pathway_id': scores_df.columns.tolist()},
+                index=scores_df.columns.tolist()),
+            obs=adatakegg.obs,
+            obsm=adatakegg.obsm,
+            uns=adatakegg.uns
+        )
+    return adata_scores
+
+
+def pathways_dict_coherce_min_len(pathways: dict, min_len_admitted: int= 2):
+    good_keys = [mykey for mykey, myval in pathways.items()
+                     if len(pathways[mykey]) >= min_len_admitted]
+    subset_dict = dict(filter(lambda item:item[0] in good_keys, pathways.items()))
+    return subset_dict
+
+
+def modules_scores_by_scanpy(adata, pathways: dict, do_log=False):
+    adatacopy = adata.copy()
+    if do_log:
+        if adatacopy.X.min().min() < 0:
+            print("Warning: negative numbers before log")
+            print("applying shift of the log values (all to be positives)")
+            adatacopy.X = adatacopy.X + abs(adatacopy.X.min().min())
+        sc.pp.log1p(adatacopy)
+
+    pathway_names = list()
+    scores_lists = list()
+    for pw in pathways.keys():
+        pathway_names.append(pw)
+        mygenelist = pathways[pw]
+        miniadata = sc.tl.score_genes(adatacopy, gene_list=mygenelist,
+                                      ctrl_size=len(mygenelist), copy=True)
+        scores_lists.append(miniadata.obs['score'].tolist())
+
+    df = pd.DataFrame(np.array(scores_lists),
+                      index=pathway_names,
+                      columns=adatacopy.obs['obs'].tolist(),
+                      )
+    return df.T
