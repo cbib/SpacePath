@@ -22,7 +22,7 @@ pathways scores on whole brain data (Dr Ellis) !
 """
 
 SAMPLE = "whole-ellis"  # .h5ad saved by 1-adata-pixel-selection.py
-mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
+mydata_dir = "/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "whole-ellis"
 anno_dict = {'HMDB': "whole-ellis_hmdb.csv",
              'LipidMaps': "whole-ellis_lipidmaps.csv"}
@@ -38,7 +38,10 @@ me_annots = zd.MetabolomeAnnotations(name="demo",
 me_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}_mx_f1.h5ad'))
+
+print(adata_mz.var.head(2))
+
 
 verification(adata_mz, me_annots)
 
