@@ -103,7 +103,7 @@ def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
 ###
 # compute kpca
 ##
-print("computing kpca from sspa package")
+print("Computing Pathway Scores with kpca from sspa package")
 pw_as_df = pd.DataFrame(
     {key: pd.Series(value) for key, value in pathwaysObj.pathways.items()})
 pw_as_df = pw_as_df.transpose()
@@ -115,6 +115,23 @@ df_log_transformed = np.log(adata.to_df() + 1)  # same as sc.pp.log1p does
 kpca_scores = kpca_model.fit_transform(df_log_transformed)
 
 print(kpca_scores.iloc[:3,:5])
+
+print("CRUCIAL as computation is long: save the pathway scores")
+kpca_score_to_save = ad.AnnData(
+    X=csr_matrix(kpca_scores),
+    var=pd.DataFrame(
+        {'pathway_id' : kpca_scores.columns.tolist()},
+        index=kpca_scores.columns.tolist()),
+    obs=adata.obs,
+    obsm=adata.obsm,
+    uns=adata.uns
+)
+kpca_score_to_save.write(
+    os.path.join(mydata_dir, subfolder, f'{SAMPLE}_PathwaysScores.h5ad'),
+    compression=None, compression_opts=None)
+del kpca_score_to_save
+print("saved the pathway scores as .h5ad file")
+
 
 # TODO: is it always needed to shift the distr to the right ???
 kpca_scores = (kpca_scores + abs(kpca_scores.min().min())) * 1e3 # shift to right and unshrink
@@ -130,7 +147,7 @@ kpca_score_adata = ad.AnnData(
 )
 
 plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
-                  f"{SAMPLE}-ScoresKPCA", plot_folder)
+                  f"{SAMPLE}-Chosen", plot_folder)
 
 kpca_score_adata = spatial_standard_computations(kpca_score_adata, pca_ncomps=12,
                                   plot_folder=plot_folder,

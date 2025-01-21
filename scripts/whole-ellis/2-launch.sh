@@ -8,7 +8,7 @@
 #SBATCH --nodes=1
 #SBATCH --mem=240G
 #SBATCH --ntasks-per-node=20
-#SBATCH --time=12:00:00
+#SBATCH --time=30:00:00
 #SBATCH --exclusive
 ##################################################
 scontrol show job $SLURM_JOB_ID
