@@ -25,8 +25,9 @@ pathways scores on *bordeaux proteome example data*
 
 SAMPLE = sys.argv[1]
 #"UBcalibr2"
-
-mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
+print(SAMPLE)
+mydata_dir = "/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
+#"/home/johanna/spatial_thesis/spatial_metabolomics/data"
 subfolder = "UBplatform"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",

@@ -1,5 +1,5 @@
 
-#   this chunk was before compute kpca in 1-platform-pixel-select.py
+#   this chunk was before compute kpca in 1-platform-pixel-select-and-describe.py
 ###
 # compute scanpy module score
 ##
