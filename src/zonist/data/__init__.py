@@ -240,7 +240,7 @@ class MetabolicPathways(BaseModel, extra=Extra.allow):
     col_molecule_ids: str = "KEGG"   #  must be KEGG to match joined annots
     piled: pd.DataFrame = pd.DataFrame()
     pathways_ids: pd.DataFrame = pd.DataFrame()
-    pathways: Dict[str, List[str]] =  dict()
+    pathways: Dict[str, List[str]] = dict()
 
     def preload_official(self):
         if not os.path.exists(os.path.join(
@@ -301,7 +301,7 @@ class MetabolicPathways(BaseModel, extra=Extra.allow):
          - the mz column to the same .piled dataframe
          - the attribute .pathways, a dictionary with pathway_id as key"""
         annotations_df_mz_kegg =  annots_obj.df[[annots_obj.col_mz, "KEGG"]]
-        self.piled = helpers.pathways_and_annots_inner_join(
+        self.piled = helpers.pathways_and_annots_join(
             self.piled, annotations_df_mz_kegg, self.col_molecule_ids)
 
         self.pathways = helpers.gmt_piled_to_dict(

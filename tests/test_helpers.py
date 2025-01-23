@@ -81,7 +81,7 @@ class Test(TestCase):
             "mz": ["102.0317", "132.0899", "588.5665543", "913.821868"],
             "KEGG": ["C00232", "C00077", "C09090", "CXXXXYY"]
         })
-        result = helpers.pathways_and_annots_inner_join(gmt_piled, anno_mz_kegg,
+        result = helpers.pathways_and_annots_join(gmt_piled, anno_mz_kegg,
                                                         col_molecule_id="KEGG")
         # result : 
         #    path_id    KEGG      mz

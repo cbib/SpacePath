@@ -199,7 +199,7 @@ def gmts_merge_pile_splitid(dfs_dict, col_pathway_id: str,
     return id_name_df, gmt_piled
 
 
-def pathways_and_annots_inner_join(gmt_piled: pd.DataFrame,
+def pathways_and_annots_join(gmt_piled: pd.DataFrame,
          anno_mz_kegg: pd.DataFrame, col_molecule_id: str) -> pd.DataFrame:
     assert len(list(gmt_piled.columns)) == 2, \
         "too many columns in gmt piled table, bad format"
@@ -209,8 +209,12 @@ def pathways_and_annots_inner_join(gmt_piled: pd.DataFrame,
         f"no column {col_molecule_id}  in annotations table"
 
     anno_mz_kegg = anno_mz_kegg.drop_duplicates()
-    gmt_piled_ok = pd.merge(gmt_piled, anno_mz_kegg, on="KEGG", how="inner")
-    # delete rows where kegg has no mz: no need as did inner
+    accepted_kegg_set = set(gmt_piled["KEGG"].tolist()).intersection(
+        set(anno_mz_kegg["KEGG"].tolist()))
+    gmt_piled_ok = pd.merge(gmt_piled, anno_mz_kegg, on="KEGG", how="left")
+    gmt_piled_ok = gmt_piled_ok.loc[gmt_piled_ok["KEGG"].isin(list(
+        accepted_kegg_set)), :]
+
     return gmt_piled_ok
 
 
