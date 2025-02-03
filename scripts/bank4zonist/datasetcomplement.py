@@ -13,6 +13,8 @@ import squidpy as sq
 get the matrix of KEGG given the annotations, and the adata_mz
 """
 
+
+
 def yield_specific_typical_pathways() -> dict:
     biologically_chosen_pathways = {
         "hsa00600": "Sphingolipid metabolism",
@@ -38,8 +40,7 @@ def build_kegg_resolved_adata(adata_mz, annots_df):
         local_1D_adata_mz = adata_mz[ :, str(one_mz)].copy()
         for a_kegg in local_kegg:
             intensities_arrs_list.append(
-                np.array(local_1D_adata_mz.X.todense().T).flatten() / float(
-                    len(local_kegg)))
+                np.array(local_1D_adata_mz.X.todense().T).flatten() / len(local_kegg))
             kegg_list.append(a_kegg)
     adata = ad.AnnData(X=csr_matrix(np.array(intensities_arrs_list).T),
                        obs=adata_mz.obs,

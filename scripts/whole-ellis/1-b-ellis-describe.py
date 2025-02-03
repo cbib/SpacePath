@@ -5,7 +5,7 @@ import anndata as ad
 import zonist.data as zd
 from scipy.sparse import csr_matrix
 import sys
-
+import squidpy as sq
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))  # TODO: fix in the same way ailleurs !!
 from statsembryo1 import *
@@ -15,7 +15,7 @@ from datasetcomplement import (build_kegg_resolved_adata,
 """
 """
 
-SAMPLE = "whole-ellis"  # f1.h5ad saved by 1-adata-pixel-selection.py
+SAMPLE = "whole-ellis"  # f1.h5ad saved by -pixel-selection.py
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 
@@ -62,11 +62,15 @@ pathwaysObj.intersect_with_annotations(me_annots)
 
 print("subset adata_mz for only mz mapping to a KEGG metabolite identifiers that in turn map to pathways")
 me_annots_OKdf = me_annots.df.loc[
-              me_annots.df["mz"].isin(pathwaysObj.piled["mz"].unique()), :]
+              me_annots.df["KEGG"].isin(pathwaysObj.piled["KEGG"].unique()), :]
 
 adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
-adata_mz = compute_moran_i(adata_mz, 12)
 
+tdf = pathwaysObj.piled.copy()
+refinement_mz_pws_dict = ugly_long_function(tdf)
+the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
+
+adata_mz = compute_moran_i(adata_mz, 12)
 
 # the KEGG id adata
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
@@ -74,21 +78,19 @@ print("KEGG resolved adata: ", adata)
 adata = spatial_standard_computations(
     adata, 12, plot_folder, prefix=f"{SAMPLE}-KEGGmetabolites")
 
-tdf = pathwaysObj.piled.copy()
-susceptible_of_refinement_list = ugly_long_function(tdf)
-
 sub_moran = adata_mz.uns['moranI'].loc[
      adata_mz.uns['moranI'].index.isin(
-         [str(x) for x in susceptible_of_refinement_list])]
+         [str(x) for x in the_mz_for_refinement_list])]
 
 sub_moran.to_csv(
     os.path.join(plot_folder, f'{SAMPLE}--moran-subset.tsv'),
     header=True, index=True, sep='\t')
 
-tmpstr = os.path.join(plot_folder, f'{SAMPLE}--susceptible_of_refinement.png')
-sq.pl.spatial_scatter(adata_mz,
-                      color=[str(x) for x in susceptible_of_refinement_list],
-                      img=False,
-                      save=os.path.abspath(tmpstr))
+for  x in the_mz_for_refinement_list:
+    tmpstr = os.path.join(plot_folder, f'{SAMPLE}-{x}-maybe_refinement.png')
+    sq.pl.spatial_scatter(adata_mz,
+                          color=str(x),
+                          img=False,
+                          save=os.path.abspath(tmpstr))
 
 print("finished ! ")

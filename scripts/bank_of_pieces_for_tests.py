@@ -5,3 +5,92 @@ res = pathways_dict_coherce_min_len(test_pathways_dict, min_len_admitted=3)   # 
 res
 
 
+##
+
+fake = ad.AnnData(X=csr_matrix(np.array([[1,0,11,0], [55,88,6,7], [0,2,4,0], [78,0,0,0]], )),
+                  var=pd.DataFrame({"mz": [9.1, 8.1, 7.1, 6.1]},
+                                   index=[str(x) for x in [9.1, 8.1, 7.1, 6.1]]),
+                   obs = pd.DataFrame({"obs": ["x1y1", "x2y2", "x3y3", "x4y4"]}))
+fake = adata_mz_filter_negligible_abundance(fake)
+print(fake.to_df())
+#    9.1  8.1  7.1
+# 0    1    0   11
+# 1   55   88    6
+# 2    0    2    4
+# 3   78    0    0
+
+
+##
+
+U = list(pathwaysObj.pathways.keys())
+V = pathwaysObj.piled["pathway_id"].unique()
+empty_a = set(U) - set(V)
+empty_b = set(V) - set(U)
+if len(empty_a) == 0 and len(empty_b) == 0:
+    print("Yeeeeeeeeeeeeeeeeeeeeeeeeah")
+
+##
+
+floatsofme = np.array([8.98354354, 5.31687654])
+print(np.trunc(floatsofme, 4))
+
+
+data = np.array([0,0,0, 3000, 50, 90, 5700, 9700, 25000, 50000])
+value1 = 2200
+value2 = 3000
+estupido = np.percentile(data, 50)
+kak = threshold_of_presence_by_distribution(data)
+
+result = closeness_by_interval(value1, value2)
+print(f"Are {value1} and {value2} close? {result}")
+
+
+
+
+##
+if happy1 + happy2 > 0:
+    inner_dict = {
+        (one_mz, pws_tuple): {
+            metabolite1: (
+                met_prob.loc[spot1, metabolite1], happy1),
+            metabolite2: (met_prob.loc[spot1, metabolite1],
+                          happy2)}}
+# ...
+jojo = "C00877"
+print(len(new_probabs))
+print(new_probabs)
+increased = 0
+decreased = 0
+nothingnew = 0
+for one_spot in new_probabs.keys():
+    for a_mz__pws_tup in new_probabs[one_spot].keys():
+        if new_probabs[one_spot][a_mz__pws_tup][jojo][1] == 0.6:
+            increased += 1
+        elif new_probabs[one_spot][a_mz__pws_tup][jojo][1] == 0.4:
+            decreased += 1
+        else:
+            nothingnew +=1
+
+        # 'C00877'
+print("increased ", increased)
+print("decreased ", decreased)
+print("shit ", nothingnew)
+
+
+##
+better = []
+for k in range(4, 8):
+    for h in range(3, 7):
+        better.append(f"x{k}_y{h}")
+
+print(better)
+
+
+
+op = pd.DataFrame(data=np.array([[55,88,6,7], [0,2,4,0], [78,0,0,0], [78,0,0,0]]), columns=["c05", "c04", "c11", "c12"], index=['a', 'u', 'v', 'o'])
+
+ap = pd.DataFrame(data=np.array([[1,0,0],  [0,2,0], [78,0,0]]), columns=["c10", "c11", "c12"], index=['e', 'i', 'w'])
+
+ou = {0: op, 1: ap}
+ki = verticalassembly(ou, ['a', 'e', 'i', 'o','u', 'v', 'w'])
+print(ki)

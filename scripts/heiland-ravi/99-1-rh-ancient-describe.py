@@ -61,7 +61,7 @@ adata_mz = spatial_standard_computations(adata_mz, 12,
                                          plot_folder=plot_folder, prefix=SAMPLE)
 #adata_mz = compute_moran_i(adata_mz, 5)
 
-me_annots = fix_annotation_to_adata_mz(gathered_annots, adata_mz)
+me_annots = update_annotation_as_adata_mz(gathered_annots, adata_mz)
 verification(adata_mz, me_annots)
 
 me_annots.convert_ids_to_kegg(me_refmap.table)
@@ -99,7 +99,7 @@ adata = build_kegg_resolved_adata(
 
 tdf = pathwaysObj.piled.copy()
 
-susceptible_of_refinement_list = ugly_long_function(tdf)
+
 # sub_moran = adata_mz.uns['moranI'].loc[
 #      adata_mz.uns['moranI'].index.isin([str(x) for x in susceptible_of_refinement_list])
 # ]
@@ -109,12 +109,6 @@ susceptible_of_refinement_list = ugly_long_function(tdf)
 #     header=True, index=True, sep='\t'
 # )
 
-tmpstr = os.path.join(plot_folder, f'{SAMPLE}--susceptible_of_refinement.png')
-sq.pl.spatial_scatter(adata_mz,
-                      color=[str(x) for x in susceptible_of_refinement_list],
-                      img=False,
-                      save=os.path.abspath(tmpstr)
-                      )
 
 
 

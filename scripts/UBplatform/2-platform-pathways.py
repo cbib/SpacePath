@@ -23,11 +23,11 @@ pathways scores on *bordeaux proteome example data*
 
 """
 
-SAMPLE = sys.argv[1]
+SAMPLE = "UBcalibr5"#sys.argv[1]
 #"UBcalibr2"
 print(SAMPLE)
-mydata_dir = "/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
-#"/home/johanna/spatial_thesis/spatial_metabolomics/data"
+mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
+#"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "UBplatform"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
@@ -73,14 +73,13 @@ pathwaysObj.intersect_with_annotations(me_annots)
 
 print("subset adata_mz for only mz mapping to a KEGG metabolite identifiers that in turn map to pathways")
 me_annots_OKdf = me_annots.df.loc[
-              me_annots.df["mz"].isin(pathwaysObj.piled["mz"].unique()), :]
+              me_annots.df["KEGG"].isin(pathwaysObj.piled["KEGG"].unique()), :]
 
 adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
 
 # the KEGG id adata
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
 print("KEGG resolved adata: ", adata)
-
 ###
 #  select pathways to visualize:
 #
@@ -89,17 +88,17 @@ biologically_chosen_pathways = yield_specific_typical_pathways()
 
 def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
                            SAMPLEANDDETALS, plot_folder) -> None:
-    for id in biologically_chosen_pathways.keys():
+    for m_id in biologically_chosen_pathways.keys():
         try:
-            pw_name = biologically_chosen_pathways[id]
+            pw_name = biologically_chosen_pathways[m_id]
             tmpstr = os.path.join(plot_folder,
                                   f'{SAMPLEANDDETALS}-{pw_name}.png')  # TODO: improve destination folder
-            sq.pl.spatial_scatter(adata_scores, color=[id],
-                                  img=False, title=f"{id} {pw_name}",
+            sq.pl.spatial_scatter(adata_scores, color=[m_id],
+                                  img=False, title=f"{m_id} {pw_name}",
                                   save=os.path.abspath(tmpstr))
         except Exception as e:
             print("[plot_selected_pathways]Could NOT plot: {} {}".format(
-                id, pw_name))
+                m_id, pw_name))
 
 
 ###
@@ -152,18 +151,18 @@ df.insert(0, 'Pathway_name', these_names)
 df.to_csv(os.path.join(plot_folder, f'{SAMPLE}-PathwaysMoranI.tsv'), header=True, index=True, sep="\t")
 del these_names, tmp2, df
 
-for id in spatially_top_pathways:
+for m_id in spatially_top_pathways:
     pw_name = pathwaysObj.pathways_ids.loc[
-        pathwaysObj.pathways_ids['pathway_id'] == id, "pathway_name"].item()
+        pathwaysObj.pathways_ids['pathway_id'] == m_id, "pathway_name"].item()
 
     tmpstr = os.path.join(plot_folder, f'{SAMPLE}-{pw_name}.png')  # TODO: improve destination folder
     try:
-        sq.pl.spatial_scatter(kpca_score_adata, color=[id],
-                              img=False, title=f"{id} {pw_name}",
+        sq.pl.spatial_scatter(kpca_score_adata, color=[m_id],
+                              img=False, title=f"{m_id} {pw_name}",
                               save=os.path.abspath(tmpstr))
     except Exception as e:
         print(e)
-        print(f"impossible to plot {id} {pw_name}")
+        print(f"impossible to plot {m_id} {pw_name}")
 
 print("the end")
 

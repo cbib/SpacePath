@@ -1,3 +1,4 @@
+import sys
 import os
 import numpy as np
 import pandas as pd
@@ -6,55 +7,63 @@ import zonist.data as zd
 from scipy.sparse import csr_matrix
 from sklearn.utils import sparsefuncs
 import squidpy as sq
-import sys
-
 import sspa as sspa
 
+
 sys.path.append(os.path.join(os.path.dirname(__file__),
-                             '../bank4zonist'))  # TODO: fix in the same way ailleurs !!
+                             '../bank4zonist'))
 from statsembryo1 import *
 from datasetcomplement import (build_kegg_resolved_adata,
                                yield_specific_typical_pathways)
 
+
 """
-pathways scores on whole brain data (Dr Ellis) !
+verifying Ravi & Heiland data
+use:
+   python $MYPY $SAMPLE
+where :
+  $MYPY is the script file with .py extension (extension included)
+  sample one  of: 
+    samples = [   "248_T"   , "259_T", "260_T", "262_T", "269_T", "275_T"]
+
+Or use Bash oneliner:
+mylist=(248_T 259_T 260_T 262_T 269_T 275_T);for k in ${mylist[*]}; do echo $k; python $MYPY $k; done
 
 """
 
-SAMPLE = "whole-ellis"  # .h5ad saved by 1-adata-pixel-selection.py
-mydata_dir = "/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
-subfolder = "whole-ellis"
-anno_dict = {'HMDB': "whole-ellis_hmdb.csv",
-             'LipidMaps': "whole-ellis_lipidmaps.csv"}
-plot_folder = "../../../figures/ellis"
+SAMPLE = sys.argv[1] #  "248_T"
+
+mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
+#"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
+anno_dict = {'HMDB': "Metaspace_annotations_943peaks.csv"}
+plot_folder = "../../../figures/heiland"
 
 assert os.path.exists(plot_folder), "Cannot continue, the plot_folder does not exist"
 
-
-me_annots = zd.MetabolomeAnnotations(name="demo",
-                                     data_dir=mydata_dir,
-                                     subfolder=subfolder,
-                                     annotation_files=anno_dict)
-me_annots.load()
+gathered_annots = zd.MetabolomeAnnotations(name="heiland",
+                            data_dir=mydata_dir,
+                            subfolder="heiland-msi",
+                            annotation_files=anno_dict)
+gathered_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx_f1.h5ad'))
+    mydata_dir, "heiland-msi", f'MALDI_{SAMPLE}.h5ad'))
 
-print(adata_mz.var.head(2))
+print(adata_mz)
+adata_mz = get_rid_of_poor_var_mz(adata_mz)  # TODO : highlight this because is proper to this Ravi&Heiland data
+print("now:", adata_mz)
 
-
+me_annots = update_annotation_as_adata_mz(gathered_annots, adata_mz)  # TODO highlight: proper to Ravi&Heiland data as annotation is 1 file for all 6 slices
 verification(adata_mz, me_annots)
-
 
 ## reference mappings to get KEGG ids from HMDB and LipidMaps identifiers
 me_refmap = zd.MetaboliteIdsMappings(
     data_dir=mydata_dir,
     subfolder="metabolites-mappings",
     mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
-                   'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv" }
-)
-me_refmap.load()
+                   'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv" })
 
+me_refmap.load()
 me_annots.convert_ids_to_kegg(me_refmap.table)
 me_annots.treat_mz_multiplets(adata_mz)
 
@@ -71,7 +80,7 @@ pathwaysObj.intersect_with_annotations(me_annots)
 
 print("subset adata_mz for only mz mapping to a KEGG metabolite identifiers that in turn map to pathways")
 me_annots_OKdf = me_annots.df.loc[
-              me_annots.df["mz"].isin(pathwaysObj.piled["mz"].unique()), :]
+              me_annots.df["KEGG"].isin(pathwaysObj.piled["KEGG"].unique()), :]
 
 adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
 
@@ -103,7 +112,7 @@ def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
 ###
 # compute kpca
 ##
-print("Computing Pathway Scores with kpca from sspa package")
+print("computing kpca from sspa package")
 pw_as_df = pd.DataFrame(
     {key: pd.Series(value) for key, value in pathwaysObj.pathways.items()})
 pw_as_df = pw_as_df.transpose()
@@ -115,23 +124,6 @@ df_log_transformed = np.log(adata.to_df() + 1)  # same as sc.pp.log1p does
 kpca_scores = kpca_model.fit_transform(df_log_transformed)
 
 print(kpca_scores.iloc[:3,:5])
-
-print("CRUCIAL as computation is long: save the pathway scores")
-kpca_score_to_save = ad.AnnData(
-    X=csr_matrix(kpca_scores),
-    var=pd.DataFrame(
-        {'pathway_id' : kpca_scores.columns.tolist()},
-        index=kpca_scores.columns.tolist()),
-    obs=adata.obs,
-    obsm=adata.obsm,
-    uns=adata.uns
-)
-kpca_score_to_save.write(
-    os.path.join(mydata_dir, subfolder, f'{SAMPLE}_PathwaysScores.h5ad'),
-    compression=None, compression_opts=None)
-del kpca_score_to_save
-print("saved the pathway scores as .h5ad file")
-
 
 # TODO: is it always needed to shift the distr to the right ???
 kpca_scores = (kpca_scores + abs(kpca_scores.min().min())) * 1e3 # shift to right and unshrink
@@ -147,7 +139,7 @@ kpca_score_adata = ad.AnnData(
 )
 
 plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
-                  f"{SAMPLE}-Chosen", plot_folder)
+                  f"{SAMPLE}-ScoresKPCA", plot_folder)
 
 kpca_score_adata = spatial_standard_computations(kpca_score_adata, pca_ncomps=12,
                                   plot_folder=plot_folder,
@@ -167,17 +159,17 @@ df.insert(0, 'Pathway_name', these_names)
 df.to_csv(os.path.join(plot_folder, f'{SAMPLE}-PathwaysMoranI.tsv'), header=True, index=True, sep="\t")
 del these_names, tmp2, df
 
-for id in spatially_top_pathways:
+for m_id in spatially_top_pathways:
     pw_name = pathwaysObj.pathways_ids.loc[
-        pathwaysObj.pathways_ids['pathway_id'] == id, "pathway_name"].item()
+        pathwaysObj.pathways_ids['pathway_id'] == m_id, "pathway_name"].item()
 
     tmpstr = os.path.join(plot_folder, f'{SAMPLE}-{pw_name}.png')  # TODO: improve destination folder
     try:
-        sq.pl.spatial_scatter(kpca_score_adata, color=[id],
-                              img=False, title=f"{id} {pw_name}",
+        sq.pl.spatial_scatter(kpca_score_adata, color=[m_id],
+                              img=False, title=f"{m_id} {pw_name}",
                               save=os.path.abspath(tmpstr))
     except Exception as e:
         print(e)
-        print(f"impossible to plot {id} {pw_name}")
+        print(f"impossible to plot {m_id} {pw_name}")
 
-print("ok end")
+print("ok ")

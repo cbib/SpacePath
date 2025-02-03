@@ -21,7 +21,7 @@ pathways scores on whole brain data (Dr Ellis) !
 
 """
 
-SAMPLE = "whole-ellis"  # .h5ad saved by 1-adata-pixel-selection.py
+SAMPLE = "whole-ellis"  # .h5ad saved by  -pixel-selection.py
 mydata_dir = "/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "whole-ellis"
 anno_dict = {'HMDB': "whole-ellis_hmdb.csv",
@@ -71,7 +71,7 @@ pathwaysObj.intersect_with_annotations(me_annots)
 
 print("subset adata_mz for only mz mapping to a KEGG metabolite identifiers that in turn map to pathways")
 me_annots_OKdf = me_annots.df.loc[
-              me_annots.df["mz"].isin(pathwaysObj.piled["mz"].unique()), :]
+              me_annots.df["KEGG"].isin(pathwaysObj.piled["KEGG"].unique()), :]
 
 adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
 
