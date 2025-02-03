@@ -232,6 +232,18 @@ def gmt_piled_to_dict(gmt_piled_mz, pathway_id: str, mz_or_kegg: str):
 
 
 
+def generate_coordinates_arr(pixels_names_l: List[str]) -> np.array:
+    """expects each name in the form 'xXX_yYY', e.g. 'x88_y99'"""
+    coord_l = list()
+    for k in pixels_names_l:   # eg k = 'x00_y00'
+        items = k.split("_")
+        coord_l.append(np.array([int(items[0].replace("x", "")),
+                       int(items[1].replace("y", ""))]))
+
+    return np.array(coord_l)
+
+
+
 
 
 

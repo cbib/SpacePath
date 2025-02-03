@@ -44,10 +44,9 @@ def files2blocks(spectra_obj, barcode_prefix ):
     coordinates_list = list()
     coord_str_list = list()
 
-    # coordinates_list = [[int(spectra_obj.coordinates[0][0]),
-    #                      int(spectra_obj.coordinates[0][1])]]
-    # coord_str_list = [f'{barcode_prefix}_{spectra_obj.coordinates[0][0]}_{spectra_obj.coordinates[0][1]}']
-    # intensities_mx = np.array(intensities)
+    coordinates_list = [[int(spectra_obj.coordinates[0][0]),
+                         int(spectra_obj.coordinates[0][1])]]
+    coord_str_list = [f'x{spectra_obj.coordinates[0][0]}_y{spectra_obj.coordinates[0][1]}']
     intensities_list = list()
 
     unwarped_data_message = ("ERROR: unaligned features (please perform data "
@@ -62,9 +61,8 @@ def files2blocks(spectra_obj, barcode_prefix ):
         assert np.all(np.array(mzs) == np.array(mzs0)), (
             unwarped_data_message)
         # only 2 dimensions:
-        # TODO: instead "barcode_prefix" which is useless, use x00_y00 style
         coord_str_list.append(
-            f'{barcode_prefix}_{spectra_obj.coordinates[i][0]}_{spectra_obj.coordinates[i][1]}')  
+            f'x{spectra_obj.coordinates[i][0]}_y{spectra_obj.coordinates[i][1]}')
         coordinates_list.append([spectra_obj.coordinates[i][0],
                                  spectra_obj.coordinates[i][1]])
         intensities_list.append(intensities) 

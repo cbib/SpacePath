@@ -12,7 +12,7 @@ import anndata as ad
 
 from metaspace_converter import metaspace_to_anndata
 from scipy.sparse import csr_matrix
-
+import zonist.helpers as helpers
 
 
 def build_coord_names(df) -> List[str]:
@@ -21,14 +21,6 @@ def build_coord_names(df) -> List[str]:
     pixels_names_l = p1 + p2
     return list(pixels_names_l)
 
-
-def generate_coordinates_asarray(pixels_names_l: List[str]) -> np.array:
-    coord_l = list()
-    for k in pixels_names_l:   # eg 'x0_y0'
-        items = k.split("_")
-        coord_l.append(np.array([int(items[0].replace("x", "")),
-                       int(items[1].replace("y", ""))]))
-    return np.array(coord_l)
 
 
 def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr) -> (
@@ -109,7 +101,7 @@ def steps_get_united_df(metaspace_registry: str, api_versions: dict,
 def save_quantifications_anndata(outdf, outfile) -> None:
     print(f"saving to anndata file, with .X sparse matrix of shape: "
           f"({outdf.shape[0]} rows x {outdf.shape[1]} columns)")
-    coordinates_arr = generate_coordinates_asarray(list(outdf.index))
+    coordinates_arr = helpers.generate_coordinates_arr(list(outdf.index))
     out_obj = ad.AnnData(X=csr_matrix(outdf),
                          obs=pd.DataFrame({"obs":outdf.index.tolist()},
                                           index=outdf.index.tolist()),
