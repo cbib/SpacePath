@@ -1,4 +1,5 @@
 from unittest import TestCase
+from typing import List, Dict
 import src.zonist.helpers as helpers
 
 import pandas as pd
@@ -50,7 +51,8 @@ class Test(TestCase):
              np.nan, np.nan]]
 
         gmt = pd.DataFrame(data, columns=range(0, 7))
-        result = helpers.prettify_gmt(gmt_df=gmt, undesired_name_substring='-!?')
+        result = helpers.prettify_gmt(gmt_df=gmt,
+                                      undesired_name_substring='-!?')
         self.assertTrue('IDpath4' not in result.iloc[:, 0].tolist())
         self.assertListEqual(['IDpath1', 'IDpath2', 'IDpath3'],
                              result.iloc[:, 0].tolist())
@@ -82,7 +84,7 @@ class Test(TestCase):
             "KEGG": ["C00232", "C00077", "C09090", "CXXXXYY"]
         })
         result = helpers.pathways_and_annots_join(gmt_piled, anno_mz_kegg,
-                                                        col_molecule_id="KEGG")
+                                                  col_molecule_id="KEGG")
         # result : 
         #    path_id    KEGG      mz
         #    one        C00232    102.0317
@@ -97,13 +99,22 @@ class Test(TestCase):
                 ["one", "C09090", "588.56"],
                 ["one", "C00077", "132.0899"],
                 ["two", "CXXXXYY", "913.821868"]]
-        gmt_piled = pd.DataFrame(data, columns=["path_id", "KEGG", "mz"])        
+        gmt_piled = pd.DataFrame(data, columns=["path_id", "KEGG", "mz"])
 
-        result = helpers.gmt_piled_to_dict(gmt_piled, 
-                                           pathway_id="path_id", 
+        result = helpers.gmt_piled_to_dict(gmt_piled,
+                                           pathway_id="path_id",
                                            mz_or_kegg="mz")
         self.assertListEqual(list(result.keys()),
-                              ["one", "two"])
+                             ["one", "two"])
         self.assertTrue(np.all(
             np.array(result["one"]) == np.array(
                 ["102.0317", "588.56", "132.0899"])))
+
+    def test_generate_coordinates_arr(self):
+        coords_l: List[str] = ['x4_y1', 'x4_y2', 'x5_y3', 'x6_y8', 'x6_y9']
+        result = helpers.generate_coordinates_arr(coords_l)
+        uf = result[:, 0]
+        self.assertTrue(np.all(result[:, 0] == np.array([4,4,5,6,6])))
+        self.assertTrue(np.all(result[:, 1] == np.array([1,2,3,8,9])))
+
+
