@@ -35,7 +35,7 @@ from datasetcomplement import (build_kegg_resolved_adata,
 
 
 ## start
-# only use random batch
+# only use random sorting into groups
 
 SAMPLE = "whole-ellis"  # .h5ad saved by       -pixel-selection.py
 mydata_dir =  "/home/johanna/spatial_thesis/spatial_metabolomics/data" #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
@@ -44,7 +44,7 @@ anno_dict = {'HMDB': "whole-ellis_hmdb.csv",
              'LipidMaps': "whole-ellis_lipidmaps.csv"}
 plot_folder = "../../../figures/ellis"
 
-my_option = "RandomBatch"
+
 my_n_grous = 30
 
 assert os.path.exists(plot_folder), ("Cannot continue, the plot_folder does "
@@ -110,37 +110,35 @@ pw_as_df['Pathway_name'] = 0  # sspa expects this column, which is dropped
 
 groups_d = dict()
 
+groups_d = spots_groups_by_random_choice(
+        adata.obs['obs'].to_numpy(), n_groups=my_n_groups)
 
-    groups_d = spots_groups_by_random_choice(
-            adata.obs['obs'].to_numpy(), n_groups=my_n_groups)
+t0 = time.time()
+kpca_scores_d = compute_kpca_on_spot_groups(pw_as_df, adata, groups_d)
+hours, minutes, seconds = time_formatting(time.time() - t0)
+print(f"HH:MM:SS : {hours}:{minutes}:{seconds}")
+print("gathering results...")
 
-    t0 = time.time()
-    kpca_scores_d = compute_kpca_on_batches(pw_as_df, adata, groups_d)
-    hours, minutes, seconds = time_formatting(time.time() - t0)
-    print(f"HH:MM:SS : {hours}:{minutes}:{seconds}")
-    print("gathering results...")
+kpca_scores = verticalassembly(kpca_scores_d, ordered_spots_names=adata.obs['obs'].tolist())
+del kpca_scores_d
+kpca_score_adata = ad.AnnData(
+    X=csr_matrix(kpca_scores),
+    var=pd.DataFrame(
+        {'pathway_id' : kpca_scores.columns.tolist()},
+        index=kpca_scores.columns.tolist()),
+    obs=adata.obs,
+    obsm=adata.obsm,
+    uns=adata.uns
+)
 
-    kpca_scores = verticalassembly(kpca_scores_d, ordered_spots_names=adata.obs['obs'].tolist())
-    del kpca_scores_d
-    kpca_score_adata = ad.AnnData(
-        X=csr_matrix(kpca_scores),
-        var=pd.DataFrame(
-            {'pathway_id' : kpca_scores.columns.tolist()},
-            index=kpca_scores.columns.tolist()),
-        obs=adata.obs,
-        obsm=adata.obsm,
-        uns=adata.uns
-    )
+kpca_scores.write_h5ad(os.path.join(mydata_dir, subfolder,
+                                    f"{SAMPLE}-ScoresKPCA.h5ad"))
+print("saved ! ")
+biologically_chosen_pathways = yield_specific_typical_pathways()
 
-    kpca_scores.write_h5ad(os.path.join(mydata_dir, subfolder,
-                                        f"{SAMPLE}-{my_option}{my_n_grous}-ScoresKPCA.h5ad"))
-
-    print("saved ! ")
-    biologically_chosen_pathways = yield_specific_typical_pathways()
-
-    plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
-                      f"{SAMPLE}-{my_option}{my_n_grous}-ScoresKPCA",
-                           plot_folder)
+plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
+                  f"{SAMPLE}-ScoresKPCA",
+                       plot_folder)
 
 
 

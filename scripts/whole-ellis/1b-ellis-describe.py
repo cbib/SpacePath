@@ -35,6 +35,7 @@ me_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}_mx_f1.h5ad'))  # TODO  : how to avoid forgetting _f1
+print(adata_mz)
 
 verification(adata_mz, me_annots)
 
@@ -65,6 +66,19 @@ me_annots_OKdf = me_annots.df.loc[
               me_annots.df["KEGG"].isin(pathwaysObj.piled["KEGG"].unique()), :]
 
 adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
+
+# # NEw!
+adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,
+                                        prefix=f"{SAMPLE}-MZ")
+print("mz that do have KEGG compound ids : ", adata_mz) # to know how many mz are left
+print("----------------") # TODO !! del
+
+# # the KEGG id adata ## TODO delete this chunk because is again repeated later
+adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
+print("KEGG resolved adata: ", adata)
+print("----------------") # TODO !! del
+import sys # TODO !! del
+sys.exit() # TODO !! del
 
 tdf = pathwaysObj.piled.copy()
 refinement_mz_pws_dict = ugly_long_function(tdf)

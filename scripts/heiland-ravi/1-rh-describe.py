@@ -26,7 +26,7 @@ mylist=(248_T 259_T 260_T 262_T 269_T 275_T);for k in ${mylist[*]}; do echo $k; 
 
 
 SAMPLE = sys.argv[1] #  "248_T"
-
+print("============>", SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 anno_dict = {'HMDB': "Metaspace_annotations_943peaks.csv"}
@@ -78,15 +78,25 @@ me_annots_OKdf = me_annots.df.loc[
 
 adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
 
-tdf = pathwaysObj.piled.copy()
-refinement_mz_pws_dict = ugly_long_function(tdf)
-the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
+# # NEw!
+# adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,
+#                                         prefix=f"{SAMPLE}-MZ")
+print("mz that do have KEGG compound ids : ", adata_mz) # to know how many mz are left
+print("----------------") # TODO !! del
 
-adata_mz = compute_moran_i(adata_mz, 12)
+# tdf = pathwaysObj.piled.copy()
+# refinement_mz_pws_dict = ugly_long_function(tdf)
+# the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
+#
+# adata_mz = compute_moran_i(adata_mz, 12)
 
-# the KEGG id adata
+# # the KEGG id adata
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
 print("KEGG resolved adata: ", adata)
+print("----------------") # TODO !! del
+import sys # TODO !! del
+sys.exit() # TODO !! del
+
 adata = spatial_standard_computations(
     adata, 12, plot_folder, prefix=f"{SAMPLE}-KEGGmetabolites")
 

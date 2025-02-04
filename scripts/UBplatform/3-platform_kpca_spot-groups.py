@@ -44,8 +44,9 @@ mylist=(UBcalibr1 UBcalibr2 UBcalibr3 UBcalibr4 UBcalibr5);for k in ${mylist[*]}
 
 
 ## start
-my_choice = "RandomBatch"  # this is constant in this script
-SAMPLE =  sys.argv[1] #"UBcalibr4"
+CHOICE_STYLE_BATCH =  ["RandomGrps", "RectGrps"]
+SAMPLE = "UBcalibr4" #"UBcalibr2"
+
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
@@ -113,15 +114,18 @@ pw_as_df = pw_as_df.transpose()
 pw_as_df['Pathway_name'] = 0  # sspa expects this column, which is dropped
 
 groups_d = dict()
-for my_n_groups in [8, 10, 15, 20, 30]:
-
-    groups_d = spots_groups_by_random_choice(
-            adata.obs['obs'].to_numpy(), n_groups=my_n_groups)
+for my_option in CHOICE_STYLE_BATCH:
+    if my_option == "RectGrps":
+        groups_d, df =  spots_groups_by_rectangular_cuts(
+            adata.obs['obs'].tolist(), n_groups=4)  # TODO avoid output df
+    elif my_option == "RandomGrps":
+        groups_d = spots_groups_by_random_choice(
+            adata.obs['obs'].to_numpy(), n_groups=4)
 
     for k in groups_d.keys():
         print(len(groups_d[k]))
 
-    kpca_scores_d = compute_kpca_on_batches(pw_as_df, adata, groups_d)
+    kpca_scores_d = compute_kpca_on_spot_groups(pw_as_df, adata, groups_d)
 
     kpca_scores = verticalassembly(kpca_scores_d, ordered_spots_names=adata.obs['obs'].tolist())
 
@@ -138,4 +142,4 @@ for my_n_groups in [8, 10, 15, 20, 30]:
     biologically_chosen_pathways = yield_specific_typical_pathways()
 
     plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
-                      f"{SAMPLE}-{my_choice}{my_n_groups}-ScoresKPCA", plot_folder)
+                      f"{SAMPLE}-{my_option}-ScoresKPCA", plot_folder)

@@ -109,11 +109,11 @@ def compute_kpca(pw_as_df, adata):
     return kpca_scores
 
 
-def compute_kpca_on_batches(pw_as_df, adata, groups_d: Dict[int, list]) -> Dict[int, dict]:
-    print(f"Computing Pathway Scores using {len(groups_d)} batches...")
+def compute_kpca_on_spot_groups(pw_as_df, adata, groups_d: Dict[int, list]) -> Dict[int, dict]:
+    print(f"Computing Pathway Scores for {len(groups_d)} groups of spots...")
     kpca_scores_d = dict()
     for k in groups_d.keys():
-        print("Batch:", str(k))
+        print("Group:", str(k))
         adata_here = adata[groups_d[k], :].copy()
         kpca_scores_d[k] = compute_kpca(pw_as_df, adata_here)
 

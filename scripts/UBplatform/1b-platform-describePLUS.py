@@ -48,7 +48,7 @@ mylist=(UBcalibr1 UBcalibr2 UBcalibr3 UBcalibr4 UBcalibr5);for k in ${mylist[*]}
 
 """
 
-SAMPLE = "UBcalibr2" #sys.argv[1] #"UBcalibr4"
+SAMPLE = sys.argv[1] # "UBcalibr2"
 #"UBcalibr2"
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -71,7 +71,7 @@ me_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
-
+print(adata_mz)
 
 # ## check with and without tese two lines:
 # adata_mz = adata_mz_filter_negligible_abundance(adata_mz, spots_non_zero=5)  # this filter is soft: ~ 2 mz are excluded, no reason to use  # TODO delete
@@ -107,6 +107,19 @@ me_annots_OKdf = me_annots.df.loc[
 
 adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
 
+# # NEw!
+adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,
+                                        prefix=f"{SAMPLE}-MZ")
+print("mz that do have KEGG compound ids : ", adata_mz) # to know how many mz are left
+print("----------------") # TODO !! del
+
+# # the KEGG id adata ## TODO delete this chunk because is again repeated later
+adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
+print("KEGG resolved adata: ", adata)
+print("----------------") # TODO !! del
+import sys # TODO !! del
+sys.exit() # TODO !! del
+
 
 X_mz_binary_df = compute_mz_binary_df(adata_mz)
 X_metabolites_probs_df = compute_metabolites_probs_df(X_mz_binary_df,
@@ -141,7 +154,7 @@ print(adata)
 uf = compounds_counts_by_pathway(pathwaysObj)
 uf.to_csv("uf2.csv")
 
-#  scores methods are slow , for the moment use pseudoscores, TODO later work to solve the scores computation (batches ? kpca)
+# for the moment use pseudoscores, TODO : in a separate script do kpca by grouping
 pathways_pseudoscores = compute_pathways_pseudoscores(adata, pathwaysObj,
                                                       min_size=2,
                                                       method="sum")  # sum is preferred, average is also implemented

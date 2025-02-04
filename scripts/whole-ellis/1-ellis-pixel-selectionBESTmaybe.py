@@ -34,15 +34,6 @@ adata = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subdir, quantif_file))
 
 
-##  add attributes to be spatially plottable
-
-# coordinates_arr = generate_coordinates(adata.obs["obs"].tolist())
-# adata = ad.AnnData(adata.X,
-#                     obs = adata.obs, var= adata.var,
-#                     obsm = {"spatial": coordinates_arr},
-#                     varm = {"metabolites": adata.var["mz"].to_numpy()}
-#                     )
-
 
 print("\nGet rid of pixels that are not part of the tissue:")
 #  use Spatial domains as in https://www.sc-best-practices.org/spatial/domains.html
