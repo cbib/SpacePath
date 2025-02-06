@@ -15,26 +15,25 @@ from pydantic import Extra
 
 import zonist.helpers as helpers
 
-from zonist.constants import (supported_mappings,
-                              supported_annotations,
-                              columns_ref_map_expected)
+from zonist.constants import (supported_mappings, supported_annotations,
+                              columns_ref_map_expected,
+                              not_metabolic_reactions_pathways)
 
-
-logger = logging.getLogger(__name__)
-logger = helpers.reset_log_config(logger)
-logger.info("\nTime: {}".format(time.strftime('%Y%m%d-%H.%M.%S')))
 
 
 class BaseModel(PydanticBaseModel):
     class Config:
         arbitrary_types_allowed = True
 
+logger = logging.getLogger(__name__)
+logger = helpers.reset_log_config(logger)
+#logger.info("\nTime: {}".format(time.strftime('%Y%m%d-%H.%M.%S')))
+
 
 class Dataset(BaseModel, extra=Extra.allow):
     name : str
     data_dir: str  # /m/n/o/prj/st/spatial_metabo/data    
     subfolder: str  # where either imzml+ibd files, or spatialmatrix  !
-
 
 
 class MetaboliteIdsMappings(BaseModel, extra=Extra.allow):
@@ -67,8 +66,7 @@ class MetaboliteIdsMappings(BaseModel, extra=Extra.allow):
             logger.info(" your loaded dataframe :\n %s", df.head(2))
             df = df.dropna()
             df = df.loc[df["KEGG"] != "", :]
-            df = df.loc[df["KEGG"] != "NA", :]
-            df = df.loc[df["KEGG"] != "NaN", :]
+            df = df.loc[~df["KEGG"].isin(["NA", "NaN"]), :]
             df['database'] = map_key
             df.columns = ["not_kegg_id", "KEGG", "database"]
             dfs_dict[map_key] = df
@@ -234,13 +232,12 @@ class MetabolicPathways(BaseModel, extra=Extra.allow):
     official_file: str
     custom_file: Optional[str] = ''
     file_style: str = "gmt-sspa"  #  official and custom must be same style
-    undesired_name_substring: str = " - Homo sapiens (human)" # in names
+    undesired_substring: str = " - Homo sapiens (human)" # in names
     col_pathway_id: str = "pathway_id"
     col_pathway_name: str = "pathway_name"
     col_molecule_ids: str = "KEGG"   #  must be KEGG to match joined annots
     piled: pd.DataFrame = pd.DataFrame()
     pathways_ids: pd.DataFrame = pd.DataFrame()
-    pathways: Dict[str, List[str]] = dict()
 
     def preload_official(self):
         if not os.path.exists(os.path.join(
@@ -261,8 +258,11 @@ class MetabolicPathways(BaseModel, extra=Extra.allow):
         except Exception as e:
             logger.error(e)
 
-        self.official = helpers.prettify_gmt(
-            official_gmt, self.undesired_name_substring)
+        official_gmt = helpers.prettify_gmt(official_gmt,
+                                            self.undesired_substring)
+        official_gmt = helpers.purge_pathways(
+            official_gmt, not_metabolic_reactions_pathways)
+        self.official = official_gmt
 
     def preload_custom(self):
         try:
@@ -296,46 +296,23 @@ class MetabolicPathways(BaseModel, extra=Extra.allow):
 
         logger.info("success, attributes : piled, pathways_ids")
 
-    def intersect_with_annotations(self, annots_obj: MetabolomeAnnotations):  # pd.DataFrame
-        """adds:
-         - the mz column to the same .piled dataframe
-         - the attribute .pathways, a dictionary with pathway_id as key"""
-        annotations_df_mz_kegg =  annots_obj.df[[annots_obj.col_mz, "KEGG"]]
-        self.piled = helpers.pathways_and_annots_join(
-            self.piled, annotations_df_mz_kegg, self.col_molecule_ids)
-
-        self.pathways = helpers.gmt_piled_to_dict(
+    def to_dict(self) -> Dict[str, List[str]]:
+        return helpers.gmt_piled_to_dict(
             self.piled, self.col_pathway_id, mz_or_kegg=self.col_molecule_ids)
 
-    # def write_to_json(self, dataset_subfolder: str, mz_or_kegg_choice: str = "mz"):
-    #     full_path_file_json = os.path.join(
-    #             self.data_dir, dataset_subfolder,
-    #             f"gmt_{mz_or_kegg_choice}.json")
-    #
-    #     gmt_dict = helpers.gmt_dict_write_json(
-    #         self.piled, self.col_pathway_id,
-    #         mz_or_kegg_choice, full_path_file_json)
-    #     self.gmt_dict = gmt_dict
-    #     logger.info("saved json file to : %s", full_path_file_json)
+    def intersect_with_annotations(self, annots_obj: MetabolomeAnnotations):
+        """
+         - adds the mz column to the .piled df in the MetabolicPathways obj
+         - retains only the elements that are in the intersection of both objs
+        """
+        self.piled = helpers.pathways_and_annots_join(
+            self.piled, annots_obj.df[[annots_obj.col_mz, "KEGG"]],
+            self.col_molecule_ids)
 
 
-class MetabolomeSpatialMatrix(Dataset):
-    # TODO : is this class is useful? or use adata object directly instead ?
-    adata_filename: str  # one only
-    # col_mz : str = "mz"
-    #style_coordinates_names: str = "metaspace"
-    #style_coordinates_explanation: Dict[str, str] = {
-    #    'metaspace' : "xR_yS where R and S are integers"}
 
-    def preload(self):
-        print("not yet supported")
-        # TODO
-        #print("loading")
-    
-    def check_expectations(self):
-        print("not yet supported")
-        # TODO
-        # print("checking")
+
+
 
 
 

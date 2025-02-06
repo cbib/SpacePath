@@ -70,6 +70,7 @@ def pull_offsample_info(df, col_mz: str, col_offsample: str):
                             keep='first')
     return df
 
+
 def convert_metabo_annots_tokegg(
         annotdf: pd.DataFrame,  mappings_ref_ids: pd.DataFrame,
         col_molecule_ids: str, col_mz: str) -> pd.DataFrame:
@@ -97,6 +98,7 @@ def convert_metabo_annots_tokegg(
     final = final.sort_values(by=col_mz, ascending=True)
 
     return final
+
 
 def identify_multi_mz_to_one_kegg(annotdf: pd.DataFrame,
                                   col_mz: str) -> bool:
@@ -155,15 +157,28 @@ def compute_one_to_one_mz_keggid_df(annotdf: pd.DataFrame, adata_mz: ad.AnnData,
 
     return annotdf
 
+
 def prettify_gmt(gmt_df, undesired_name_substring: Union[str, None]):
     gmt_df["to_delete"] = 0
-    # delete all rows that do not have any metabolite or gene (3rd col)
+    # delete all rows that do not have any molecule (3rd col)
     gmt_df.loc[gmt_df.iloc[:, 2].isna(), "to_delete"] = 1
     gmt_df = gmt_df.loc[gmt_df["to_delete"] != 1, :]
     gmt_df = gmt_df.drop(columns=["to_delete"])
+    gmt_df.iloc[:, 1] = gmt_df.iloc[:, 1].str.replace(" / ", ", ")  # required
     if undesired_name_substring is not None:
         gmt_df.iloc[:, 1] = gmt_df.iloc[:, 1].str.replace(
             undesired_name_substring, "")
+    return gmt_df
+
+
+def purge_pathways(gmt_df, not_metabolic_reactions_pathways: List[str]):
+    gmt_df["bad"] = 0
+    gmt_df["lower"] = gmt_df.iloc[:, 1].str.lower()
+    gmt_df.loc[gmt_df["lower"].str.contains(
+        "|".join(not_metabolic_reactions_pathways), regex=True), "bad"] = 1
+    gmt_df = gmt_df.loc[gmt_df["bad"] != 1, :]
+    gmt_df = gmt_df.drop(columns=["bad", "lower"])
+
     return gmt_df
 
 
@@ -209,11 +224,12 @@ def pathways_and_annots_join(gmt_piled: pd.DataFrame,
         f"no column {col_molecule_id}  in annotations table"
 
     anno_mz_kegg = anno_mz_kegg.drop_duplicates()
-    accepted_kegg_set = set(gmt_piled["KEGG"].tolist()).intersection(
+    accepted_kegg_intersect = set(gmt_piled["KEGG"].tolist()).intersection(
         set(anno_mz_kegg["KEGG"].tolist()))
     gmt_piled_ok = pd.merge(gmt_piled, anno_mz_kegg, on="KEGG", how="left")
+    # only the intersection is kept:
     gmt_piled_ok = gmt_piled_ok.loc[gmt_piled_ok["KEGG"].isin(list(
-        accepted_kegg_set)), :]
+        accepted_kegg_intersect)), :]
 
     return gmt_piled_ok
 
@@ -229,7 +245,6 @@ def gmt_piled_to_dict(gmt_piled_mz, pathway_id: str, mz_or_kegg: str):
         out[w] = items_w
 
     return out
-
 
 
 def generate_coordinates_arr(pixels_names_l: List[str]) -> np.array:

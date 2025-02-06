@@ -41,7 +41,7 @@ class Test(TestCase):
         self.assertListEqual(result['database'].tolist(),
                              ["HMDB", "KEGG", "LipidMaps"])
 
-    def test_clean_gmt(self):
+    def test_prettify_gmt(self):
         data = [
             ['IDpath1', 'pathway-one-!?', 'm1', 'm4', 'm6', np.nan, np.nan],
             ['IDpath2', 'pathway-two-!?', 'm2', 'm3', np.nan, np.nan, np.nan],
@@ -58,6 +58,21 @@ class Test(TestCase):
                              result.iloc[:, 0].tolist())
         self.assertListEqual(
             ['pathway-one', 'pathway-two', 'pathway-three'],
+            result.iloc[:, 1].tolist())
+
+    def test_purge_pathways(self):  #
+        data = [
+            ['IDpath1', 'Fatty Oxidation', 'm1', 'm3', 'm4', 'm6',  np.nan],
+            ['IDpath2', 'Meiosis', 'm2', 'm3', np.nan, np.nan, np.nan],
+            ['IDpath3', 'TCA cycle', 'm3', 'm4', 'm5', 'm7', np.nan],
+            ['IDpath4', 'Yersinia Infection', 'm8', 'm9', 'm15', 'm1', 'm2']]
+        not_strictly_metabolical =  ["meiosis", "infection"]
+        gmt = pd.DataFrame(data, columns=range(0, 7))
+        result = helpers.purge_pathways(gmt, not_strictly_metabolical)
+        self.assertListEqual(['IDpath1',  'IDpath3'],
+                             result.iloc[:, 0].tolist())
+        self.assertListEqual(
+            ['Fatty Oxidation', 'TCA cycle'],
             result.iloc[:, 1].tolist())
 
     def test_gmt_to_piled_form(self):
@@ -101,20 +116,18 @@ class Test(TestCase):
                 ["two", "CXXXXYY", "913.821868"]]
         gmt_piled = pd.DataFrame(data, columns=["path_id", "KEGG", "mz"])
 
-        result = helpers.gmt_piled_to_dict(gmt_piled,
-                                           pathway_id="path_id",
+        result = helpers.gmt_piled_to_dict(gmt_piled, pathway_id="path_id",
                                            mz_or_kegg="mz")
         self.assertListEqual(list(result.keys()),
                              ["one", "two"])
-        self.assertTrue(np.all(
-            np.array(result["one"]) == np.array(
+        self.assertTrue(np.all(np.array(result["one"]) == np.array(
                 ["102.0317", "588.56", "132.0899"])))
 
     def test_generate_coordinates_arr(self):
         coords_l: List[str] = ['x4_y1', 'x4_y2', 'x5_y3', 'x6_y8', 'x6_y9']
         result = helpers.generate_coordinates_arr(coords_l)
         uf = result[:, 0]
-        self.assertTrue(np.all(result[:, 0] == np.array([4,4,5,6,6])))
-        self.assertTrue(np.all(result[:, 1] == np.array([1,2,3,8,9])))
+        self.assertTrue(np.all(result[:, 0] == np.array([4, 4, 5, 6, 6])))
+        self.assertTrue(np.all(result[:, 1] == np.array([1, 2, 3, 8, 9])))
 
 
