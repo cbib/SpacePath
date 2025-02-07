@@ -11,7 +11,7 @@ import anndata as ad
 import sspa as sspa
 
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import Extra
+#from pydantic import Extra  #  deprecated, TODO: remove
 
 import zonist.helpers as helpers
 
@@ -30,13 +30,13 @@ logger = helpers.reset_log_config(logger)
 #logger.info("\nTime: {}".format(time.strftime('%Y%m%d-%H.%M.%S')))
 
 
-class Dataset(BaseModel, extra=Extra.allow):
+class Dataset(BaseModel, extra='allow'):
     name : str
-    data_dir: str  # /m/n/o/prj/st/spatial_metabo/data    
-    subfolder: str  # where either imzml+ibd files, or spatialmatrix  !
+    data_dir: str  # /main/dir/of/spatial/data
+    subfolder: str    # e.g. projectName/
 
 
-class MetaboliteIdsMappings(BaseModel, extra=Extra.allow):
+class MetaboliteIdsMappings(BaseModel, extra='allow'):
     data_dir: str
     subfolder: str
     delimiter: str = '\t'  # we provide tab delimited .tsv viles
@@ -186,7 +186,7 @@ class MetabolomeAnnotations(Dataset):
             if excess_mz_bool:
                 message_multimz = (
                     "Identified 'multi m/z to one KEGGid' cases!: Please run "
-                    "'<obj>.treat_mz_multiplets(anndata_mz)'.")
+                    "'<metabo_annotations>.treat_mz_multiplets(anndata_mz)'.")
                 logger.warning(message_multimz)
                 print(message_multimz)
         except Exception as e:
@@ -226,7 +226,7 @@ class MetabolomeAnnotations(Dataset):
                          "expected ones are exactly %s", expected_columns_by_df)
 
 
-class MetabolicPathways(BaseModel, extra=Extra.allow):
+class MetabolicPathways(BaseModel, extra='allow'):
     data_dir: str
     subfolder: str
     official_file: str
