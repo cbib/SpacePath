@@ -12,26 +12,35 @@ from sklearn.metrics import adjusted_rand_score
 from sklearn.utils import sparsefuncs
 
 
-def time_formatting(timeseconds):
-    hours = int(timeseconds / 3600)
-    remaining_seconds = timeseconds % 3600
-    minutes = int(remaining_seconds / 60)
-    seconds = np.around(remaining_seconds % 60, 1)
-    return hours, minutes, seconds
+# todo: a new module named assignments_refine in :  zonist.src.zonist.processing
+# def xxxx
+def build_kegg_resolved_adata(adata_mz, annots_df):
+    """
+    Given the adata_mz and the annots_df, returns a new adata object
+    """
+    mz_list = annots_df["mz"].unique()
+    intensities_arrs_list = []
+    kegg_list = list()
+    for one_mz in mz_list:
+        local_kegg = annots_df.loc[
+            annots_df["mz"] == one_mz, "KEGG"].tolist()
+        local_1D_adata_mz = adata_mz[ :, str(one_mz)].copy()
+        for a_kegg in local_kegg:
+            intensities_arrs_list.append(
+                np.array(local_1D_adata_mz.X.todense().T).flatten() / len(local_kegg))
+            kegg_list.append(a_kegg)
+    adata = ad.AnnData(X=csr_matrix(np.array(intensities_arrs_list).T),
+                       obs=adata_mz.obs,
+                       var=pd.DataFrame({"ID": kegg_list},
+                                        index=kegg_list),
+                       obsm=adata_mz.obsm)
+    adata.uns['spatial'] = {'my_slice_name': {
+        'scalefactors': {'fiducial_diameter_fullres': 100,
+                         'spot_diameter_fullres': 1,
+                         'tissue_hires_scalef': 0.5,
+                         'tissue_lowres_scalef': 0.5}}}
 
-
-def gmt_piled_to_dict(gmt_piled_mz, pathway_id: str, mz_or_kegg: str):
-    # TODO: remind that this is an exact copy of the one in zonist helpers
-    keptdf = gmt_piled_mz[[pathway_id, mz_or_kegg]]
-    pathways_uniqs = keptdf[pathway_id].unique().tolist()
-
-    out = {}
-    for w in pathways_uniqs:
-        items_w = keptdf.loc[keptdf[pathway_id] == w,
-                             mz_or_kegg].astype(str).unique().tolist()
-        out[w] = items_w
-
-    return out
+    return adata
 
 
 def adata_mz_filter_negligible_abundance(adata_mz, spots_non_zero=5):   #TODO change to 10
@@ -85,75 +94,6 @@ def get_rid_of_poor_var_mz(adata_mz):
     adata_mz = adata_mz[:, [str(i) for i in good_mz]]
 
     return adata_mz
-
-
-def jenesaispas(good_pathways: list, pathwaysObj):
-    metabolites_to_throw_away = list()
-    unwanted_pathways = list(
-        set(list(pathwaysObj.pathways.keys())) - set(good_pathways))
-    d = {k: v for k, v in  pathwaysObj.pathways.items() if k in good_pathways}
-    good_compounds_list = [i for m_id_list in d.values() for i in m_id_list]
-
-    for pw in unwanted_pathways:
-        a = pathwaysObj.pathways[pw]
-        tmp_set = set(a) - set(good_compounds_list)
-        if len(tmp_set) > 0:
-            metabolites_to_throw_away += list(tmp_set)
-
-    return metabolites_to_throw_away
-
-
-def pathways_ok__unwanted_metabolites(pathwaysObj, min_pathway_size=2):
-    """TODO doc"""
-    pathways_sizes = {k: len(pathwaysObj.pathways[k])
-                      for k  in pathwaysObj.pathways.keys()}
-    good_sizes = {k: v for k, v in pathways_sizes.items()
-                  if v >= min_pathway_size}
-    good_pathways = list(good_sizes.keys())
-
-    metabolites_to_throw_away = jenesaispas(good_pathways,
-                                            pathwaysObj)
-
-    return good_pathways, metabolites_to_throw_away  #
-
-
-def update_really(annotsObj, pathwaysObj, good_pathways, metabolites_to_throw_away):
-    # todo: specify the types of parameters
-    # update pathways dict
-    pathwaysObj.piled = pathwaysObj.piled.loc[
-                        pathwaysObj.piled["pathway_id"].isin(good_pathways)]
-    pathwaysObj.piled = pathwaysObj.piled.loc[~pathwaysObj.piled[
-        "KEGG"].isin(metabolites_to_throw_away),:]
-    pathwaysObj.pathways = gmt_piled_to_dict(pathwaysObj.piled,
-                                             "pathway_id", "KEGG")
-    annotsObj.df = annotsObj.df.loc[~annotsObj.df["KEGG"].isin(
-        metabolites_to_throw_away), :]
-
-    return annotsObj, pathwaysObj
-
-
-def compounds_counts_by_pathway(pathwaysObj):
-    """
-    Generates a table with the number of compounds by pathway
-    :return: e.g.
-
-    """
-    pw_id_l = []
-    pw_name = []
-    pw_compounds = []
-    pw_count = []
-    for pw_id in pathwaysObj.pathways.keys():
-        metabolites = pathwaysObj.pathways[pw_id]
-        pw_id_l.append(pw_id)
-        pw_name.append(pathwaysObj.pathways_ids.loc[
-                           pathwaysObj.pathways_ids["pathway_id"] == pw_id,
-                           "pathway_name"].item())
-        pw_compounds.append("; ".join(metabolites))
-        pw_count.append(len(metabolites))
-    uf = pd.DataFrame({'pathway_id': pw_id_l, 'name': pw_name,
-                       'cmpslist': pw_compounds, 'count': pw_count})
-    uf = uf.sort_values(by='count', ascending=False)
-    return uf
 
 
 def compute_mz_binary_df(adata_mz: ad.AnnData):
@@ -447,12 +387,4 @@ def complicated_stuff_2(refinement_mz_pws_dict, pathways_pseudoscores, X_metabol
                     break   #  it is ok if able to update with compared pathways , we can stop
 
     return updated_probs_dict
-
-
-def pathways_dict_coherce_min_len(pathways: dict, min_len_admitted: int= 2):
-    good_keys = [mykey for mykey, myval in pathways.items()
-                     if len(pathways[mykey]) >= min_len_admitted]
-    subset_dict = dict(filter(lambda item:item[0] in good_keys, pathways.items()))
-    return subset_dict
-
 

@@ -28,11 +28,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__),
 
 from statsembryo1 import *
 from vizembryo1 import *
-from pathways_methods import *
+from pathways_methods import *  # kpca ....
 from datasetcomplement import (build_kegg_resolved_adata,
                                yield_specific_typical_pathways)
-
-
 
 """
 pathways scores on *bordeaux proteome example data* 
@@ -44,8 +42,8 @@ mylist=(UBcalibr1 UBcalibr2 UBcalibr3 UBcalibr4 UBcalibr5);for k in ${mylist[*]}
 
 
 ## start
-CHOICE_STYLE_BATCH =  ["RandomGrps", "RectGrps"]
-SAMPLE = "UBcalibr4" #"UBcalibr2"
+CHOICE_STYLE_BATCH =  ["RandomGrps"] # ["RandomGrps", "RectGrps"]
+SAMPLE = "UBcalibr2" #"UBcalibr2"
 
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -102,32 +100,30 @@ adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
 print("KEGG resolved adata: ", adata)
 
+
 # exclude all metabolites that do not comply with the policy "at least 2 metabolites by pathway"
 good_pathways, metabolites_to_throw_away = pathways_ok__unwanted_metabolites(
     pathwaysObj , min_pathway_size=2)
+
+hyhy = pathwaysObj.pathways_ids.copy().astype(str)  # todo delete
+
 me_annots, pathwaysObj = update_really(me_annots, pathwaysObj, good_pathways, metabolites_to_throw_away)
 
+hoho = pd.DataFrame({'pathway_id': list(pathwaysObj.to_dict().keys())}) # todo delete
+yes = pd.merge(hoho, hyhy, how='left',
+              left_on="pathway_id", right_on="pathway_id",
+             left_index=False, right_index=False)
 
-pw_as_df = pd.DataFrame(
-    {key: pd.Series(value) for key, value in pathwaysObj.pathways.items()})
-pw_as_df = pw_as_df.transpose()
-pw_as_df['Pathway_name'] = 0  # sspa expects this column, which is dropped
+pw_as_df = reshape_pathways_for_kpca(pathwaysObj)
 
-groups_d = dict()
 for my_option in CHOICE_STYLE_BATCH:
     if my_option == "RectGrps":
-        groups_d, df =  spots_groups_by_rectangular_cuts(
-            adata.obs['obs'].tolist(), n_groups=4)  # TODO avoid output df
+        kpca_scores =  pathways_scores_by_rectangular_cuts(pathwaysObj,
+                                                           adata, n_groups=4)
     elif my_option == "RandomGrps":
-        groups_d = spots_groups_by_random_choice(
-            adata.obs['obs'].to_numpy(), n_groups=4)
-
-    for k in groups_d.keys():
-        print(len(groups_d[k]))
-
-    kpca_scores_d = compute_kpca_on_spot_groups(pw_as_df, adata, groups_d)
-
-    kpca_scores = verticalassembly(kpca_scores_d, ordered_spots_names=adata.obs['obs'].tolist())
+        kpca_scores = compute_pathways_scores(pathwaysObj,
+                                adata, method="sspa_kpca", min_entity=2,
+                                n_groups_of_spots=4)
 
     kpca_score_adata = ad.AnnData(
         X=csr_matrix(kpca_scores),
@@ -139,7 +135,14 @@ for my_option in CHOICE_STYLE_BATCH:
         uns=adata.uns
     )
 
+    hoho = kpca_score_adata.var.copy().astype(str)
+    hyhy = pathwaysObj.pathways_ids.copy().astype(str)
+
+    yes = pd.merge(hoho, hyhy, how='left',
+                   left_on="pathway_id", right_on="pathway_id",
+                   left_index=False, right_index=False)
+    yes.to_csv("yeeees.txt")
     biologically_chosen_pathways = yield_specific_typical_pathways()
 
     plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
-                      f"{SAMPLE}-{my_option}-ScoresKPCA", plot_folder)
+                      f"{SAMPLE}-{my_option}--Picked", plot_folder)

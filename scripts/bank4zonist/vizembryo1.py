@@ -1,18 +1,28 @@
 import os
+
+from typing import List, Dict
+import numpy as np
+import matplotlib.pyplot as plt
+
+import scanpy as sc
 import squidpy as sq
 
 
-def plot_selected_kegg_compound_ids(adata, me_annots, metabolites_to_throw_away):
-    for item in metabolites_to_throw_away:
+def plot_selected_kegg_compound_ids(adata, me_annots,
+                                    metabolites_kegg_ids: List[str], sample, plot_folder)-> None:
+
+    for item in metabolites_kegg_ids:
         item_name = me_annots.df.loc[
             me_annots.df["KEGG"] == item, "moleculeNames"].item()
         mz_here = me_annots.df.loc[me_annots.df["KEGG"] == item, "mz"].item()
+        tmpstr = os.path.join(plot_folder,
+                              f'{sample}-{item_name}.png')
         sq.pl.spatial_scatter(adata, color=[item],
                               img=False,
                               title=f"({mz_here}) {item}: {item_name}",
-                              # save=os.path.abspath(tmpstr)
+                              save=os.path.abspath(tmpstr)
                               )
-        plt.show()
+
 
 def plot_cosine_distances_random_spots(spots_cos_sim_df):
     import seaborn as sns
@@ -30,16 +40,17 @@ def plot_cosine_distances_random_spots(spots_cos_sim_df):
                     kde=True)
         plt.show()
 
+
 def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
                            SAMPLEANDDETALS, plot_folder) -> None:
-    for id in biologically_chosen_pathways.keys():
+    for m_id in biologically_chosen_pathways.keys():
         try:
-            pw_name = biologically_chosen_pathways[id]
+            pw_name = biologically_chosen_pathways[m_id]
             tmpstr = os.path.join(plot_folder,
                                   f'{SAMPLEANDDETALS}-{pw_name}.png')  # TODO: improve destination folder
-            sq.pl.spatial_scatter(adata_scores, color=[id],
-                                  img=False, title=f"{id} {pw_name}",
+            sq.pl.spatial_scatter(adata_scores, color=[m_id],
+                                  img=False, title=f"{m_id} {pw_name}",
                                   save=os.path.abspath(tmpstr))
         except Exception as e:
             print("[plot_selected_pathways]Could NOT plot: {} {}".format(
-                id, pw_name))
+                m_id, pw_name))

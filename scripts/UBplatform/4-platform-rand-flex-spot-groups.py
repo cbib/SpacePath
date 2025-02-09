@@ -108,7 +108,7 @@ me_annots, pathwaysObj = update_really(me_annots, pathwaysObj, good_pathways, me
 
 
 pw_as_df = pd.DataFrame(
-    {key: pd.Series(value) for key, value in pathwaysObj.pathways.items()})
+    {key: pd.Series(value) for key, value in pathwaysObj.to_dict().items()})
 pw_as_df = pw_as_df.transpose()
 pw_as_df['Pathway_name'] = 0  # sspa expects this column, which is dropped
 
@@ -138,4 +138,4 @@ for my_n_groups in [8, 10, 15, 20, 30]:
     biologically_chosen_pathways = yield_specific_typical_pathways()
 
     plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
-                      f"{SAMPLE}-{my_choice}{my_n_groups}-ScoresKPCA", plot_folder)
+                      f"{SAMPLE}-{my_choice}{my_n_groups}--Picked", plot_folder)

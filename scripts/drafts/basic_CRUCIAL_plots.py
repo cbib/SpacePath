@@ -10,6 +10,24 @@ for i in *Batch*;do echo $i; loo="${i//Batch/Grps}"; cp "$i" "$loo" ; done
 finally I delete the old files
 """
 
+def simple_test_groups_xy():
+    better = []
+    for k in range(4, 150):
+        for h in range(4, 93):
+            better.append(f"x{k}_y{h}")
+
+    rsult, df = spots_groups_by_rectangular_cuts(better, 2)
+
+    import seaborn as sns
+    sns.scatterplot(data=df, x="x", y="y", hue="group", s=6)
+    plt.show()
+
+    rsu2 = spots_groups_by_random_choice(np.array(better), 4)
+    df = add_groups_to_spots_df(df, rsu2, "group2")
+    sns.scatterplot(data=df, x="x", y="y", hue="group2", s=6)
+    plt.show()
+
+
 pixels_number = [11677, 16943, 17334, 10433, 13622,
                   19714, 28992, 4947, 92476, 16875,
                  103874, 133444 ]

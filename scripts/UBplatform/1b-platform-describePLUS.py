@@ -36,7 +36,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__),
 from statsembryo1 import *
 from vizembryo1 import *
 from datasetcomplement import (build_kegg_resolved_adata,
-                               yield_specific_typical_pathways)
+                               yield_specific_typical_pathways,
+                               reshape_pathways_for_kpca)
 
 
 
@@ -48,7 +49,7 @@ mylist=(UBcalibr1 UBcalibr2 UBcalibr3 UBcalibr4 UBcalibr5);for k in ${mylist[*]}
 
 """
 
-SAMPLE = sys.argv[1] # "UBcalibr2"
+SAMPLE = "UBcalibr2"
 #"UBcalibr2"
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -90,8 +91,6 @@ me_annots.convert_ids_to_kegg(me_refmap.table)
 me_annots.treat_mz_multiplets(adata_mz)
 
 
-# print(len(me_annots.df["KEGG"].to_list())); print(len(me_annots.df["KEGG"].unique()))
-
 ## pathways
 pathwaysObj = zd.MetabolicPathways(
     data_dir=mydata_dir,
@@ -99,7 +98,9 @@ pathwaysObj = zd.MetabolicPathways(
     official_file="KEGG_hsa_pathways_compounds_R110.gmt")
 
 pathwaysObj.load()
-pathwaysObj.intersect_with_annotations(me_annots)   # updated pathwaysObj
+initial_kegg_pathways = pathwaysObj.to_dict()  # if I want to keep the initial composition of Metabolic pws as downloaded from KEGG db
+
+pathwaysObj.intersect_with_annotations(me_annots)   # updated pathwaysObj   #
 
 print("subset adata_mz for only mz mapping to a KEGG metabolite identifiers that in turn map to pathways")
 me_annots_OKdf = me_annots.df.loc[
@@ -111,15 +112,6 @@ adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
 adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,
                                         prefix=f"{SAMPLE}-MZ")
 print("mz that do have KEGG compound ids : ", adata_mz) # to know how many mz are left
-print("----------------") # TODO !! del
-
-# # the KEGG id adata ## TODO delete this chunk because is again repeated later
-adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
-print("KEGG resolved adata: ", adata)
-print("----------------") # TODO !! del
-import sys # TODO !! del
-sys.exit() # TODO !! del
-
 
 X_mz_binary_df = compute_mz_binary_df(adata_mz)
 X_metabolites_probs_df = compute_metabolites_probs_df(X_mz_binary_df,
@@ -129,8 +121,6 @@ adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
 print("KEGG resolved adata: ", adata)
 uf = compounds_counts_by_pathway(pathwaysObj)
 uf.to_csv("uf1.csv")
-
-metabo_sums = np.array(X_metabolites_probs_df).sum(axis=0) # sum of pixels intensities by compound, final dimension will be nb of compounds
 
 # is_it_well_done(X_metabolites_probs_df, adata_mz, adata, me_annots_OKdf)
 
@@ -177,7 +167,7 @@ local_cosine_sim = cosine_similarity(np.array(tmp_mx1),
 
 def subset_m_probs_curr_pw(metabolites_probs_here, pathwaysObj, pw):  # TODO is this used ?
 
-    theor_compounds_in_pw = pathwaysObj.pathways[pw]
+    theor_compounds_in_pw = pathwaysObj.to_dict()[pw]
     real_compounds_in_pw = set(theor_compounds_in_pw).intersection(
         set(metabolites_probs_here.columns.tolist()))
 
@@ -289,35 +279,6 @@ print(pleasestop)
 #     spot1_name = coords_matcher_dict[v1]
 #     for v2 in neighs_of_v1:
 #         spot2_name = coords_matcher_dict[v2]
-
-
-
-
-
-"""
-decision: test ssgsea on the data that has 100K spots :: did not work fast
- (use implementation done by the sspa package)  did not work fast neither
-OR
-pathway scores = use decoupler ?, see : https://liana-py.readthedocs.io/en/latest/notebooks/misty.html  
-"""
-
-"""
-* cosine similarity between two spots: how similar they are in mz abundances
-* spatially close spots: spots that are at a distance of 3 max
-* but if two spots, that are spatially close, have "bad" cosine similarity, 
-     they must be NOT subjected to refinement, only close in both cosine and spatial must.
-     refinement of metabolite probabilities: 
-"""
-
-# # cosine similarity df: THIS IS TOO MEMORY CONSUMING when using huge matrices
-# # an alternative is to compute this between spatially related spots
-# spots_cos_sim_mx = cosine_similarity(adata_mz.to_df(), adata_mz.to_df())
-# spots_cos_sim_df = pd.DataFrame(spots_cos_sim_mx,
-#                                 index = adata_mz.obs["obs"].tolist(),
-#                                 columns= adata_mz.obs["obs"].tolist())
-
-
-
 
 
 

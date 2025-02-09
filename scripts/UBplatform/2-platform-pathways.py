@@ -11,6 +11,8 @@ import squidpy as sq
 
 import sspa as sspa
 
+from scripts.bank4zonist.pathways_methods import compute_kpca, reshape_pathways_for_kpca
+
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
 from statsembryo1 import *
@@ -23,7 +25,7 @@ pathways scores on *bordeaux proteome example data*
 
 """
 
-SAMPLE = "UBcalibr5"#sys.argv[1]
+SAMPLE = "UBcalibr2"#sys.argv[1]
 #"UBcalibr2"
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -86,34 +88,11 @@ print("KEGG resolved adata: ", adata)
 ##
 biologically_chosen_pathways = yield_specific_typical_pathways()
 
-def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
-                           SAMPLEANDDETALS, plot_folder) -> None:
-    for m_id in biologically_chosen_pathways.keys():
-        try:
-            pw_name = biologically_chosen_pathways[m_id]
-            tmpstr = os.path.join(plot_folder,
-                                  f'{SAMPLEANDDETALS}-{pw_name}.png')  # TODO: improve destination folder
-            sq.pl.spatial_scatter(adata_scores, color=[m_id],
-                                  img=False, title=f"{m_id} {pw_name}",
-                                  save=os.path.abspath(tmpstr))
-        except Exception as e:
-            print("[plot_selected_pathways]Could NOT plot: {} {}".format(
-                m_id, pw_name))
-
-
 ###
 # compute kpca
 ##
-print("computing kpca from sspa package")
-pw_as_df = pd.DataFrame(
-    {key: pd.Series(value) for key, value in pathwaysObj.pathways.items()})
-pw_as_df = pw_as_df.transpose()
-pw_as_df['Pathway_name'] = 0  # sspa expects this column, which is dropped
-
-kpca_model = sspa.sspa_kpca.sspa_KPCA(
-    pw_as_df, min_entity=2, random_state=0)
-df_log_transformed = np.log(adata.to_df() + 1)  # same as sc.pp.log1p does
-kpca_scores = kpca_model.fit_transform(df_log_transformed)
+pw_as_df = reshape_pathways_for_kpca(pathwaysObj)
+kpca_scores = compute_kpca(pw_as_df, adata)
 
 print(kpca_scores.iloc[:3,:5])
 
@@ -131,7 +110,7 @@ kpca_score_adata = ad.AnnData(
 )
 
 plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
-                  f"{SAMPLE}-ScoresKPCA", plot_folder)
+                  f"{SAMPLE}--Picked", plot_folder)
 
 kpca_score_adata = spatial_standard_computations(kpca_score_adata, pca_ncomps=12,
                                   plot_folder=plot_folder,

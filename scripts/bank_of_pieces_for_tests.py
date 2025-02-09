@@ -22,7 +22,7 @@ print(fake.to_df())
 
 ##
 
-U = list(pathwaysObj.pathways.keys())
+U = list(pathwaysObj.to_dict().keys())
 V = pathwaysObj.piled["pathway_id"].unique()
 empty_a = set(U) - set(V)
 empty_b = set(V) - set(U)
@@ -87,10 +87,17 @@ print(better)
 
 
 
-op = pd.DataFrame(data=np.array([[55,88,6,7], [0,2,4,0], [78,0,0,0], [78,0,0,0]]), columns=["c05", "c04", "c11", "c12"], index=['a', 'u', 'v', 'o'])
+df1 = pd.DataFrame(data=np.array([[55,88,6,7], [0,2,4,0],
+                                 [78,0,0,0], [78,0,0,0]]),
+                  columns=["c05", "c04", "c11", "c12"],
+                  index=['a', 'u', 'v', 'o'])
 
-ap = pd.DataFrame(data=np.array([[1,0,0],  [0,2,0], [78,0,0]]), columns=["c10", "c11", "c12"], index=['e', 'i', 'w'])
+df2 = pd.DataFrame(data=np.array([[1,0,0],  [0,2,0], [78,0,0]]),
+                  columns=["c10", "c11", "c12"], index=['e', 'i', 'w'])
 
-ou = {0: op, 1: ap}
-ki = verticalassembly(ou, ['a', 'e', 'i', 'o','u', 'v', 'w'])
+dfs_dicts = {0: df1, 1: df2}
+ki = verticalassembly(dfs_dicts, ['a', 'e', 'i', 'o', 'u', 'v', 'w'])
 print(ki)
+
+## ## ##
+metabo_sums = np.array(X_metabolites_probs_df).sum(axis=0) # sum of pixels intensities by compound, final dimension will be nb of compounds
