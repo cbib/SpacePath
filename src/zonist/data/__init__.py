@@ -11,23 +11,25 @@ import anndata as ad
 import sspa as sspa
 
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ConfigDict
 #from pydantic import Extra  #  deprecated, TODO: remove
 
 import zonist.helpers as helpers
+import zonist.processing.pathways_methods as pathways_methods
 
 from zonist.constants import (supported_mappings, supported_annotations,
                               columns_ref_map_expected,
                               not_metabolic_reactions_pathways)
 
-
-
-class BaseModel(PydanticBaseModel):
-    class Config:
-        arbitrary_types_allowed = True
-
 logger = logging.getLogger(__name__)
 logger = helpers.reset_log_config(logger)
 #logger.info("\nTime: {}".format(time.strftime('%Y%m%d-%H.%M.%S')))
+
+
+class BaseModel(PydanticBaseModel):
+    # class Config:  # deprecated since pydantic v2
+    #     arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class Dataset(BaseModel, extra='allow'):
@@ -308,6 +310,19 @@ class MetabolicPathways(BaseModel, extra='allow'):
         self.piled = helpers.pathways_and_annots_join(
             self.piled, annots_obj.df[[annots_obj.col_mz, "KEGG"]],
             self.col_molecule_ids)
+
+    def constrain(self, min_pathway_size, max_pathway_size):
+        good_pathways_l = pathways_methods.yield_compliant_pathways(
+            self.to_dict(), min_pathway_size, max_pathway_size)
+        metabolites_to_eject = pathways_methods.find_metabolites_to_exclude(
+            good_pathways_l, self.to_dict())
+        self.piled = self.piled.loc[
+            self.piled["pathway_id"].isin(good_pathways_l)]
+        self.piled = self.piled.loc[~self.piled[
+            "KEGG"].isin(metabolites_to_eject), :]
+        self.pathways_ids = self.pathways_ids.loc[
+                                   self.pathways_ids[
+                                       "pathway_id"].isin(good_pathways_l), :]
 
 
 

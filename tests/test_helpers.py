@@ -82,7 +82,7 @@ class Test(TestCase):
             ['IDpath3', 'pathway-three', 'm3', 'm4', 'm5',
              'm7', 'm8']]
         gmt = pd.DataFrame(data, columns=range(0, 7))
-        result = helpers.gmt_to_piled_form(gmt, "path_id", "KEGG")
+        result = helpers.gmt_to_piled_form(gmt, "pathway_id", "KEGG")
         self.assertTrue(result.shape[1] == 2)
         self.assertTrue(result.shape[0] == 10)
         self.assertTrue(np.all(np.array(["IDpath3", "m8"]) == (
@@ -91,7 +91,7 @@ class Test(TestCase):
 
     def test_gmt_join_mz(self):
         gmt_piled = pd.DataFrame({
-            "path_id": ["one", "one", "one", "one", "two", "two"],
+            "pathway_id": ["one", "one", "one", "one", "two", "two"],
             "KEGG": ["C00232", "C09090", "C0", "C00077", "CKKKK", "CXXXXYY"]
         })
         anno_mz_kegg = pd.DataFrame({
@@ -101,7 +101,7 @@ class Test(TestCase):
         result = helpers.pathways_and_annots_join(gmt_piled, anno_mz_kegg,
                                                   col_molecule_id="KEGG")
         # result : 
-        #    path_id    KEGG      mz
+        #    pathway_id    KEGG      mz
         #    one        C00232    102.0317
         #    one        C09090    588.5665543
         #    one        C00077    132.0899
@@ -114,9 +114,9 @@ class Test(TestCase):
                 ["one", "C09090", "588.56"],
                 ["one", "C00077", "132.0899"],
                 ["two", "CXXXXYY", "913.821868"]]
-        gmt_piled = pd.DataFrame(data, columns=["path_id", "KEGG", "mz"])
+        gmt_piled = pd.DataFrame(data, columns=["pathway_id", "KEGG", "mz"])
 
-        result = helpers.gmt_piled_to_dict(gmt_piled, pathway_id="path_id",
+        result = helpers.gmt_piled_to_dict(gmt_piled, pathway_id="pathway_id",
                                            mz_or_kegg="mz")
         self.assertListEqual(list(result.keys()),
                              ["one", "two"])

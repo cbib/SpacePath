@@ -35,10 +35,11 @@ class Test(TestCase):
         self.assertEqual(len(result[2]), 3)
         self.assertEqual(len(result[3]), 4)
 
-
     def test_reshape_pathways_for_kpca(self):
-        pathwaysObj = PathwaysForTests()
-        result = processing.reshape_pathways_for_kpca(pathwaysObj)
+        #pathwaysObj = PathwaysForTests()
+        pathways_dict = {"p1": ["9", "8", "7", "6",],
+                         "p2": ["5", "4", "3"]}
+        result = processing.reshape_pathways_for_kpca(pathways_dict)
         self.assertIsInstance(result, pd.DataFrame)
         self.assertListEqual(result.index.tolist(), ['p1', 'p2'])
         self.assertTrue(np.all(result.loc["p1", :].to_numpy() ==

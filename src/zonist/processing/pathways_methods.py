@@ -10,7 +10,6 @@ import sspa as sspa
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra
-from zonist.data import MetabolicPathways
 from .quantifications_methods import is_log_transformed
 
 
@@ -56,9 +55,9 @@ def compute_kpca(pw_as_df, adata, min_entity=2):
     return kpca_scores
 
 
-def reshape_pathways_for_kpca(pathwaysObj: MetabolicPathways):
+def reshape_pathways_for_kpca(pathways_dict):
     pw_as_df = pd.DataFrame({key: pd.Series(
-        m_list) for key, m_list in pathwaysObj.to_dict().items()})
+        m_list) for key, m_list in pathways_dict.items()})
     pw_as_df = pw_as_df.transpose()
     pw_as_df['Pathway_name'] = 'none'  # sspa expects this column, which is dropped
 
@@ -97,19 +96,19 @@ def gather_scores_dfs_dict(kpca_scores_d: Dict[int, pd.DataFrame],
     for k in range(1, len(kpca_scores_d.keys())):
         tmp_k = add_missing_cols(kpca_scores_d[k], columns_set)
         tmp_k = tmp_k[sorted(list(columns_set))]
-        tmp  = pd.concat([tmp, tmp_k], axis=0) #, sort=True)
+        tmp  = pd.concat([tmp, tmp_k], axis=0)
     tmp = tmp.fillna(tmp.min().min())
     tmp = tmp.loc[ordered_spots_names, :]
 
     return tmp
 
 
-def compute_pathways_scores(pathwaysObj: MetabolicPathways,
+def compute_pathways_scores(pathways_dict,
                             adata: ad.AnnData, method: str, min_entity: int,
                             n_groups_of_spots: int,
                             threshold_n_spots_is_high: int)-> pd.DataFrame:
     if method == "sspa_kpca":
-        pw_as_df = reshape_pathways_for_kpca(pathwaysObj)
+        pw_as_df = reshape_pathways_for_kpca(pathways_dict)
         if adata.obs.shape[0] < threshold_n_spots_is_high:
             kpca_scores = compute_kpca(pw_as_df, adata, min_entity=min_entity)
         else:
@@ -125,9 +124,30 @@ def compute_pathways_scores(pathwaysObj: MetabolicPathways,
     return kpca_scores
 
 
-def pathways_dict_coherce_min_len(pathways: dict, min_len_admitted: int= 2):
-    good_keys = [mykey for mykey, myval in pathways.items()
-                     if len(pathways[mykey]) >= min_len_admitted]
-    subset_dict = dict(filter(lambda item:item[0] in good_keys, pathways.items()))
-    return subset_dict
+def find_metabolites_to_exclude(good_pathways: List[str], pathways_dict):
+    """TODO: ddetailed doc, very important"""  # todo !
+    mts = {k: v for k, v in pathways_dict.items() if k in good_pathways}
+    good_compounds_list = [i for m_id_list in mts.values() for i in m_id_list]
+
+    metabolites_to_eject = set()
+    unwanted_pathways = list(
+        set(list(pathways_dict.keys())) - set(good_pathways))
+    for pw in unwanted_pathways:
+        tmp_set = set(pathways_dict[pw]) - set(good_compounds_list)
+        metabolites_to_eject = metabolites_to_eject.union(tmp_set)
+
+    return list(set(metabolites_to_eject))
+
+
+def yield_compliant_pathways(pathways_dict,
+                             min_pathway_size=2,
+                             max_pathway_size=500) -> List[str]:
+    """TODO doc"""
+    pathways_sizes = {k: len(pathways_dict[k]) for k in pathways_dict.keys()}
+    good_pathways_sizes = {k: v for k, v in pathways_sizes.items()
+                  if ((v >= min_pathway_size) and (v <= max_pathway_size)) }
+    good_pathways: List[str] = list(good_pathways_sizes.keys())
+
+    return good_pathways
+
 
