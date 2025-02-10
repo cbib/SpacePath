@@ -3,14 +3,15 @@ import numpy as np
 import pandas as pd
 import anndata as ad
 import zonist.data as zd
+import zonist.method as zm
+
 from scipy.sparse import csr_matrix
 import sys
 import squidpy as sq
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))  # TODO: fix in the same way ailleurs !!
-from statsembryo1 import *
-from datasetcomplement import (build_kegg_resolved_adata,
-                               yield_specific_typical_pathways)
+from quantifs_methods import *
+from visualization import *
 
 """
 """
@@ -44,13 +45,11 @@ me_refmap = zd.MetaboliteIdsMappings(
     data_dir=mydata_dir,
     subfolder="metabolites-mappings",
     mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
-                   'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv" })
-
+                   'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv" }
+)
 me_refmap.load()
 me_annots.convert_ids_to_kegg(me_refmap.table)
 me_annots.treat_mz_multiplets(adata_mz)
-
-# print(len(me_annots.df["KEGG"].to_list())); print(len(me_annots.df["KEGG"].unique()))
 
 ## pathways
 pathwaysObj = zd.MetabolicPathways(
@@ -59,52 +58,22 @@ pathwaysObj = zd.MetabolicPathways(
     official_file="KEGG_hsa_pathways_compounds_R110.gmt")
 
 pathwaysObj.load()
-pathwaysObj.intersect_with_annotations(me_annots)
+initial_pws_dict = pathwaysObj.to_dict()   # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
-print("subset adata_mz for only mz mapping to a KEGG metabolite identifiers that in turn map to pathways")
-me_annots_OKdf = me_annots.df.loc[
-              me_annots.df["KEGG"].isin(pathwaysObj.piled["KEGG"].unique()), :]
+pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
+                                                      me_annots,
+                                                      min_pathway_size=2)  # default max is 500
 
-adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
+adata_mz = adata_mz[:, me_annots.df["mz"].astype(str).unique()].copy() # todo this is NOT sync, but like so
+print("mz post sync", adata_mz)
 
-# # NEw!
 adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,
-                                        prefix=f"{SAMPLE}-MZ")
-print("mz that do have KEGG compound ids : ", adata_mz) # to know how many mz are left
-print("----------------") # TODO !! del
+                                        prefix=f"{SAMPLE}-MZ-V2")  # ====> !!
 
-# # the KEGG id adata ## TODO delete this chunk because is again repeated later
-adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
-print("KEGG resolved adata: ", adata)
-print("----------------") # TODO !! del
-import sys # TODO !! del
-sys.exit() # TODO !! del
-
-tdf = pathwaysObj.piled.copy()
-refinement_mz_pws_dict = ugly_long_function(tdf)
-the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
-
-adata_mz = compute_moran_i(adata_mz, 12)
+refinement_mz_pws_dict = ugly_long_function(pathwaysObj.piled.copy(),
+                                            pathwaysObj.to_dict())
 
 # the KEGG id adata
-adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
+adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
-adata = spatial_standard_computations(
-    adata, 12, plot_folder, prefix=f"{SAMPLE}-KEGGmetabolites")
-
-sub_moran = adata_mz.uns['moranI'].loc[
-     adata_mz.uns['moranI'].index.isin(
-         [str(x) for x in the_mz_for_refinement_list])]
-
-sub_moran.to_csv(
-    os.path.join(plot_folder, f'{SAMPLE}--moran-subset.tsv'),
-    header=True, index=True, sep='\t')
-
-for  x in the_mz_for_refinement_list:
-    tmpstr = os.path.join(plot_folder, f'{SAMPLE}-{x}-maybe_refinement.png')
-    sq.pl.spatial_scatter(adata_mz,
-                          color=str(x),
-                          img=False,
-                          save=os.path.abspath(tmpstr))
-
-print("finished ! ")
+adata = spatial_standard_computations(adata, 12, plot_folder, f"{SAMPLE}-KEGGmetabolitesV2")  # ====> !!

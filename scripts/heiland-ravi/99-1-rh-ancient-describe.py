@@ -12,7 +12,7 @@ import sspa as sspa
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))  # TODO: fix in the same way ailleurs !!
-from statsembryo1 import *
+from quantifs_methods import *
 from datasetcomplement import (build_kegg_resolved_adata,
                                yield_specific_typical_pathways)
 

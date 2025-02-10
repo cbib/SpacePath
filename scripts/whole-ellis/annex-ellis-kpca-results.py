@@ -17,8 +17,8 @@ import sspa as sspa
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
-from statsembryo1 import *
-from vizembryo1 import *
+from quantifs_methods import *
+from visualization import *
 from datasetcomplement import (yield_specific_typical_pathways)
 
 

@@ -1,16 +1,33 @@
+import sys
 import os
 import numpy as np
 import pandas as pd
 import anndata as ad
+import matplotlib.pyplot as plt
 import zonist.data as zd
-from scipy.sparse import csr_matrix
-import sys
+import zonist.method as zm
+import squidpy as sq
+
+
+#from scripts.bank4zonist.quantifs_methods import compute_mz_binary_df
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
-                             '../bank4zonist'))  # TODO: fix in the same way ailleurs !!
-from statsembryo1 import *
-from datasetcomplement import (build_kegg_resolved_adata,
-                               yield_specific_typical_pathways)
+                             '../bank4zonist'))
+#
+# from scripts.bank4zonist.quantifs_methods import (verification,
+#                                               compounds_counts_by_pathway,
+#                                               pathways_ok__unwanted_metabolites,
+#                                               update_really, compute_mz_binary_df,
+#                                               compute_metabolites_probs_df,
+#                                               compute_pathways_pseudoscores,
+#                                               ugly_long_function)
+#
+# from scripts.bank4zonist.datasetcomplement import (build_kegg_resolved_adata,
+#                                                    yield_specific_typical_pathways)
+
+from quantifs_methods import *
+from visualization import *
+
 
 """
 verifying Ravi & Heiland data
@@ -23,7 +40,6 @@ samples = [   "248_T"   , "259_T", "260_T", "262_T", "269_T", "275_T"]
 Or use Bash oneliner:
 mylist=(248_T 259_T 260_T 262_T 269_T 275_T);for k in ${mylist[*]}; do echo $k; python 1-rh-describe.py $k; done
 """
-
 
 SAMPLE = sys.argv[1] #  "248_T"
 print("============>", SAMPLE)
@@ -61,8 +77,6 @@ me_refmap.load()
 me_annots.convert_ids_to_kegg(me_refmap.table)
 me_annots.treat_mz_multiplets(adata_mz)
 
-# print(len(me_annots.df["KEGG"].to_list())); print(len(me_annots.df["KEGG"].unique()))
-
 ## pathways
 pathwaysObj = zd.MetabolicPathways(
     data_dir=mydata_dir,
@@ -70,49 +84,42 @@ pathwaysObj = zd.MetabolicPathways(
     official_file="KEGG_hsa_pathways_compounds_R110.gmt")
 
 pathwaysObj.load()
-pathwaysObj.intersect_with_annotations(me_annots)
+initial_pws_dict = pathwaysObj.to_dict()   # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
-print("subset adata_mz for only mz mapping to a KEGG metabolite identifiers that in turn map to pathways")
-me_annots_OKdf = me_annots.df.loc[
-              me_annots.df["KEGG"].isin(pathwaysObj.piled["KEGG"].unique()), :]
+pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
+                                                      me_annots,
+                                                      min_pathway_size=2)  # default max is 500
 
-adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
+adata_mz = adata_mz[:, me_annots.df["mz"].astype(str).unique()].copy() # todo this is NOT sync, but like so
+print("mz post sync", adata_mz)
 
-# # NEw!
-# adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,
-#                                         prefix=f"{SAMPLE}-MZ")
-print("mz that do have KEGG compound ids : ", adata_mz) # to know how many mz are left
-print("----------------") # TODO !! del
+#adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder, prefix=f"{SAMPLE}-MZ-V2")  # ====> !!
 
-# tdf = pathwaysObj.piled.copy()
-# refinement_mz_pws_dict = ugly_long_function(tdf)
-# the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
-#
-# adata_mz = compute_moran_i(adata_mz, 12)
+refinement_mz_pws_dict = ugly_long_function(pathwaysObj.piled.copy(),
+                                            pathwaysObj.to_dict())
 
-# # the KEGG id adata
-adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
+# the KEGG id adata
+adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
-print("----------------") # TODO !! del
-import sys # TODO !! del
-sys.exit() # TODO !! del
+#adata = spatial_standard_computations(adata, 12, plot_folder, f"{SAMPLE}-KEGGmetabolitesV2")  # ====> !!
 
-adata = spatial_standard_computations(
-    adata, 12, plot_folder, prefix=f"{SAMPLE}-KEGGmetabolites")
+with_moran = False
+if with_moran:
+    the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
+    adata_mz = compute_moran_i(adata_mz, 12)
+    sub_moran = adata_mz.uns['moranI'].loc[
+        adata_mz.uns['moranI'].index.isin(
+            [str(x) for x in the_mz_for_refinement_list])]
 
+    sub_moran.to_csv(
+        os.path.join(plot_folder, f'{SAMPLE}--moran-subset.tsv'),
+        header=True, index=True, sep='\t')
 
-sub_moran = adata_mz.uns['moranI'].loc[
-     adata_mz.uns['moranI'].index.isin(
-         [str(x) for x in the_mz_for_refinement_list])]
+    tmpstr = os.path.join(plot_folder,
+                          f'{SAMPLE}--susceptible_of_refinement.png')
+    sq.pl.spatial_scatter(adata_mz,
+                          color=[str(x) for x in the_mz_for_refinement_list],
+                          img=False,
+                          save=os.path.abspath(tmpstr))
 
-sub_moran.to_csv(
-    os.path.join(plot_folder, f'{SAMPLE}--moran-subset.tsv'),
-    header=True, index=True, sep='\t')
-
-tmpstr = os.path.join(plot_folder, f'{SAMPLE}--susceptible_of_refinement.png')
-sq.pl.spatial_scatter(adata_mz,
-                      color=[str(x) for x in the_mz_for_refinement_list],
-                      img=False,
-                      save=os.path.abspath(tmpstr))
-
-print("finished ! ")
+    print("finished ! ")

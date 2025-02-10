@@ -1,14 +1,13 @@
 import os
-import numpy as np
+from typing import Dict
+
 import anndata as ad
-import squidpy as sq
-import scanpy as sc
+import numpy as np
 import pandas as pd
-from typing import Dict, List
-import matplotlib.pyplot as plt
+import scanpy as sc
+import squidpy as sq
 from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
-from sklearn.metrics import adjusted_rand_score
 from sklearn.utils import sparsefuncs
 
 
@@ -43,8 +42,8 @@ def build_kegg_resolved_adata(adata_mz, annots_df):
     return adata
 
 
-def adata_mz_filter_negligible_abundance(adata_mz, spots_non_zero=5):   #TODO change to 10
-    # TODO: evaluate the nb of zeroes in entire matrix, if not enough, fix a minval for converting to zero all values <= minval ??
+def adata_mz_filter_negligible_abundance(adata_mz, spots_non_zero=5):   #TODO change to 10?
+    # TODO: evaluate the nb of zeroes in entire matrix, if too few , fix a minval for converting to zero all values <= minval ??
     non_zero_counts = adata_mz.X.getnnz(axis=0)
     mz_df = adata_mz.var.copy()
     mz_df['bool_arr'] = [1 if x >= spots_non_zero
@@ -201,7 +200,7 @@ def closeness_by_fraction(value1: float, value2: float, fraction: float=0.8) -> 
 
     return (max_value / min_value) >= fraction
 
-
+# todo: change name of this fun:
 def spatial_standard_computations(adata, pca_ncomps=20,
                                   plot_folder=None, prefix='sample'):
     # TODO: do not mix 'processing' and 'visualization', instead, do a separate funciton for figures
@@ -240,32 +239,45 @@ def compute_moran_i(adata_mz, n_neighs=10):
     return adata_mz
 
 
-def get_target_pathways_of_one_mz(subdf):
+def get_target_pathways_of_one_mz(subdf, pathways_dict):
     """
-    The  subdf represents only *one mz* dataframe (cols: pathway_id, KEGG).
-    KEGG is the metabolite identifier.
+    :param subdf: represents only *one mz* dataframe (cols: pathway_id, KEGG),
+       being KEGG the metabolite identifier.
+    :param: pathways_dict: keys are pathway ids, values are all the kegg ids
+    :return: a dict where the keys are the compared pairs of pathways, e.g.
+       {('hsa0230', 'hsa4976'): {'hsa0230': ['C00212'], 'hsa4976': ['C07210']}
+
+    Explanation:
+
     For the given distinct KEGG ids and pathway ids in the dataframe,
-    first constructs a dict of sets of KEGG ids for each pathway.
-    Then, compares each possible pair (k, h) of pathways from the dict,
+    first constructs a dict (of the current mz) of sets of KEGG ids for each pathway.
+    Then, compares each possible pair (k, h) of pathways from the 'mz' dict,
     to check if there are KEGG ids that are exclusive to k (same for h).
-    Returns a dict where the keys are the compared pairs of pathways, e.g.
-    {('hsa0230', 'hsa4976'): {'hsa0230': ['C00212'], 'hsa4976': ['C07210']}
-    If (k, h) pathways had an empty intersection, they go into target dict.
+    Also takes into account the total KEGG ids of k and h pathways (not ony the current mz).
+
+    If (k, h) pathways had an empty intersection related to the kegg of the current mz,
+    and if there are, in each pathway, a total of kegg ids that is superior or equal to the
+    n+1 kegg ids of the current mz, then both (k, h) pathways go into target dict.
     """
-    adict: Dict[str, set] = dict()
+    adict_curr_mz: Dict[str, set] = dict()
     pathways_to_target = dict()
     for i, row in subdf.iterrows():
-        if row["pathway_id"] not in adict.keys():
-            adict[row["pathway_id"]] = {row["KEGG"]}
-        adict[row["pathway_id"]].update([row["KEGG"]])
-    for k in adict.keys():
-        for h in adict.keys():
+        if row["pathway_id"] not in adict_curr_mz.keys():
+            adict_curr_mz[row["pathway_id"]] = {row["KEGG"]}
+        adict_curr_mz[row["pathway_id"]].update([row["KEGG"]])
+    for k in adict_curr_mz.keys():
+        for h in adict_curr_mz.keys():
             if k != h:
-                a = adict[k] - adict[h]
-                b = adict[h] - adict[k]
-                intersect_k_h = adict[h].intersection(adict[k])
-                if (len(a) == 1) and (len(b) == 1):
-                    if len(intersect_k_h) == 0:
+                pw1_allkegg = set(pathways_dict[k])  # total k
+                pw2_allkegg = set(pathways_dict[h])   # total h
+                a: set = adict_curr_mz[k] - adict_curr_mz[h]
+                b: set = adict_curr_mz[h] - adict_curr_mz[k]
+                intersect_k_h :set = adict_curr_mz[h].intersection(adict_curr_mz[k])
+
+                if (len(a) >= 1 ) and (len(b) >= 1):   ##  (len(a) == 1 ) and (len(b) == 1): #
+                    if (len(intersect_k_h) == 0) and (
+                            len(pw1_allkegg) >= (len(a) + 1)) and (
+                            len(pw2_allkegg) >= (len(b) + 1)):
                         pathways_to_target[(k,h)] = {k: list(a), h: list(b)}
 
     return pathways_to_target
@@ -281,7 +293,7 @@ def message_factory_1(total_nb, kegg_oneormore__one_pathway,
     print("susceptible_of_refinement: ", susceptible_of_refinement)
 
 
-def ugly_long_function(mz_met_pathway_piled: pd.DataFrame) :
+def ugly_long_function(mz_met_pathway_piled: pd.DataFrame, pathways_dict) :
     """
     :param mz_met_pathway_piled: The df with the correspondences of mz,
         metabolites KEGG ids, and pathways KEGG ids.
@@ -310,7 +322,7 @@ def ugly_long_function(mz_met_pathway_piled: pd.DataFrame) :
         elif (len(subdf["KEGG"].unique()) > 1) and (
                 len(subdf["pathway_id"].unique()) > 1):
             subdf = subdf.drop_duplicates("KEGG")
-            pws_ok = get_target_pathways_of_one_mz(subdf)
+            pws_ok = get_target_pathways_of_one_mz(subdf, pathways_dict)
             if len(pws_ok) > 0:
                 susceptible_of_refinement += 1
                 final_dict[str(mz)] = pws_ok
@@ -322,6 +334,48 @@ def ugly_long_function(mz_met_pathway_piled: pd.DataFrame) :
                       susceptible_of_refinement)
 
     return final_dict
+
+
+def my_switch(x: int):
+    match x:
+        case x if x == 0:
+            return "unchanged"
+        case x if (x >= 1) and (x <= 5):
+            return "1to5Kegg"
+        case x if (x >= 6) and (x <= 10):
+            return "6to10Kegg"
+        case x if x > 10:
+            return "11andmoreKegg"
+        case _:
+            return "FAILED"
+
+
+def evaluate_spot1_change(refinement_mz_pws_dict, Xbinary_pathways,
+                             X_metabolites_probs_df, spot1, spot2):
+
+    present_pathway = 1
+    absent_pathway = 0
+    the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
+    modifiable_keggs = set()
+    for one_mz in the_mz_for_refinement_list:
+        pws_tuples_l = list(refinement_mz_pws_dict[str(one_mz)].keys())
+        for pws_tuple in pws_tuples_l:
+            pw1 = pws_tuple[0];   pw2 = pws_tuple[1]
+            metabolites_pw1 = refinement_mz_pws_dict[str(one_mz)][pws_tuple][pw1]
+            metabolites_pw2 = refinement_mz_pws_dict[str(one_mz)][pws_tuple][pw2]
+            pw1andpw2_metabolites = list(set(
+                metabolites_pw1).union(set(metabolites_pw2)))
+            pw_score = Xbinary_pathways.loc[[spot1, spot2], [pw1, pw2]]
+            metabo_probs_local = X_metabolites_probs_df.loc[
+                [spot1, spot2], pw1andpw2_metabolites]
+            if (metabo_probs_local.sum().sum()) == 0:  # impossible to proceed, all values are zero
+                continue
+            else:
+                if pw_score.loc[spot1, pw1] == present_pathway:
+                    if pw_score.loc[spot2, pw1] == present_pathway:
+                        modifiable_keggs = modifiable_keggs.union(set(metabolites_pw1))
+
+    return modifiable_keggs
 
 
 def complicated_stuff_1(pw_score, met_prob, spot1, spot2, pw1, pw2, metabolite1, metabolite2):
@@ -356,7 +410,7 @@ def complicated_stuff_1(pw_score, met_prob, spot1, spot2, pw1, pw2, metabolite1,
     return happy1, happy2
 
 
-def complicated_stuff_2(refinement_mz_pws_dict, pathways_pseudoscores, X_metabolites_probs_df, spot1,spot2):
+def complicated_stuff_2(refinement_mz_pws_dict, pathways_scores_df, X_metabolites_probs_df, spot1,spot2):
     the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
     updated_probs_dict = dict()
     for one_mz in the_mz_for_refinement_list:
@@ -367,7 +421,7 @@ def complicated_stuff_2(refinement_mz_pws_dict, pathways_pseudoscores, X_metabol
                 0]
             metabolite2 = refinement_mz_pws_dict[str(one_mz)][pws_tuple][pw2][
                 0]
-            pw_score = pathways_pseudoscores.loc[[spot1, spot2], [pw1, pw2]]
+            pw_score = pathways_scores_df.loc[[spot1, spot2], [pw1, pw2]]
             met_prob = X_metabolites_probs_df.loc[
                 [spot1, spot2], [metabolite1, metabolite2]]
             # green_light_pw1 = False
@@ -384,7 +438,18 @@ def complicated_stuff_2(refinement_mz_pws_dict, pathways_pseudoscores, X_metabol
                     updated_probs_dict = {
                             metabolite1: happy1,
                             metabolite2: happy2}
-                    break   #  it is ok if able to update with compared pathways , we can stop
+                    break   #  it is ok if able to update with compared pathways , we can stop ??? # Todo check this !! not sure :/
 
     return updated_probs_dict
 
+
+def subset_m_probs_curr_pw(metabolites_probs_here, pathwaysObj, pw):  # TODO is this used ?
+
+    theor_compounds_in_pw = pathwaysObj.to_dict()[pw]
+    real_compounds_in_pw = set(theor_compounds_in_pw).intersection(
+        set(metabolites_probs_here.columns.tolist()))
+
+    return metabolites_probs_here[list(real_compounds_in_pw)].T
+
+if __name__ == "__main__":
+    print(my_switch(0))

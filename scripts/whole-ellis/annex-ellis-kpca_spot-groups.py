@@ -17,8 +17,8 @@ import sspa as sspa
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
-from statsembryo1 import *
-from vizembryo1 import *
+from quantifs_methods import *
+from visualization import *
 from pathways_methods import *   # reshape_pathways_for_kpca and other
 from datasetcomplement import (build_kegg_resolved_adata
                                )

@@ -14,14 +14,13 @@ import sspa as sspa
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
-from statsembryo1 import *
-from datasetcomplement import (build_kegg_resolved_adata,
+from quantifs_methods import *
+from datasetcomplement import (# build_kegg_resolved_adata,  !!was moved to quantifs_methods
                                yield_specific_typical_pathways)
 
 
 """
 pathways scores on *bordeaux proteome example data* 
-
 """
 
 SAMPLE = "UBcalibr2"#sys.argv[1]
@@ -69,7 +68,7 @@ pathwaysObj = zd.MetabolicPathways(
 pathwaysObj.load()
 initial_pws_dict = pathwaysObj.to_dict()   # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
-me_annots
+
 pws01, anns01 = zm.SyncPathwaysAndAnnots.run(pathwaysObj.model_copy(),
                                              me_annots.model_copy(),
                                              min_pathway_size=1,
@@ -90,20 +89,18 @@ adata_mz = adata_mz[:, me_annots.df["mz"].astype(str).unique()].copy()
 # the KEGG id adata
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
-###
-#  select pathways to visualize:
-##
-biologically_chosen_pathways = yield_specific_typical_pathways()
 
 ###
 # compute kpca
 ##
-
 kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj, adata)
 print(kpca_scores.shape)
 print(kpca_scores.iloc[:3,:5])
 
 # # TODO: is it always needed to shift the distr to the right ???
+
+biologically_chosen_pathways = yield_specific_typical_pathways()
+
 # kpca_scores = (kpca_scores + abs(kpca_scores.min().min())) * 1e3 # shift to right and unshrink
 #
 # kpca_score_adata = ad.AnnData(

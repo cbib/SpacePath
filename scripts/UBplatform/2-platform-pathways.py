@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import anndata as ad
 import zonist.data as zd
+import zonist.method as zm
 from scipy.sparse import csr_matrix
 from sklearn.utils import sparsefuncs
 import squidpy as sq
@@ -11,13 +12,11 @@ import squidpy as sq
 
 import sspa as sspa
 
-from scripts.bank4zonist.pathways_methods import compute_kpca, reshape_pathways_for_kpca
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
-from statsembryo1 import *
-from datasetcomplement import (build_kegg_resolved_adata,
-                               yield_specific_typical_pathways)
+from quantifs_methods import *
+from datasetcomplement import (yield_specific_typical_pathways)
 
 
 """
@@ -62,8 +61,6 @@ me_refmap.load()
 me_annots.convert_ids_to_kegg(me_refmap.table)
 me_annots.treat_mz_multiplets(adata_mz)
 
-# print(len(me_annots.df["KEGG"].to_list())); print(len(me_annots.df["KEGG"].unique()))
-
 ## pathways
 pathwaysObj = zd.MetabolicPathways(
     data_dir=mydata_dir,
@@ -71,77 +68,79 @@ pathwaysObj = zd.MetabolicPathways(
     official_file="KEGG_hsa_pathways_compounds_R110.gmt")
 
 pathwaysObj.load()
-pathwaysObj.intersect_with_annotations(me_annots)
 
-print("subset adata_mz for only mz mapping to a KEGG metabolite identifiers that in turn map to pathways")
-me_annots_OKdf = me_annots.df.loc[
-              me_annots.df["KEGG"].isin(pathwaysObj.piled["KEGG"].unique()), :]
+pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
+                                                      me_annots,
+                                                      min_pathway_size=2)  # default max is 500
 
-adata_mz = adata_mz[:, me_annots_OKdf["mz"].astype(str).unique()].copy()
+adata_mz = adata_mz[:, me_annots.df["mz"].astype(str).unique()].copy()
 
 # the KEGG id adata
-adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots_OKdf)
+adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
-###
-#  select pathways to visualize:
-#
-##
-biologically_chosen_pathways = yield_specific_typical_pathways()
 
-###
-# compute kpca
-##
-pw_as_df = reshape_pathways_for_kpca(pathwaysObj)
-kpca_scores = compute_kpca(pw_as_df, adata)
 
+# compute kpca #
+kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj, adata)
+print(kpca_scores.shape)
 print(kpca_scores.iloc[:3,:5])
+kpca_scores.to_csv(os.path.join(mydata_dir,subfolder,
+                                f"{SAMPLE}-PathwaysScores.tsv"),
+    sep='\t', header=True, index=True)
 
-# TODO: is it always needed to shift the distr to the right ???
-kpca_scores = (kpca_scores + abs(kpca_scores.min().min())) * 1e3 # shift to right and unshrink
+# #
 
-kpca_score_adata = ad.AnnData(
-    X=csr_matrix(kpca_scores),
-    var=pd.DataFrame(
-        {'pathway_id' : kpca_scores.columns.tolist()},
-        index=kpca_scores.columns.tolist()),
-    obs=adata.obs,
-    obsm=adata.obsm,
-    uns=adata.uns
-)
+do_plots = False  # # several plots :
+if do_plots:
+    biologically_chosen_pathways = yield_specific_typical_pathways()
 
-plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
-                  f"{SAMPLE}--Picked", plot_folder)
+    # TODO: is it always needed to shift the distr to the right ???
+    kpca_scores = (kpca_scores + abs(kpca_scores.min().min())) * 1e3 # shift to right and unshrink
 
-kpca_score_adata = spatial_standard_computations(kpca_score_adata, pca_ncomps=12,
-                                  plot_folder=plot_folder,
-                              prefix=f'{SAMPLE}PathwaysScores')
+    kpca_score_adata = ad.AnnData(
+        X=csr_matrix(kpca_scores),
+        var=pd.DataFrame(
+            {'pathway_id' : kpca_scores.columns.tolist()},
+            index=kpca_scores.columns.tolist()),
+        obs=adata.obs,
+        obsm=adata.obsm,
+        uns=adata.uns
+    )
 
-kpca_score_adata = compute_moran_i(kpca_score_adata, 5)
+    plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
+                      f"{SAMPLE}--Picked", plot_folder)
 
-spatially_top_pathways = kpca_score_adata.uns['moranI'].iloc[:6, :].index.tolist()
+    kpca_score_adata = spatial_standard_computations(kpca_score_adata, pca_ncomps=12,
+                                      plot_folder=plot_folder,
+                                  prefix=f'{SAMPLE}PathwaysScores')
 
-df = kpca_score_adata.uns['moranI'].copy()
-tmp2 = pathwaysObj.pathways_ids[["pathway_id", "pathway_name"]].drop_duplicates()
-these_names = []
-for theid in df.index.tolist():
-    these_names.append(tmp2.loc[
-                           tmp2["pathway_id"] == theid, "pathway_name"].item())
-df.insert(0, 'Pathway_name', these_names)
-df.to_csv(os.path.join(plot_folder, f'{SAMPLE}-PathwaysMoranI.tsv'), header=True, index=True, sep="\t")
-del these_names, tmp2, df
+    kpca_score_adata = compute_moran_i(kpca_score_adata, 5)
 
-for m_id in spatially_top_pathways:
-    pw_name = pathwaysObj.pathways_ids.loc[
-        pathwaysObj.pathways_ids['pathway_id'] == m_id, "pathway_name"].item()
+    spatially_top_pathways = kpca_score_adata.uns['moranI'].iloc[:6, :].index.tolist()
 
-    tmpstr = os.path.join(plot_folder, f'{SAMPLE}-{pw_name}.png')  # TODO: improve destination folder
-    try:
-        sq.pl.spatial_scatter(kpca_score_adata, color=[m_id],
-                              img=False, title=f"{m_id} {pw_name}",
-                              save=os.path.abspath(tmpstr))
-    except Exception as e:
-        print(e)
-        print(f"impossible to plot {m_id} {pw_name}")
+    df = kpca_score_adata.uns['moranI'].copy()
+    tmp2 = pathwaysObj.pathways_ids[["pathway_id", "pathway_name"]].drop_duplicates()
+    these_names = []
+    for theid in df.index.tolist():
+        these_names.append(tmp2.loc[
+                               tmp2["pathway_id"] == theid, "pathway_name"].item())
+    df.insert(0, 'Pathway_name', these_names)
+    df.to_csv(os.path.join(plot_folder, f'{SAMPLE}-PathwaysMoranI.tsv'),
+              header=True, index=True, sep="\t")
+    del these_names, tmp2, df
+
+    for m_id in spatially_top_pathways:
+        pw_name = pathwaysObj.pathways_ids.loc[
+            pathwaysObj.pathways_ids['pathway_id'] == m_id, "pathway_name"].item()
+
+        tmpstr = os.path.join(plot_folder, f'{SAMPLE}-{pw_name}.png')  # TODO: improve destination folder
+        try:
+            sq.pl.spatial_scatter(kpca_score_adata, color=[m_id],
+                                  img=False, title=f"{m_id} {pw_name}",
+                                  save=os.path.abspath(tmpstr))
+        except Exception as e:
+            print(e)
+            print(f"impossible to plot {m_id} {pw_name}")
 
 print("the end")
 

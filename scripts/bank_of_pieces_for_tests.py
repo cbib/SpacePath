@@ -101,3 +101,46 @@ print(ki)
 
 ## ## ##
 metabo_sums = np.array(X_metabolites_probs_df).sum(axis=0) # sum of pixels intensities by compound, final dimension will be nb of compounds
+
+##
+new_probabs = dict()
+
+spot1 = "x72_y45"
+spot2 = "x71_y45"
+tmp_mx1 = adata_mz[spot1, :].X.todense()  # already 2D array as required by cosine_similarity
+tmp_mx2 = adata_mz[spot2, :].X.todense()
+local_cosine_sim = cosine_similarity(np.array(tmp_mx1),
+                                             np.array(tmp_mx2))
+# new_probabs[spot1] = dict()
+#
+# #X_metabolites_probs_df
+# for one_mz in the_mz_for_refinement_list:
+#     pws_tuples_l = list(refinement_mz_pws_dict[str(one_mz)].keys())
+#     for pws_tuple in pws_tuples_l:
+#         pw1 = pws_tuple[0] ;      pw2 = pws_tuple[1]   # todo: what if I say that I choose the second element as pw1 ? (inverse sense?)
+#         metabolite1 = refinement_mz_pws_dict[str(one_mz)][pws_tuple][pw1][0]
+#         metabolite2 = refinement_mz_pws_dict[str(one_mz)][pws_tuple][pw2][0]
+#         pw_score = pathways_pseudoscores.loc[[spot1, spot2],  [pw1, pw2]]
+#         met_prob = X_metabolites_probs_df.loc[[spot1, spot2],  [metabolite1, metabolite2]]
+#         # green_light_pw1 = False
+#         # green_light_pw2 = False
+#
+#         if (met_prob.loc[spot1, metabolite1] + met_prob.loc[
+#             spot1, metabolite2] > 0):  # first check if probs are tunable: must be distinct than zero both
+#                 happy1, happy2 = complicated_stuff_1(pw_score, met_prob, spot1, spot2, pw1, pw2, metabolite1, metabolite2)
+#                 if happy1 + happy2 > 0:
+#                     new_probabs[spot1] = { (one_mz,pws_tuple): {metabolite1: (met_prob.loc[spot1, metabolite1], happy1),
+#                                       metabolite2: (met_prob.loc[spot1, metabolite1], happy2)}}
+#
+#                 # we do not touch spot 2
+##
+
+pws01, anns01 = zm.SyncPathwaysAndAnnots.run(pathwaysObj.model_copy(),
+                                             me_annots.model_copy(),
+                                             min_pathway_size=1,
+                                             max_pathway_size=1)
+
+# print(len(pws01.piled['pathway_id'].tolist()))
+# print(len(pws01.piled['pathway_id'].unique()))
+lost_forever = adata_mz[:, anns01.df["mz"].astype(str).unique()].copy()
+spatial_standard_computations(lost_forever, 12, plot_folder, f"{SAMPLE}RejectedMz")

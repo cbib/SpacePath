@@ -26,8 +26,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
 
-from statsembryo1 import *
-from vizembryo1 import *
+from quantifs_methods import *
+from visualization import *
 from pathways_methods import *
 from datasetcomplement import (build_kegg_resolved_adata,
                                yield_specific_typical_pathways)
