@@ -10,8 +10,7 @@ from sklearn.utils import sparsefuncs
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
 from quantifs_methods import *
-from datasetcomplement import (build_kegg_resolved_adata,
-                               yield_specific_typical_pathways)
+
 
 """
 verifying *bordeaux proteome example data* 
@@ -20,7 +19,7 @@ also suppressing bad pixels of UBcalibr4 data
 """
 
 # variables
-SAMPLE = sys.argv[1]  #"UBcalibr4"
+SAMPLE = "UBcalibr4"
 
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 subfolder = "UBplatform"
@@ -53,6 +52,8 @@ if (SAMPLE == "UBcalibr4") and not os.path.exists(
                              not_tissue_spatial_domains=[4])
     adata_mz.write(os.path.join(mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'),
                    compression=None, compression_opts=None)
+else:
+    print("the pixel selection was already computed, nothing to do")
 
 verification(adata_mz, me_annots)
 

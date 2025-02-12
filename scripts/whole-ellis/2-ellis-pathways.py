@@ -1,65 +1,42 @@
-import sys
 import os
 import numpy as np
 import pandas as pd
 import anndata as ad
-import matplotlib.pyplot as plt
 import zonist.data as zd
 import zonist.method as zm
 
-
-#from scripts.bank4zonist.quantifs_methods import compute_mz_binary_df
-
+from scipy.sparse import csr_matrix
+import sys
+import squidpy as sq
 sys.path.append(os.path.join(os.path.dirname(__file__),
-                             '../bank4zonist'))
-#
-# from scripts.bank4zonist.quantifs_methods import (verification,
-#                                               compounds_counts_by_pathway,
-#                                               pathways_ok__unwanted_metabolites,
-#                                               update_really, compute_mz_binary_df,
-#                                               compute_metabolites_probs_df,
-#                                               compute_pathways_pseudoscores,
-#                                               ugly_long_function)
-#
-# from scripts.bank4zonist.datasetcomplement import (build_kegg_resolved_adata,
-#                                                    yield_specific_typical_pathways)
-
+                             '../bank4zonist'))  # TODO: fix in the same way ailleurs !!
 from quantifs_methods import *
 from visualization import *
 
-
 """
-pathways scores on *bordeaux proteome example data* 
-
-Bash call:
-mylist=(UBcalibr1 UBcalibr2 UBcalibr3 UBcalibr4 UBcalibr5);for k in ${mylist[*]}; do echo $k; python xxxxx.py $k; done
 """
 
-SAMPLE = sys.argv[1] # "UBcalibr2"
-#"UBcalibr2"
-print(SAMPLE)
+SAMPLE = "whole-ellis"  # f1.h5ad saved by -pixel-selection.py
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
-subfolder = "UBplatform"
-#"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
-anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
-             "LipidMaps": f"{SAMPLE}_lipidmaps.csv"}
-plot_folder = "../../../figures/platform"
 
+subfolder = "whole-ellis"
+anno_dict = {'HMDB': "whole-ellis_hmdb.csv",
+             'LipidMaps': "whole-ellis_lipidmaps.csv"}
+plot_folder = "../../../figures/ellis"
 
 assert os.path.exists(plot_folder), "Cannot continue, the plot_folder does not exist"
 
-me_annots = zd.MetabolomeAnnotations(name=SAMPLE,
+
+me_annots = zd.MetabolomeAnnotations(name="whole-ellis",
                             data_dir=mydata_dir,
                             subfolder=subfolder,
                             annotation_files=anno_dict)
 me_annots.load()
 
-
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}_mx_f1.h5ad'))  # TODO  : how to avoid forgetting _f1
 print(adata_mz)
-
 
 verification(adata_mz, me_annots)
 
@@ -90,15 +67,15 @@ pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
 adata_mz = adata_mz[:, me_annots.df["mz"].astype(str).unique()].copy() # todo this is NOT sync, but like so
 print("mz post sync", adata_mz)
 
-adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,
-                                        prefix=f"{SAMPLE}-MZ-V2")  # ====> !!
-
-refinement_mz_pws_dict = ugly_long_function(pathwaysObj.piled.copy(),
-                                            pathwaysObj.to_dict())
-
 # the KEGG id adata
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
-adata = spatial_standard_computations(adata, 12, plot_folder, f"{SAMPLE}-KEGGmetabolitesV2")  # ====> !!
+
+# scores
+kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj, adata)
+# save as anndata to have compression
+kpca_score_adata =
+kpca_score_adata.write_h5ad(os.path.join(mydata_dir, subfolder,
+                                         f"{SAMPLE}-PathwayScores.h5ad"))
 
 

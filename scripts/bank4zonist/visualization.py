@@ -51,6 +51,7 @@ def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
             sq.pl.spatial_scatter(adata_scores, color=[m_id],
                                   img=False, title=f"{m_id} {pw_name}",
                                   save=os.path.abspath(tmpstr))
+            plt.close()
         except Exception as e:
             print("[plot_selected_pathways]Could NOT plot: {} {}".format(
                 m_id, pw_name))

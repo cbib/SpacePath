@@ -8,25 +8,21 @@ import matplotlib.pyplot as plt
 import zonist.data as zd
 import zonist.method as zm
 
-
-from scipy.sparse import csr_matrix
-from sklearn.utils import sparsefuncs
-import squidpy as sq
-from scipy.sparse import csr_matrix
-from sklearn.utils import sparsefuncs
 import squidpy as sq
 import networkx as nx
-from tensorstore import float32
 from tqdm import tqdm
 from sklearn.metrics.pairwise import cosine_similarity
 
-from scripts.bank4zonist.quantifs_methods import my_switch
+from scripts.user_routines import prepare_harmonized_objects
+from scripts.bank4zonist.quantifs_methods import find_category_by_nb_kegg
 
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
 from quantifs_methods import *
 
-
+"""
+using presence-absence of pathways: deprecated
+"""
 
 ##  copied chunk
 SAMPLE = "UBcalibr2"#sys.argv[1]
@@ -57,28 +53,11 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
 
 verification(adata_mz, me_annots)
 
-me_refmap = zd.MetaboliteIdsMappings(
-    data_dir=mydata_dir,
-    subfolder="metabolites-mappings",
-    mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
-                   'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv" }
-)
-me_refmap.load()
-me_annots.convert_ids_to_kegg(me_refmap.table)
-me_annots.treat_mz_multiplets(adata_mz)
 
-## pathways
-pathwaysObj = zd.MetabolicPathways(
-    data_dir=mydata_dir,
-    subfolder="metabolites-mappings",
-    official_file="KEGG_hsa_pathways_compounds_R110.gmt")
+pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
+    mydata_dir, me_annots, adata_mz)
+print("mz post sync", adata_mz)
 
-pathwaysObj.load()
-
-pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
-                                                      me_annots,
-                                                      min_pathway_size=2)  # default max is 500
-adata_mz = adata_mz[:, me_annots.df["mz"].astype(str).unique()].copy()
 
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
@@ -144,21 +123,15 @@ for v1 in tqdm(nodes_list):
                 modifiablein_s1_whencomparing_s2
             )
 
-    categ_will_modif[spot1] = str(my_switch(len(total_kegg_will_change))) # unchanged, change1to5Kegg, change6to10Kegg, change11andmoreKegg
-"""
-categ_will_modif = dict()
-for v1 in tqdm(nodes_list):
-    spot1 = coords_matcher_dict[v1]
-    random_stuff = np.random.choice([1,2,3,4,5,6,7,8,9,10,11], size=1)
-    categ_will_modif[spot1] = str(random_stuff)
-"""
-#print(new_probabs)
+    categ_will_modif[spot1] = str(find_category_by_nb_kegg(len(total_kegg_will_change))) # unchanged, change1to5Kegg, change6to10Kegg, change11andmoreKegg
+
+
+
 oh = pd.DataFrame({
     'obs': [tup[0] for tup in categ_will_modif.items()],
     'will_modif': [str(tup[1]) for tup in categ_will_modif.items()]
 })
-#oh["will_modif"] = pd.Categorical(oh["will_modif"], [
-#        "unchanged", "1to5Kegg", "6to10Kegg", "11andmoreKegg"] )
+
 
 if np.all(adata.obs['obs'].to_numpy() == oh['obs'].to_numpy()):
     adata.obs = adata.obs.assign(will_modif=oh["will_modif"].tolist())

@@ -84,13 +84,11 @@ print("KEGG resolved adata: ", adata)
 kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj, adata)
 print(kpca_scores.shape)
 print(kpca_scores.iloc[:3,:5])
-kpca_scores.to_csv(os.path.join(mydata_dir,subfolder,
-                                f"{SAMPLE}-PathwaysScores.tsv"),
-    sep='\t', header=True, index=True)
+
 
 # #
 
-do_plots = False  # # several plots :
+do_plots = True  # # several plots :
 if do_plots:
     biologically_chosen_pathways = yield_specific_typical_pathways()
 
@@ -107,12 +105,13 @@ if do_plots:
         uns=adata.uns
     )
 
-    plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
-                      f"{SAMPLE}--Picked", plot_folder)
+    # plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
+    #                  f"{SAMPLE}--Picked", plot_folder)
 
     kpca_score_adata = spatial_standard_computations(kpca_score_adata, pca_ncomps=12,
                                       plot_folder=plot_folder,
-                                  prefix=f'{SAMPLE}PathwaysScores')
+                                  prefix=f'{SAMPLE}PathwaysScoresV2')
+
 
     kpca_score_adata = compute_moran_i(kpca_score_adata, 5)
 

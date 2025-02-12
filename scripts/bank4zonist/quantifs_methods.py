@@ -9,10 +9,50 @@ import squidpy as sq
 from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
 from sklearn.utils import sparsefuncs
+from zonist.data import MetabolicPathways
+
 
 
 # todo: a new module named assignments_refine in :  zonist.src.zonist.processing
-# def xxxx
+
+def score_as_adata(kpca_scores, adata, pathwaysObj: MetabolicPathways, original_pathways_dict):
+    score_adata = ad.AnnData(
+        X=csr_matrix(kpca_scores),
+        var=pd.DataFrame(
+            {'pathway_id': kpca_scores.columns.tolist()},
+            index=kpca_scores.columns.tolist()),
+        obs=adata.obs,
+        obsm=adata.obsm,
+        uns=adata.uns
+    )
+    tmp = pathwaysObj.pathways_ids.copy()
+    tmp.index = tmp['pathway_id']
+    tmp = tmp.loc[score_adata.var['pathway_id'],:]
+    score_adata.var = score_adata.var.assign(
+        pathway_name=tmp['pathway_name'].tolist())
+    score_adata.uns['former_pathways_dict'] = original_pathways_dict
+    score_adata.uns['current_pathways_dict'] = pathwaysObj.to_dict()
+
+    return score_adata
+
+
+def attach_annots_to_adata(adata, annots_df):
+    """"""
+    annots_df = annots_df.drop_duplicates()
+    assert len(set(adata.var['ID'].tolist()).intersection(
+        set(annots_df['KEGG'].tolist()))) == len(
+        set(annots_df['KEGG'].tolist())), ("Error, adata.var ID column must "
+                                           "match KEGG column of annotations")
+    annots_df.index = annots_df['KEGG'].tolist()
+    df_ok = annots_df.loc[adata.var['ID'], :]  # rows in same order than in adata.var
+    adata.var = adata.var.assign(molecule_name=df_ok['moleculeNames'].tolist())
+    adata.var = adata.var.assign(mz=df_ok['mz'].tolist())
+    adata.var = adata.var.assign(formula=df_ok['formula'])
+
+    return adata
+
+
+
 def build_kegg_resolved_adata(adata_mz, annots_df):
     """
     Given the adata_mz and the annots_df, returns a new adata object
@@ -39,6 +79,8 @@ def build_kegg_resolved_adata(adata_mz, annots_df):
                          'tissue_hires_scalef': 0.5,
                          'tissue_lowres_scalef': 0.5}}}
 
+    adata = attach_annots_to_adata(adata, annots_df) ## new !
+
     return adata
 
 
@@ -53,7 +95,7 @@ def adata_mz_filter_negligible_abundance(adata_mz, spots_non_zero=5):   #TODO ch
     return adata_mz
 
 
-def update_annotation_as_adata_mz(annotationsObj, adata_mz):  # zd.MetabolomeAnnotations
+def update_annotation_tomatch_adatamz(annotationsObj, adata_mz):  # zd.MetabolomeAnnotations
     # update the annotations to match with the adata_mz mz features
     me_annots = annotationsObj.model_copy()  # copy is deprecated
     okmz = adata_mz.var['mz']
@@ -350,6 +392,19 @@ def my_switch(x: int):
             return "FAILED"
 
 
+def find_category_by_nb_kegg(x: int):
+    out = ""
+    if x == 0:
+        out = "unchanged"
+    elif (x >= 1) and (x <= 5):
+        out = "1to5Kegg"
+    elif (x >= 6) and (x <= 10):
+        out = "6to10Kegg"
+    elif x > 10:
+        out = "11andmoreKegg"
+    return out
+
+
 def evaluate_spot1_change(refinement_mz_pws_dict, Xbinary_pathways,
                              X_metabolites_probs_df, spot1, spot2):
 
@@ -452,4 +507,17 @@ def subset_m_probs_curr_pw(metabolites_probs_here, pathwaysObj, pw):  # TODO is 
     return metabolites_probs_here[list(real_compounds_in_pw)].T
 
 if __name__ == "__main__":
-    print(my_switch(0))
+    import time
+    t0 = time.time()
+    print(my_switch(5))
+    elapsed1 = time.time() - t0
+    t0 = time.time()
+    print(find_category_by_nb_kegg(5))
+    elapsed2 = time.time() - t0
+    if elapsed1 < elapsed2:
+        print(elapsed1)
+        print("switch is faster")
+    elif elapsed2 < elapsed1:
+        print("switch is slooooower")
+    print(elapsed1)
+    print(elapsed2)

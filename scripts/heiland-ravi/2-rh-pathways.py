@@ -55,7 +55,7 @@ print(adata_mz)
 adata_mz = get_rid_of_poor_var_mz(adata_mz)  # TODO : highlight this because is proper to this Ravi&Heiland data
 print("now:", adata_mz)
 
-me_annots = update_annotation_as_adata_mz(gathered_annots, adata_mz)  # TODO highlight: proper to Ravi&Heiland data as annotation is 1 file for all 6 slices
+me_annots = update_annotation_tomatch_adatamz(gathered_annots, adata_mz)  # TODO highlight: proper to Ravi&Heiland data as annotation is 1 file for all 6 slices
 verification(adata_mz, me_annots)
 
 ## reference mappings to get KEGG ids from HMDB and LipidMaps identifiers
