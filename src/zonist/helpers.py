@@ -124,7 +124,7 @@ def resolve_mz_multi_kegg(adata: ad.AnnData, df: pd.DataFrame) -> List[tuple]:
     output: List[tuple] a list of tuples: (mz (float), kegg (str))
     """
     mean_arr, v_arr = sparsefuncs.mean_variance_axis(adata.X, axis=0)
-    adata.var['variance'] = v_arr
+    adata.var = adata.var.assign(computed_variance = v_arr)
     df2 = df.groupby("KEGG", as_index=False).size()
     unique_kegg_ids = df2.loc[df2['size'] == 1, "KEGG"].tolist()
     ok_mz_kegg_tuples = [tuple(t) for t in df.loc[
@@ -135,7 +135,7 @@ def resolve_mz_multi_kegg(adata: ad.AnnData, df: pd.DataFrame) -> List[tuple]:
         df_with_v_metric = adata.var.loc[
                adata.var['mz'].isin(multi_annot_df["mz"].tolist()),:]
         df_with_v_metric = df_with_v_metric.sort_values(
-            by='variance', ascending=False)
+            by='computed_variance', ascending=False)
         mz_best = df_with_v_metric["mz"].tolist()[0] # first item mz
         ok_mz_kegg_tuples.append([mz_best, a_kegg])
         # end for
@@ -173,7 +173,7 @@ def prettify_gmt(gmt_df, undesired_name_substring: Union[str, None]):
 
 def purge_pathways(gmt_df, not_metabolic_reactions_pathways: List[str]):
     gmt_df["bad"] = 0
-    gmt_df["lower"] = gmt_df.iloc[:, 1].str.lower()
+    gmt_df["lower"] = gmt_df.iloc[:, 1].str.lower()  # column 1 has the names
     gmt_df.loc[gmt_df["lower"].str.contains(
         "|".join(not_metabolic_reactions_pathways), regex=True), "bad"] = 1
     gmt_df = gmt_df.loc[gmt_df["bad"] != 1, :]

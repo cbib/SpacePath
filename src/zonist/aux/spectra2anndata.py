@@ -87,16 +87,24 @@ def load_run(data_dir, base_filename, prefix, output_dir):
         spectra, prefix
     )
     print(intensities_df.head())
-    adata = ad.AnnData(intensities_df.T,
-                   obsm={"spatial": np.array(coordinates_arr)},
-                   varm={"transcripts" : np.array(features)})
+    adata = ad.AnnData(X = csr_matrix(intensities_df.T),
+                       obs=pd.DataFrame({"obs": list(coordinates_arr)},
+                                        index=list(coordinates_arr)),
+                       var=pd.DataFrame(
+                           {"mz": np.array(features, dtype=np.float32)},
+                           index=list(features)
+                       ),
+                       obsm={"spatial": coordinates_arr} )
+    adata.uns['spatial'] = {
+        'MY_SLICE7_NAME': {'scalefactors':
+                               {'fiducial_diameter_fullres': 100,
+                                'spot_diameter_fullres': 1,
+                                'tissue_hires_scalef': 0.5,
+                                'tissue_lowres_scalef': 0.5}}}
 
-    outfile = os.path.join(output_dir, 
-                           f"{prefix}--anndata.pk")
-
-    with open(outfile, "wb") as fopen:
-        pickle.dump(adata, fopen)
-    print(f"saved anndata object (pickle) to file:  {outfile}")
+    outfile = outfile + ".h5ad"
+    adata.write(outfile, compression=None, compression_opts=None)
+    print(f"End: file saved to '{outfile}'")
 
 
 if __name__ == "__main__":

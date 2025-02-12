@@ -12,14 +12,15 @@ columns_ref_map_expected: List[str] = ["not_kegg_id", "KEGG", "database"]
 
 
 not_metabolic_reactions_pathways = [
+    "autophagy", "cgmp-pkg signaling",
     "phagocytosis",  "necroptosis", "fc gamma", "ri signaling", "mapk",
     "wnt", "notch", "hedgehog",  "erbb", "tgf", "hippo", "vegf", "apelin",
-    "jak-stat", "kappa", "tnf", "ras s", "rap1"  "foxo", "mtor",
+    "jak-stat", "kappa", "tnf", "ras s", "rap1",  "foxo", "mtor", "pi3k-akt",
     "rage signal", "oxytocin", "relaxin", "estrog", "prolactin", "renin",
     "cytokine", "d signaling", "vegf", "gnrh", "secretion", "leukemia",
-    "syndrome", "thyroid", "endocrine",  "cushing", "ovarian",
-    "atherosclerosis", "cardiomyo", "arthritis", "inflammatory",
-    "lupus erythematosus",  "kaposi", "asthma", "disease",
+    "syndrome", "thyroid", "endocrine",  "cushing", "ovarian", "contraction",
+    "atherosclerosis", "cardiomyo", "arthritis", "inflammatory", "platelet",
+    "lupus erythematosus",  "kaposi", "asthma", "disease", "depression",
     "longevity regulating", "circadian", "thermogenesis", "photo",
     "trypanosomiasis", "shigellosis", "infection", "immune", "diabetes",
     "leishmania", "toxoplasmosis", "legionel", "malaria", "tuberculosis",

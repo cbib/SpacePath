@@ -67,7 +67,8 @@ class Test(TestCase):
             ['IDpath3', 'TCA cycle', 'm3', 'm4', 'm5', 'm7', np.nan],
             ['IDpath4', 'Yersinia Infection', 'm8', 'm9', 'm15', 'm1', 'm2']]
         not_strictly_metabolical =  ["meiosis", "infection"]
-        gmt = pd.DataFrame(data, columns=range(0, 7))
+        numerical_column_names = range(0, 7)
+        gmt = pd.DataFrame(data, columns=numerical_column_names)
         result = helpers.purge_pathways(gmt, not_strictly_metabolical)
         self.assertListEqual(['IDpath1',  'IDpath3'],
                              result.iloc[:, 0].tolist())

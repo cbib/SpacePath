@@ -29,10 +29,10 @@ class BaseModel(PydanticBaseModel):
 
 # 1 methods configs
 class MethodConfig(BaseModel):
-    name: str = "method"
+    class_type: str = "method"
 
 class ComputePathwaysScoresConfig(MethodConfig):
-    description: str = "nkjnsdfonfd !!!!!!!!!!"
+    description: str = "parameters to compute the pathways scores"
     method: str = "sspa_kpca"
     min_entity: int = 2
     n_groups_of_spots: int = 30
