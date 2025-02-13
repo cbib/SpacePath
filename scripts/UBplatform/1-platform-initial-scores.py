@@ -59,7 +59,10 @@ print("mz post sync", adata_mz)
 #adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,  prefix=f"{SAMPLE}-MZ-V2")  # ====> !!
 
 # the KEGG id adata
-adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
+X_metabolites_probs_df = compute_metabolites_probs_df(adata_mz, me_annots.df)
+
+adata = build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df,
+                                  annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
 #adata = spatial_standard_computations(adata, 12, plot_folder, f"{SAMPLE}-KEGGmetabolites-V2")  # ====> !!
 

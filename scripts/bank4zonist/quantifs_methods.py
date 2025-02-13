@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, List
 
 import anndata as ad
 import numpy as np
@@ -9,11 +9,16 @@ import squidpy as sq
 from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
 from sklearn.utils import sparsefuncs
-from zonist.data import MetabolicPathways
+from zonist.data import MetabolicPathways, MetabolomeAnnotations
+import zonist.helpers as zh
 
 
 
 # todo: a new module named assignments_refine in :  zonist.src.zonist.processing
+
+
+
+
 
 def score_as_adata(kpca_scores, adata, pathwaysObj: MetabolicPathways, original_pathways_dict):
     score_adata = ad.AnnData(
@@ -31,7 +36,7 @@ def score_as_adata(kpca_scores, adata, pathwaysObj: MetabolicPathways, original_
     score_adata.var = score_adata.var.assign(
         pathway_name=tmp['pathway_name'].tolist())
     score_adata.uns['former_pathways_dict'] = original_pathways_dict
-    score_adata.uns['current_pathways_dict'] = pathwaysObj.to_dict()
+    score_adata.uns['current_pathways_df'] = pathwaysObj.piled  # has m/z, KEGG and pathway id columns
 
     return score_adata
 
@@ -53,22 +58,68 @@ def attach_annots_to_adata(adata, annots_df):
 
 
 
-def build_kegg_resolved_adata(adata_mz, annots_df):
+def compute_mz_binary_df(adata_mz: ad.AnnData):
+    X_presence_absence_mask = adata_mz.X.todense() > 0
+    X_mz_binary_df = pd.DataFrame(
+        np.array(X_presence_absence_mask, dtype=int),
+        columns= adata_mz.var['mz'].to_numpy(),
+        index=adata_mz.obs.index.tolist())
+
+    return X_mz_binary_df
+
+
+def compute_metabolites_probs_df(adata_mz: ad.AnnData, annots_OKdf):
+    X_mz_binary_df = compute_mz_binary_df(adata_mz)
+    preX_probs = []
+    col_names_kegg = []
+    for a_mz in X_mz_binary_df.columns:
+        i_arr = X_mz_binary_df[a_mz].to_numpy()
+        the_kegg_here = annots_OKdf.loc[
+            annots_OKdf['mz'] == a_mz, "KEGG"].tolist()
+        n = len(the_kegg_here)
+        for kid in the_kegg_here:
+            col_names_kegg.append(kid)
+            initial_prob = 1 / n
+            # res = i_arr * np.array([initial_prob for v in range(len(i_arr))])
+            res = i_arr * np.repeat(initial_prob, len(i_arr))
+            preX_probs.append(np.array(res, dtype=np.float32))
+
+    X_metabolites_probs_df = pd.DataFrame(np.array(preX_probs).T,
+                                          columns=col_names_kegg,
+                                          index=X_mz_binary_df.index)
+    return X_metabolites_probs_df
+
+
+def is_it_well_done(X_metabolites_probs_df, adata_mz, adata, annots_OKdf) -> None:
+
+
+
+    tmp = np.apply_over_axes(trunc_custom, np.array(adata.X.todense()), axes=0)
+    if np.all(tmp == newly_comp_matrix):
+        print("OK! computed metabolite abundances"
+              " by two distinct methods are strictly identical")
+    else:
+        print("computed metabolite abundances by two distinct"
+              " methods are not identical, but please verify decimals")
+
+
+def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
     """
     Given the adata_mz and the annots_df, returns a new adata object
     """
-    mz_list = annots_df["mz"].unique()
-    intensities_arrs_list = []
-    kegg_list = list()
-    for one_mz in mz_list:
-        local_kegg = annots_df.loc[
-            annots_df["mz"] == one_mz, "KEGG"].tolist()
-        local_1D_adata_mz = adata_mz[ :, str(one_mz)].copy()
-        for a_kegg in local_kegg:
-            intensities_arrs_list.append(
-                np.array(local_1D_adata_mz.X.todense().T).flatten() / len(local_kegg))
-            kegg_list.append(a_kegg)
-    adata = ad.AnnData(X=csr_matrix(np.array(intensities_arrs_list).T),
+    tmp_X = dict()
+    for a_mz in adata_mz.var['mz'].to_numpy():
+        the_kegg_here = annots_df.loc[
+            annots_df['mz'] == a_mz, "KEGG"].tolist()
+        sub_adata = adata_mz[:, str(a_mz)].copy()
+        i_mz_arr = np.array(sub_adata.X.todense().T).flatten()
+        for a_kg in the_kegg_here:
+            curr_prod_arr = \
+                X_metabolites_probs_df[a_kg].to_numpy() * i_mz_arr
+            tmp_X[a_kg] = np.array(curr_prod_arr, dtype=np.float32)
+    kegg_list = list(tmp_X.keys())
+    tmp_X = np.array(pd.DataFrame(tmp_X), dtype=np.float32)
+    adata = ad.AnnData(X=csr_matrix(tmp_X),
                        obs=adata_mz.obs,
                        var=pd.DataFrame({"ID": kegg_list},
                                         index=kegg_list),
@@ -78,6 +129,8 @@ def build_kegg_resolved_adata(adata_mz, annots_df):
                          'spot_diameter_fullres': 1,
                          'tissue_hires_scalef': 0.5,
                          'tissue_lowres_scalef': 0.5}}}
+
+    adata.layers["X_probabilities"] = X_metabolites_probs_df
 
     adata = attach_annots_to_adata(adata, annots_df) ## new !
 
@@ -95,7 +148,7 @@ def adata_mz_filter_negligible_abundance(adata_mz, spots_non_zero=5):   #TODO ch
     return adata_mz
 
 
-def update_annotation_tomatch_adatamz(annotationsObj, adata_mz):  # zd.MetabolomeAnnotations
+def update_annotation_tomatch_adatamz(annotationsObj: MetabolomeAnnotations, adata_mz):  # zd.MetabolomeAnnotations
     # update the annotations to match with the adata_mz mz features
     me_annots = annotationsObj.model_copy()  # copy is deprecated
     okmz = adata_mz.var['mz']
@@ -107,7 +160,7 @@ def update_annotation_tomatch_adatamz(annotationsObj, adata_mz):  # zd.Metabolom
     return me_annots
 
 
-def verification(adata_mz, me_annots):  # zd.MetabolomeAnnotations
+def verification(adata_mz, me_annots: MetabolomeAnnotations):
     print("verifying mz match")
     try:
         bool_equal = np.all(np.array(
@@ -137,36 +190,10 @@ def get_rid_of_poor_var_mz(adata_mz):
     return adata_mz
 
 
-def compute_mz_binary_df(adata_mz: ad.AnnData):
-    # TODO: evaluate the nb of zeroes in entire matrix, if not enough, fix a minval for converting to zero all values <= minval
-    X_presence_absence_mask = adata_mz.X.todense() > 0
-    X_mz_binary_df = pd.DataFrame(
-        np.array(X_presence_absence_mask, dtype=int),
-        columns= adata_mz.var['mz'].to_numpy(),
-        index=adata_mz.obs.index.tolist())
-
-    return X_mz_binary_df
 
 
-def compute_metabolites_probs_df(X_mz_binary_df, annots_OKdf):
-    preX_probs = []
-    col_names_kegg = []
-    for a_mz in X_mz_binary_df.columns:
-        i_arr = X_mz_binary_df[a_mz].to_numpy()
-        the_kegg_here = annots_OKdf.loc[
-            annots_OKdf['mz'] == a_mz, "KEGG"].tolist()
-        n = len(the_kegg_here)
-        for kid in the_kegg_here:
-            col_names_kegg.append(kid)
-            initial_prob = 1 / n
-            # res = i_arr * np.array([initial_prob for v in range(len(i_arr))])
-            res = i_arr * np.repeat(initial_prob, len(i_arr))
-            preX_probs.append(np.array(res, dtype=np.float32))
 
-    X_metabolites_probs_df = pd.DataFrame(np.array(preX_probs).T,
-                                          columns=col_names_kegg,
-                                          index=X_mz_binary_df.index)
-    return X_metabolites_probs_df
+
 
 
 def trunc_custom(values, decs=0):
@@ -175,26 +202,6 @@ def trunc_custom(values, decs=0):
     return np.trunc(values*10**decs)/(10**decs)
 
 
-def is_it_well_done(X_metabolites_probs_df, adata_mz, adata, annots_OKdf) -> None:
-    newly_comp = dict()
-    for a_mz in adata_mz.var['mz'].to_numpy():
-        the_kegg_here = annots_OKdf.loc[
-            annots_OKdf['mz'] == a_mz, "KEGG"].tolist()
-        sub_adata = adata_mz[:, str(a_mz)].copy()
-        i_mz_arr = np.array(sub_adata.X.todense().T).flatten()
-        for a_kg in the_kegg_here:
-            curr_prod_arr = \
-                X_metabolites_probs_df[a_kg].to_numpy() * i_mz_arr
-            newly_comp[a_kg] = np.array(curr_prod_arr, dtype=np.float32)
-
-    newly_comp_matrix = np.apply_over_axes(trunc_custom, np.array(pd.DataFrame(newly_comp)), axes=0)
-    tmp = np.apply_over_axes(trunc_custom, np.array(adata.X.todense()), axes=0)
-    if np.all(tmp == newly_comp_matrix):
-        print("OK! computed metabolite abundances"
-              " by two distinct methods are strictly identical")
-    else:
-        print("computed metabolite abundances by two distinct"
-              " methods are not identical, but please verify decimals")
 
 
 def closeness_by_z_scores(value1: float, value2: float,
@@ -241,6 +248,7 @@ def closeness_by_fraction(value1: float, value2: float, fraction: float=0.8) -> 
     min_value = min(value1, value2)
 
     return (max_value / min_value) >= fraction
+
 
 # todo: change name of this fun:
 def spatial_standard_computations(adata, pca_ncomps=20,
@@ -335,7 +343,7 @@ def message_factory_1(total_nb, kegg_oneormore__one_pathway,
     print("susceptible_of_refinement: ", susceptible_of_refinement)
 
 
-def ugly_long_function(mz_met_pathway_piled: pd.DataFrame, pathways_dict) :
+def ugly_long_function(mz_met_pathway_piled: pd.DataFrame) :
     """
     :param mz_met_pathway_piled: The df with the correspondences of mz,
         metabolites KEGG ids, and pathways KEGG ids.
@@ -344,6 +352,8 @@ def ugly_long_function(mz_met_pathway_piled: pd.DataFrame, pathways_dict) :
         '555.5555999' : {('hsa0230', 'hsa4976'): {
                           'hsa0230': ['C00212'], 'hsa4976': ['C07210']}
     """
+    pathways_dict = zh.pws_piled_to_dict(mz_met_pathway_piled,
+                                         'pathway_id', 'KEGG')
     kegg_oneormore__one_pathway = 0
     one_kegg_multiple_pathways = 0
     multiple_kegg_shared = 0
@@ -433,69 +443,95 @@ def evaluate_spot1_change(refinement_mz_pws_dict, Xbinary_pathways,
     return modifiable_keggs
 
 
-def complicated_stuff_1(pw_score, met_prob, spot1, spot2, pw1, pw2, metabolite1, metabolite2):
-    green_light_pw1 = False
-    green_light_pw2 = False
-    happy1 = 0
-    happy2 = 0
-    distr_vals = pw_score.loc[[spot1, spot2], [pw1, pw2]].to_numpy().flatten()
-    presence_thr = np.percentile(distr_vals, 50)
-    barre_pw1 = 10000 # todo: replace, use a percentile 50 of the local distribution of the pw1.&.pw2 scores or something relative such: min(pw_score.loc[spot1, pw1] / 1.2,  pw_score.loc[spot2, pw1] / 1.2)
-    dummy_ammount = 10  # bad threshold TODO fix this  because values have wide range ! 0 - 60K
-    if max(pw_score.loc[spot1, pw1],
-           pw_score.loc[
-               spot2, pw1]) > presence_thr:#dummy_ammount:  # pw1 in at least one spot is strong
-        if abs(pw_score.loc[spot1, pw1] - pw_score.loc[
-            spot2, pw1]) <= barre_pw1:  # and both have pw1 similarly strong
-            green_light_pw1 = True
-    # we want to 'steal' weight from pw2, but first we have to see if pw2 is weaker to pw1 to be able to do so, in spot 1
-    if pw_score.loc[spot1, pw2] < pw_score.loc[spot1, pw1]:
-        green_light_pw2 = True
+def inner_fun_probs_updater(pw_score: pd.DataFrame, spot1: str, spot2: str, pw1: str, pw2: str,
+                            metabolites1: List[str], metabolites2: List[str],
+                            met_prob: pd.DataFrame,
+                            stealing_fraction: float,
+                            evaluated_keggs_curr_spot_curr_mz: List[str],
+                            updated_probs_spot1: Dict[str,float]):
+    """
+    :param pw_score: e.g. :
+             hsa00100  hsa00120
+        x44_y0  0.576450 -0.056398
+        x43_y0 -0.287701  0.670142
 
-    if green_light_pw1 or green_light_pw2:
-        gain_or_pain = 0.1
-        if met_prob.loc[spot1, metabolite2] > 0:
-            happy2 = float(0)
-            if met_prob.loc[spot1, metabolite2] >= gain_or_pain:
-                happy2 = met_prob.loc[spot1, metabolite2] - gain_or_pain
-            else:
-                gain_or_pain = met_prob.loc[spot1, metabolite2]
-            happy1 = met_prob.loc[spot1, metabolite1] + gain_or_pain
-
-    return happy1, happy2
+    :param spot1:
+    :param spot2:
+    :param pw1:
+    :param pw2:
+    :param metabolites1:
+    :param metabolites2:
+    :param met_prob: e.g.:
+                    C01673  C17339  C17331  C17336  C17332
+        x44_y0     0.2     0.2     0.2     0.2     0.2
+        x43_y0     0.0     0.0     0.0     0.0     0.0
 
 
-def complicated_stuff_2(refinement_mz_pws_dict, pathways_scores_df, X_metabolites_probs_df, spot1,spot2):
+    :param stealing_fraction:
+    :param evaluated_keggs_curr_spot_curr_mz:
+    :param updated_probs_spot1:
+    :return:
+
+    note: as metabolites1 and metabolits2 are often of different lenghts,
+    the stealing is done in the pooled values
+
+    """
+
+    if pw_score.loc[spot2, pw1] >= pw_score.loc[spot1, pw1]:
+        if pw_score.loc[spot1, pw1] > pw_score.loc[spot1, pw2]:
+            steal_prop_of_mt2 = met_prob.loc[
+                                    spot1, metabolites2].to_numpy() * stealing_fraction  # * 0.5 or 1
+            steal_pool = steal_prop_of_mt2.sum() / len(met_prob.loc[spot1, metabolites1].to_numpy())
+            new_pr_2s = met_prob.loc[spot1, metabolites2].to_numpy() - steal_prop_of_mt2
+            new_pr_1s = met_prob.loc[spot1, metabolites1].to_numpy() + steal_pool
+
+            # print("the old was:", met_prob.loc[spot1, metabolites2].to_numpy())
+            for a in range(len(metabolites1)):
+                if metabolites1[a] not in evaluated_keggs_curr_spot_curr_mz:
+                    updated_probs_spot1[metabolites1[a]] = new_pr_1s[a]
+                    evaluated_keggs_curr_spot_curr_mz.append(metabolites1[a])
+            for b in range(len(metabolites2)):
+                if metabolites2[b] not in evaluated_keggs_curr_spot_curr_mz:
+                    updated_probs_spot1[metabolites2[b]] = new_pr_2s[b]
+                    evaluated_keggs_curr_spot_curr_mz.append(metabolites2[b])
+            # print("the new group1 is: ", new_pr_1s, metabolites1)
+            # print("the new group2 is: ", new_pr_2s, metabolites2)
+            # print("")
+
+    return updated_probs_spot1, evaluated_keggs_curr_spot_curr_mz
+
+
+def probabilities_updater(refinement_mz_pws_dict, pathways_scores_df,
+                          X_metabolites_probs_df, spot1, spot2):
+    stealing_fraction = 0.5  # or 1
     the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
-    updated_probs_dict = dict()
-    for one_mz in the_mz_for_refinement_list:
-        pws_tuples_l = list(refinement_mz_pws_dict[str(one_mz)].keys())
-        for pws_tuple in pws_tuples_l:
-            pw1 = pws_tuple[0];   pw2 = pws_tuple[1]
-            metabolite1 = refinement_mz_pws_dict[str(one_mz)][pws_tuple][pw1][
-                0]
-            metabolite2 = refinement_mz_pws_dict[str(one_mz)][pws_tuple][pw2][
-                0]
+    updated_probs_spot1 = dict()
+    for i_mz in the_mz_for_refinement_list:
+        pws_tuples_l = list(refinement_mz_pws_dict[str(i_mz)].keys())
+        x = 0
+        evaluated_keggs_curr_spot_curr_mz = list()
+        while (x < len(pws_tuples_l)):
+            pws_tuple = pws_tuples_l[x]
+            pw1 = pws_tuple[0]
+            pw2 = pws_tuple[1]
+            metabolites1 = refinement_mz_pws_dict[str(i_mz)][pws_tuple][pw1]
+            metabolites2 = refinement_mz_pws_dict[str(i_mz)][pws_tuple][pw2]
             pw_score = pathways_scores_df.loc[[spot1, spot2], [pw1, pw2]]
             met_prob = X_metabolites_probs_df.loc[
-                [spot1, spot2], [metabolite1, metabolite2]]
-            # green_light_pw1 = False
-            # green_light_pw2 = False
-            if (met_prob.loc[spot1, metabolite1] + met_prob.loc[
-                spot1, metabolite2]) == 0:  # impossible to proceed, both are zero
-                pass
-            elif (met_prob.loc[spot1, metabolite1] + met_prob.loc[
-                spot1, metabolite2] > 0):
-                happy1, happy2 = complicated_stuff_1(pw_score, met_prob,
-                                                     spot1, spot2, pw1, pw2,
-                                                     metabolite1, metabolite2)
-                if happy1 + happy2 > 0:
-                    updated_probs_dict = {
-                            metabolite1: happy1,
-                            metabolite2: happy2}
-                    break   #  it is ok if able to update with compared pathways , we can stop ??? # Todo check this !! not sure :/
+                [spot1, spot2], metabolites1 + metabolites2]
 
-    return updated_probs_dict
+            if (met_prob.loc[spot1, metabolites1].sum() + met_prob.loc[
+                spot1, metabolites2].sum()) > 0:
+
+                updated_probs_spot1, evaluated_keggs_curr_spot_curr_mz = inner_fun_probs_updater(
+                    pw_score, spot1, spot2, pw1, pw2,
+                    metabolites1, metabolites2, met_prob, stealing_fraction,
+                    evaluated_keggs_curr_spot_curr_mz, updated_probs_spot1)
+
+            x += 1
+        # end while
+
+    return updated_probs_spot1
 
 
 def subset_m_probs_curr_pw(metabolites_probs_here, pathwaysObj, pw):  # TODO is this used ?
@@ -505,6 +541,7 @@ def subset_m_probs_curr_pw(metabolites_probs_here, pathwaysObj, pw):  # TODO is 
         set(metabolites_probs_here.columns.tolist()))
 
     return metabolites_probs_here[list(real_compounds_in_pw)].T
+
 
 if __name__ == "__main__":
     import time
