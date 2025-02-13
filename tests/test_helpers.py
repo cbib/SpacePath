@@ -110,14 +110,14 @@ class Test(TestCase):
         self.assertListEqual(result.iloc[3, :].tolist(),
                              ["two", "CXXXXYY", "913.821868"])
 
-    def test_gmt_piled_to_dict(self):
+    def test_pws_piled_to_dict(self):
         data = [["one", "C00232", "102.0317"],
                 ["one", "C09090", "588.56"],
                 ["one", "C00077", "132.0899"],
                 ["two", "CXXXXYY", "913.821868"]]
         gmt_piled = pd.DataFrame(data, columns=["pathway_id", "KEGG", "mz"])
 
-        result = helpers.gmt_piled_to_dict(gmt_piled, pathway_id="pathway_id",
+        result = helpers.pws_piled_to_dict(gmt_piled, pathway_id="pathway_id",
                                            mz_or_kegg="mz")
         self.assertListEqual(list(result.keys()),
                              ["one", "two"])

@@ -299,7 +299,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
         logger.info("success, attributes : piled, pathways_ids")
 
     def to_dict(self) -> Dict[str, List[str]]:
-        return helpers.gmt_piled_to_dict(
+        return helpers.pws_piled_to_dict(
             self.piled, self.col_pathway_id, mz_or_kegg=self.col_molecule_ids)
 
     def intersect_with_annotations(self, annots_obj: MetabolomeAnnotations):

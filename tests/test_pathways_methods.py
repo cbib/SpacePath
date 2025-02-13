@@ -21,7 +21,7 @@ class PathwaysForTests:
         }).astype(str)
 
     def to_dict(self) -> Dict[str, List[str]]:
-        return helpers.gmt_piled_to_dict(
+        return helpers.pws_piled_to_dict(
             self.piled, "pathway_id", mz_or_kegg="KEGG")
 
 

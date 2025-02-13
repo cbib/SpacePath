@@ -234,7 +234,7 @@ def pathways_and_annots_join(gmt_piled: pd.DataFrame,
     return gmt_piled_ok
 
 
-def gmt_piled_to_dict(gmt_piled_mz, pathway_id: str, mz_or_kegg: str):
+def pws_piled_to_dict(gmt_piled_mz, pathway_id: str, mz_or_kegg: str):
     keptdf = gmt_piled_mz[[pathway_id, mz_or_kegg]]
     pathways_uniqs = keptdf[pathway_id].unique().tolist()
 
