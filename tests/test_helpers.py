@@ -18,14 +18,14 @@ class Test(TestCase):
                               "TG (17..)..", "Ornithine"],
             "database": ["HMDB", "KEGG", "LipidMaps", "HMDB"]
         })
-        ref_ids_map_kegg = pd.DataFrame({
-            "not_kegg_id": ["HMDB0001259", "HMDB0000214", "LMGL03010536",
+        ref_ids_map_df = pd.DataFrame({
+            "initial_id_unconverted": ["HMDB0001259", "HMDB0000214", "LMGL03010536",
                             "LMTG9999", "LMPE8888"],
             "KEGG": ["C00232", "C00077", "CXXXXYY", "C0101010", "C999999"],
             "database": ["HMDB", "HMDB", "LipidMaps", "LipidMaps", "HMDB"]
         })
         result = helpers.convert_metabo_annots_tokegg(
-            metabolome_annot_df, ref_ids_map_kegg,
+            metabolome_annot_df, ref_ids_map_df,
             col_molecule_ids="moleculeIds", col_mz="mz")
         self.assertListEqual(
             list(result.columns),
@@ -91,16 +91,16 @@ class Test(TestCase):
         )))
 
     def test_gmt_join_mz(self):
-        gmt_piled = pd.DataFrame({
+        pws_piled = pd.DataFrame({
             "pathway_id": ["one", "one", "one", "one", "two", "two"],
             "KEGG": ["C00232", "C09090", "C0", "C00077", "CKKKK", "CXXXXYY"]
         })
-        anno_mz_kegg = pd.DataFrame({
+        my_annotations = pd.DataFrame({
             "mz": ["102.0317", "132.0899", "588.5665543", "913.821868"],
             "KEGG": ["C00232", "C00077", "C09090", "CXXXXYY"]
         })
-        result = helpers.pathways_and_annots_join(gmt_piled, anno_mz_kegg,
-                                                  col_molecule_id="KEGG")
+        result = helpers.pathways_and_annots_join(pws_piled, my_annotations,
+                                                  mol_id_in_pws="KEGG")
         # result : 
         #    pathway_id    KEGG      mz
         #    one        C00232    102.0317
@@ -115,10 +115,10 @@ class Test(TestCase):
                 ["one", "C09090", "588.56"],
                 ["one", "C00077", "132.0899"],
                 ["two", "CXXXXYY", "913.821868"]]
-        gmt_piled = pd.DataFrame(data, columns=["pathway_id", "KEGG", "mz"])
+        pws_piled = pd.DataFrame(data, columns=["pathway_id", "KEGG", "mz"])
 
-        result = helpers.pws_piled_to_dict(gmt_piled, pathway_id="pathway_id",
-                                           mz_or_kegg="mz")
+        result = helpers.pws_piled_to_dict(pws_piled, pathway_id="pathway_id",
+                                           mz_or_identity_col="mz")
         self.assertListEqual(list(result.keys()),
                              ["one", "two"])
         self.assertTrue(np.all(np.array(result["one"]) == np.array(

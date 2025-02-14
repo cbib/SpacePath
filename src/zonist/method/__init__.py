@@ -62,13 +62,13 @@ class FakeMethod:  # no-inheritance avoids instantiation: more practical
 class ComputePathwaysScores:
     config: ComputePathwaysScoresConfig
     @staticmethod
-    def run(pathwaysObj: MetabolicPathways, adata: ad.AnnData,
+    def run(pathways_dict: Dict[str, List[str]], adata: ad.AnnData,
             config=ComputePathwaysScoresConfig()
     ) -> pd.DataFrame:
         logger.info(" Will compute spot-wise Pathways Scores "
                     "with the following config: %s", config)
         scores_df = pathways_methods.compute_pathways_scores(
-            pathwaysObj.to_dict(), adata, config.method, config.min_entity,
+            pathways_dict, adata, config.method, config.min_entity,
             config.n_groups_of_spots, config.threshold_n_spots_is_high)
 
         return scores_df
@@ -88,8 +88,7 @@ class SyncPathwaysAndAnnots:
         annotsObj.df = annotsObj.df.loc[
                     annotsObj.df["KEGG"].isin(
                         pathwaysObj.piled["KEGG"].unique()), :]
-        # annotsObj.df = annotsObj.df.loc[~annotsObj.df["KEGG"].isin(
-        #     metabolites_to_eject, :]
+
         logger.info("syncronized sucessfuly")
         return pathwaysObj, annotsObj
 

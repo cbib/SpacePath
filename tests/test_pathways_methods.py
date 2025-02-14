@@ -22,7 +22,7 @@ class PathwaysForTests:
 
     def to_dict(self) -> Dict[str, List[str]]:
         return helpers.pws_piled_to_dict(
-            self.piled, "pathway_id", mz_or_kegg="KEGG")
+            self.piled, "pathway_id", mz_or_identity_col="KEGG")
 
 
 class Test(TestCase):

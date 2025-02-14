@@ -81,10 +81,10 @@ def convert_metabo_annots_tokegg(
         tmp_df = annotdf.loc[annotdf['database'] == cd, :]
         tmp_ref = mappings_ref_ids.loc[mappings_ref_ids['database'] == cd, :]
         joined = pd.merge(tmp_df, tmp_ref, left_on=col_molecule_ids,
-                          right_on='not_kegg_id', how='left')
+                          right_on='initial_id_unconverted', how='left')
         joined = joined.assign(database=joined.database_y)
         joined = joined.drop(columns=['database_x', 'database_y',
-                                      'not_kegg_id']).dropna()
+                                      'initial_id_unconverted']).dropna()
         dfs_list.append(joined)
     # end for
     if "KEGG" in annotdf['database'].unique():
@@ -198,7 +198,7 @@ def gmt_to_piled_form(gmt_df, col_pathway_id: str, col_molecule_id: str):
 
 
 def gmts_merge_pile_splitid(dfs_dict, col_pathway_id: str,
-                            col_pathway_name: str, col_molecule_ids: str):
+                            col_pathway_name: str, col_molec_ids_pws: str):
     pathways_identities_dfs = {}
     for k in dfs_dict.keys():
         tmp = dfs_dict[k]
@@ -206,42 +206,46 @@ def gmts_merge_pile_splitid(dfs_dict, col_pathway_id: str,
             {col_pathway_id: tmp.iloc[:,0].tolist(),
              col_pathway_name: tmp.iloc[:,1].tolist()})
         dfs_dict[k] = gmt_to_piled_form(     # is a table in piled form
-            tmp, col_pathway_id, col_molecule_ids)
+            tmp, col_pathway_id, col_molec_ids_pws)
     # end for
-    gmt_piled = combine_frames_identical_columns(dfs_dict)
+    pws_piled = combine_frames_identical_columns(dfs_dict)
     id_name_df = combine_frames_identical_columns(pathways_identities_dfs)
 
-    return id_name_df, gmt_piled
+    return id_name_df, pws_piled
 
 
-def pathways_and_annots_join(gmt_piled: pd.DataFrame,
-         anno_mz_kegg: pd.DataFrame, col_molecule_id: str) -> pd.DataFrame:
-    assert len(list(gmt_piled.columns)) == 2, \
+def pathways_and_annots_join(pws_piled: pd.DataFrame,
+                             anno_mz_ids: pd.DataFrame, mol_id_in_pws: str) -> pd.DataFrame:
+    """
+
+    """
+    assert len(list(pws_piled.columns)) == 2, \
         "too many columns in gmt piled table, bad format"
-    assert len(list(anno_mz_kegg.columns)) == 2, \
-        "too many annotation columns: only the mz and KEGG are admitted"
-    assert col_molecule_id in list(anno_mz_kegg.columns), \
-        f"no column {col_molecule_id}  in annotations table"
+    assert len(list(anno_mz_ids.columns)) == 2, \
+        "too many annotation columns: only mz and identifiers cols admitted"
+    assert mol_id_in_pws in list(anno_mz_ids.columns), \
+        f"no column {mol_id_in_pws}  in annotations table"
 
-    anno_mz_kegg = anno_mz_kegg.drop_duplicates()
-    accepted_kegg_intersect = set(gmt_piled["KEGG"].tolist()).intersection(
-        set(anno_mz_kegg["KEGG"].tolist()))
-    gmt_piled_ok = pd.merge(gmt_piled, anno_mz_kegg, on="KEGG", how="left")
+    anno_mz_ids = anno_mz_ids.drop_duplicates()
+    accepted_ids_intersect = set(pws_piled[mol_id_in_pws].tolist()).intersection(
+        set(anno_mz_ids[mol_id_in_pws].tolist()))
+    pws_piled_ok = pd.merge(pws_piled, anno_mz_ids, on=mol_id_in_pws,
+                            how="left")
     # only the intersection is kept:
-    gmt_piled_ok = gmt_piled_ok.loc[gmt_piled_ok["KEGG"].isin(list(
-        accepted_kegg_intersect)), :]
+    pws_piled_ok = pws_piled_ok.loc[pws_piled_ok[mol_id_in_pws].isin(list(
+        accepted_ids_intersect)), :]
 
-    return gmt_piled_ok
+    return pws_piled_ok
 
 
-def pws_piled_to_dict(gmt_piled_mz, pathway_id: str, mz_or_kegg: str):
-    keptdf = gmt_piled_mz[[pathway_id, mz_or_kegg]]
+def pws_piled_to_dict(pws_piled_mz, pathway_id: str, mz_or_identity_col: str):
+    keptdf = pws_piled_mz[[pathway_id, mz_or_identity_col]]
     pathways_uniqs = keptdf[pathway_id].unique().tolist()
 
     out = {}
     for w in pathways_uniqs:
         items_w = keptdf.loc[keptdf[pathway_id] == w, 
-                             mz_or_kegg].astype(str).unique().tolist()
+                             mz_or_identity_col].astype(str).unique().tolist()
         out[w] = items_w
 
     return out

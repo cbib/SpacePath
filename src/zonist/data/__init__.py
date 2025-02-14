@@ -44,6 +44,8 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
     delimiter: str = '\t'  # we provide tab delimited .tsv viles
     mapping_files: Dict[str, str]  # list with basename.extension
     table: pd.DataFrame = pd.DataFrame()
+    style_desired: str = "KEGG"
+    #
 
     def load(self):
         logger.info(
@@ -67,10 +69,10 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
             #logger.info(" your loaded dataframe :\n {}".format(df.head(2)))
             logger.info(" your loaded dataframe :\n %s", df.head(2))
             df = df.dropna()
-            df = df.loc[df["KEGG"] != "", :]
-            df = df.loc[~df["KEGG"].isin(["NA", "NaN"]), :]
+            df = df.loc[df[self.style_desired] != "", :]
+            df = df.loc[~df[self.style_desired].isin(["NA", "NaN"]), :]
             df['database'] = map_key
-            df.columns = ["not_kegg_id", "KEGG", "database"]
+            df.columns = ["initial_id_unconverted", self.style_desired, "database"]
             dfs_dict[map_key] = df
 
         self.table = helpers.combine_frames_identical_columns(dfs_dict)
@@ -88,10 +90,10 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
 
     def check_expectations_map2(self, df, map_key: str):
         cols = list(df.columns)
-        if not np.all(np.array(cols) == np.array([map_key, "KEGG"])):
+        if not np.all(np.array(cols) == np.array([map_key, self.style_desired])):
             logger.error("Error: the columns of this table are not "
                          "as expected, they must be exactly : "
-                         "'%s' and 'KEGG'", map_key)
+                         "'%s' and '%s'", map_key, self.style_desired)
 
 
 class MetabolomeAnnotations(Dataset):
@@ -138,7 +140,7 @@ class MetabolomeAnnotations(Dataset):
             df = df.dropna(how="all")
             df['database'] = anno_key
             if anno_key == "custom_kegg":
-                df['database'] = "KEGG"
+                df['database'] = "KEGG"  # ok
             dfs_dict[anno_key] = df
 
         preloaded_annots = \
@@ -173,7 +175,7 @@ class MetabolomeAnnotations(Dataset):
                                 self.col_mz].unique()) - set(mz_keep)),
                     len(set(mz_keep)))
 
-    def convert_ids_to_kegg(self, ref_table: pd.DataFrame):
+    def convert_ids_to_kegg(self, ref_table: pd.DataFrame):   # todo: is it possible to make it generalizable and not only KEGG dependent ?
         logger.info('Translating ids in the metabolome annotation'
                     ' table, to KEGG')
         assert np.all(np.array(list(ref_table.columns)) == np.array(
@@ -233,25 +235,25 @@ class MetabolicPathways(BaseModel, extra='allow'):
     subfolder: str
     official_file: str
     custom_file: Optional[str] = ''
-    file_style: str = "gmt-sspa"  #  official and custom must be same style
+    file_style: str = "sspa-kegg"  # for both official and custom pathways
     undesired_substring: str = " - Homo sapiens (human)" # in names
     col_pathway_id: str = "pathway_id"
     col_pathway_name: str = "pathway_name"
-    col_molecule_ids: str = "KEGG"   #  must be KEGG to match joined annots
+    col_molec_ids_in_pathways: str = "KEGG"   #  must match joined annots
     piled: pd.DataFrame = pd.DataFrame()
     pathways_ids: pd.DataFrame = pd.DataFrame()
 
     def preload_official(self):
         if not os.path.exists(os.path.join(
                 self.data_dir, self.subfolder, self.official_file)):
-            if self.file_style == "gmt-sspa":
+            if self.file_style == "sspa-kegg":
                 logger.info("writing sspa official gmt to data dir, wait ...")
                 sspa.process_pathways.process_kegg(
                     organism="hsa", infile=None, download_latest=True,
                     filepath=os.path.join(self.data_dir, self.subfolder))
                 logger.info("saved!")
             else:
-                logger.info("only 'gmt-sspa' file_style is currently supported")
+                logger.info("only 'sspa-kegg' file_style is currently supported")
         try:
             official_gmt = pd.read_csv(
                 os.path.join(self.data_dir, self.subfolder,
@@ -289,18 +291,19 @@ class MetabolicPathways(BaseModel, extra='allow'):
             self.preload_custom()
             dfs_dict['custom'] = self.custom
 
-        id_name_pathways_df, gmt_piled = helpers.gmts_merge_pile_splitid(
+        id_name_pathways_df, pws_piled = helpers.gmts_merge_pile_splitid(
             dfs_dict, self.col_pathway_id, self.col_pathway_name,
-            self.col_molecule_ids)
+            self.col_molec_ids_in_pathways)
 
         self.pathways_ids = id_name_pathways_df
-        self.piled = gmt_piled
+        self.piled = pws_piled
 
         logger.info("success, attributes : piled, pathways_ids")
 
     def to_dict(self) -> Dict[str, List[str]]:
         return helpers.pws_piled_to_dict(
-            self.piled, self.col_pathway_id, mz_or_kegg=self.col_molecule_ids)
+            self.piled, self.col_pathway_id,
+            mz_or_identity_col=self.col_molec_ids_in_pathways)
 
     def intersect_with_annotations(self, annots_obj: MetabolomeAnnotations):
         """
@@ -308,8 +311,9 @@ class MetabolicPathways(BaseModel, extra='allow'):
          - retains only the elements that are in the intersection of both objs
         """
         self.piled = helpers.pathways_and_annots_join(
-            self.piled, annots_obj.df[[annots_obj.col_mz, "KEGG"]],
-            self.col_molecule_ids)
+            self.piled,
+            annots_obj.df[[annots_obj.col_mz, self.col_molec_ids_in_pathways]],
+            self.col_molec_ids_in_pathways)
 
     def constrain(self, min_pathway_size, max_pathway_size):
         good_pathways_l = pathways_methods.yield_compliant_pathways(
@@ -319,7 +323,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
         self.piled = self.piled.loc[
             self.piled["pathway_id"].isin(good_pathways_l)]
         self.piled = self.piled.loc[~self.piled[
-            "KEGG"].isin(metabolites_to_eject), :]
+            self.col_molec_ids_in_pathways].isin(metabolites_to_eject), :]
         self.pathways_ids = self.pathways_ids.loc[
                                    self.pathways_ids[
                                        "pathway_id"].isin(good_pathways_l), :]

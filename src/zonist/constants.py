@@ -8,7 +8,7 @@ supported_mappings: List[str] = ["LipidMaps", "HMDB"]  # this list >
 
 supported_annotations: List[str] = ["LipidMaps", "HMDB", "KEGG", "custom_kegg"]
 
-columns_ref_map_expected: List[str] = ["not_kegg_id", "KEGG", "database"]
+columns_ref_map_expected: List[str] = ["initial_id_unconverted", "KEGG", "database"]
 
 
 not_metabolic_reactions_pathways = [
