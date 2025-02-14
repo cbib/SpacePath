@@ -163,3 +163,39 @@ def is_it_well_done(X_metabolites_probs_df, adata_mz, adata, annots_OKdf) -> Non
 #     adata = attach_annots_to_adata(adata, annots_df) ## new !
 #
 #     return adata
+
+
+def closeness_by_z_scores(value1: float, value2: float,
+                     values_arr: np.array, z_score_threshold: float=1.0):
+    """
+    Checks if two values are close to each other with respect to their positions in a distribution.
+    :param value1: First value
+    :param value2: Second value
+    :param values_arr: np.array-like of values representing the distribution
+    :param z_score_threshold: Z-score difference threshold for closeness
+    :return: True if the values are close, False otherwise
+    """
+    mean = np.mean(values_arr)
+    std_dev = np.std(values_arr)
+    z_score_1 = (value1 - mean) / std_dev
+    z_score_2 = (value2 - mean) / std_dev
+
+    return abs(z_score_1 - z_score_2) <= z_score_threshold
+
+
+def threshold_of_presence_by_distribution(values_array: np.array,
+                                          z_score_threshold: float=0):
+    sorted_arr = np.sort(values_array)
+    print(sorted_arr)
+    z_scores = (sorted_arr - np.mean(sorted_arr)
+                    ) / np.std(sorted_arr)
+    tp = [u for u, v in zip(sorted_arr, z_scores) if v >= z_score_threshold]
+    print(tp)
+
+    return tp[0]
+
+def trunc_custom(values, decs=0):
+    # never used (yet)
+    # credits https://stackoverflow.com/questions/42021972/truncating-decimal-digits-numpy-array-of-floats
+    return np.trunc(values*10**decs)/(10**decs)
+

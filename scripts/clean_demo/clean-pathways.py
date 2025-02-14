@@ -93,7 +93,7 @@ print("KEGG resolved adata: ", adata)
 ###
 # compute kpca
 ##
-kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj, adata)
+kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj.to_dict(), adata)
 print(kpca_scores.shape)
 print(kpca_scores.iloc[:3,:5])
 

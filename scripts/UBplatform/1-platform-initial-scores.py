@@ -66,8 +66,11 @@ adata = build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df,
 print("KEGG resolved adata: ", adata)
 #adata = spatial_standard_computations(adata, 12, plot_folder, f"{SAMPLE}-KEGGmetabolites-V2")  # ====> !!
 
+adata.write_h5ad(os.path.join(mydata_dir, subfolder,
+                                         f"{SAMPLE}-KEGG_adata.h5ad"))
+
 ## compute scores
-kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj, adata)
+kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj.to_dict(), adata)
 
 # save as anndata with associated metadata
 scores_adata = score_as_adata(kpca_scores, adata, pathwaysObj, orig_pws_dict)
@@ -75,7 +78,6 @@ scores_adata = score_as_adata(kpca_scores, adata, pathwaysObj, orig_pws_dict)
 # save all relevant objects
 scores_adata.write_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-PathwayScores.h5ad"))
-adata.write_h5ad(os.path.join(mydata_dir, subfolder,
-                                         f"{SAMPLE}-KEGG_adata.h5ad"))
+
 
 print("Saved new data into:", os.path.join(mydata_dir, subfolder))

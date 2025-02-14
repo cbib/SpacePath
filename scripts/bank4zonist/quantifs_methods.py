@@ -41,20 +41,7 @@ def score_as_adata(kpca_scores, adata, pathwaysObj: MetabolicPathways, original_
     return score_adata
 
 
-def attach_annots_to_adata(adata, annots_df):
-    """"""
-    annots_df = annots_df.drop_duplicates()
-    assert len(set(adata.var['ID'].tolist()).intersection(
-        set(annots_df['KEGG'].tolist()))) == len(
-        set(annots_df['KEGG'].tolist())), ("Error, adata.var ID column must "
-                                           "match KEGG column of annotations")
-    annots_df.index = annots_df['KEGG'].tolist()
-    df_ok = annots_df.loc[adata.var['ID'], :]  # rows in same order than in adata.var
-    adata.var = adata.var.assign(molecule_name=df_ok['moleculeNames'].tolist())
-    adata.var = adata.var.assign(mz=df_ok['mz'].tolist())
-    adata.var = adata.var.assign(formula=df_ok['formula'])
 
-    return adata
 
 
 
@@ -90,17 +77,23 @@ def compute_metabolites_probs_df(adata_mz: ad.AnnData, annots_OKdf):
     return X_metabolites_probs_df
 
 
-def is_it_well_done(X_metabolites_probs_df, adata_mz, adata, annots_OKdf) -> None:
+def attach_annots_to_adata(adata, annots_df):
+    """"""
+    annots_df = annots_df.drop_duplicates()
+    assert len(set(adata.var['ID'].tolist()).intersection(
+        set(annots_df['KEGG'].tolist()))) == len(
+        set(annots_df['KEGG'].tolist())), ("Error, adata.var ID column must "
+                                           "match KEGG column of annotations")
+    annots_df.index = annots_df['KEGG'].tolist()
+    df_ok = annots_df.loc[adata.var['ID'], :]  # rows in same order than in adata.var
+    expected_index = adata.var.index.tolist()
+    adata.var = pd.merge(adata.var, df_ok,  how='left' , left_on='ID', right_on='KEGG')
+    adata.var.index = adata.var['ID']
+    assert np.all(np.array(expected_index) == np.array(
+        adata.var.index.tolist())), ("all messed up "
+                                     "when attaching annots to adata")
 
-
-
-    tmp = np.apply_over_axes(trunc_custom, np.array(adata.X.todense()), axes=0)
-    if np.all(tmp == newly_comp_matrix):
-        print("OK! computed metabolite abundances"
-              " by two distinct methods are strictly identical")
-    else:
-        print("computed metabolite abundances by two distinct"
-              " methods are not identical, but please verify decimals")
+    return adata
 
 
 def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
@@ -117,6 +110,7 @@ def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
             curr_prod_arr = \
                 X_metabolites_probs_df[a_kg].to_numpy() * i_mz_arr
             tmp_X[a_kg] = np.array(curr_prod_arr, dtype=np.float32)
+    # end for
     kegg_list = list(tmp_X.keys())
     tmp_X = np.array(pd.DataFrame(tmp_X), dtype=np.float32)
     adata = ad.AnnData(X=csr_matrix(tmp_X),
@@ -188,50 +182,6 @@ def get_rid_of_poor_var_mz(adata_mz):
     adata_mz = adata_mz[:, [str(i) for i in good_mz]]
 
     return adata_mz
-
-
-
-
-
-
-
-
-def trunc_custom(values, decs=0):
-    # never used (yet)
-    # credits https://stackoverflow.com/questions/42021972/truncating-decimal-digits-numpy-array-of-floats
-    return np.trunc(values*10**decs)/(10**decs)
-
-
-
-
-def closeness_by_z_scores(value1: float, value2: float,
-                     values_arr: np.array, z_score_threshold: float=1.0):
-    """
-    Checks if two values are close to each other with respect to their positions in a distribution.
-    :param value1: First value
-    :param value2: Second value
-    :param values_arr: np.array-like of values representing the distribution
-    :param z_score_threshold: Z-score difference threshold for closeness
-    :return: True if the values are close, False otherwise
-    """
-    mean = np.mean(values_arr)
-    std_dev = np.std(values_arr)
-    z_score_1 = (value1 - mean) / std_dev
-    z_score_2 = (value2 - mean) / std_dev
-
-    return abs(z_score_1 - z_score_2) <= z_score_threshold
-
-
-def threshold_of_presence_by_distribution(values_array: np.array,
-                                          z_score_threshold: float=0):
-    sorted_arr = np.sort(values_array)
-    print(sorted_arr)
-    z_scores = (sorted_arr - np.mean(sorted_arr)
-                    ) / np.std(sorted_arr)
-    tp = [u for u, v in zip(sorted_arr, z_scores) if v >= z_score_threshold]
-    print(tp)
-
-    return tp[0]
 
 
 def closeness_by_fraction(value1: float, value2: float, fraction: float=0.8) -> bool:
@@ -502,8 +452,7 @@ def inner_fun_probs_updater(pw_score: pd.DataFrame, spot1: str, spot2: str, pw1:
 
 
 def probabilities_updater(refinement_mz_pws_dict, pathways_scores_df,
-                          X_metabolites_probs_df, spot1, spot2):
-    stealing_fraction = 0.5  # or 1
+                          X_metabolites_probs_df, spot1, spot2, stealing_fraction: float):
     the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
     updated_probs_spot1 = dict()
     for i_mz in the_mz_for_refinement_list:
@@ -520,8 +469,10 @@ def probabilities_updater(refinement_mz_pws_dict, pathways_scores_df,
             met_prob = X_metabolites_probs_df.loc[
                 [spot1, spot2], metabolites1 + metabolites2]
 
-            if (met_prob.loc[spot1, metabolites1].sum() + met_prob.loc[
-                spot1, metabolites2].sum()) > 0:
+            # in spot2: if pw1 is largely superior to pw2 (at least twice)
+            if (pw_score.loc[spot2, pw1] >= (pw_score.loc[spot2, pw2] * 2)) and (
+                    (met_prob.loc[spot1, metabolites1].sum() + met_prob.loc[
+                spot1, metabolites2].sum()) > 0):
 
                 updated_probs_spot1, evaluated_keggs_curr_spot_curr_mz = inner_fun_probs_updater(
                     pw_score, spot1, spot2, pw1, pw2,
