@@ -73,7 +73,11 @@ adata.write_h5ad(os.path.join(mydata_dir, subfolder,
 kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj.to_dict(), adata)
 
 # save as anndata with associated metadata
-scores_adata = score_as_adata(kpca_scores, adata, pathwaysObj, orig_pws_dict)
+scores_adata = score_as_adata(kpca_scores, adata,
+                              #pathwaysObj,
+                              pathwaysObj.pathways_ids,
+                              pathwaysObj.piled,
+                              orig_pws_dict)
 
 # save all relevant objects
 scores_adata.write_h5ad(os.path.join(mydata_dir, subfolder,

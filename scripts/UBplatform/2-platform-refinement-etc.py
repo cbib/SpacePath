@@ -27,19 +27,20 @@ subfolder = "UBplatform"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 
 
-plot_folder = "../../../figures/platform"
-
-
-
 # kegg resolved adata
 adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-KEGG_adata.h5ad"))
+annots_df = adata.var.copy()
+annots_df['KEGG'] = annots_df['ID'].tolist()
+annots_df = annots_df.drop(columns=['ID'])  # df must not have ID col.name
 
 # pathways
 scores_adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-PathwayScores.h5ad"))
 
+
 refinement_mz_pws_dict = ugly_long_function(scores_adata.uns['current_pathways_df'])
+
 
 X_metabolites_probs_df = pd.DataFrame(data=adata.layers['X_probabilities'],
                                       index=adata.obs['obs'].tolist(),
@@ -48,7 +49,7 @@ X_metabolites_probs_df = pd.DataFrame(data=adata.layers['X_probabilities'],
 
 # spatial parsing
 RADIUS = 1
-SF = 0.5   #   stealing_fraction = 0.5  # or 1
+SF = 1   #   stealing_fraction = 0.5  # or 1
 
 sq.gr.spatial_neighbors(adata, radius=RADIUS, coord_type="generic")
 connectivities_sparse_mx = adata.obsp["spatial_connectivities"]
@@ -58,8 +59,8 @@ coords_matcher_dict = {k: v for k, v in zip(
     range(0, len(coordinates_names_str)), coordinates_names_str)}
 coords_matcher_rev = {v: k for k, v in coords_matcher_dict.items()}
 
-print(f"parsing spots : for each spots, neighbors at d = {RADIUS} are evaluated")
-COSINE_SIMILARITY_THRESHOLD = 0.9
+print(f"parsing spots : for each spot, neighbors at d = {RADIUS} are evaluated")
+COSINE_SIMILARITY_THRESHOLD = 0.7
 G = nx.from_scipy_sparse_array(connectivities_sparse_mx)
 nodes_list = G.nodes()
 
@@ -89,25 +90,47 @@ for v1 in tqdm(nodes_list):
                 new_probabs[spot1] = tmp_probs_dict
 
 # add the new_probabilities to the probabs:
+refined_metabolites = list()
 X_probs_new = X_metabolites_probs_df.copy()
 for spot in new_probabs.keys():
     for metabolite in new_probabs[spot].keys():
         X_probs_new.loc[spot, metabolite] = new_probabs[spot][metabolite]
+        if metabolite not in refined_metabolites:
+            refined_metabolites.append(metabolite)
 print("ok new probs")
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
 
-adata.var['KEGG'] = adata.var['ID']
+
 adata_new = build_kegg_resolved_adata(adata_mz,
                                       X_probs_new ,
-                                  annots_df=adata.var.copy())
+                                  annots_df=annots_df)
+
+adata_new.uns['refined_metabolites'] = refined_metabolites
+
 print("ok new adata")
-adata_new.write_h5ad(os.path.join(mydata_dir, subfolder,
-                                         f"{SAMPLE}-crazy_adata.h5ad"))
 
-pathways_dict = zh.pws_piled_to_dict(scores_adata.uns['current_pathways_df'], "pathway_id", mz_or_kegg="KEGG")
+
+adata_new.write_h5ad(os.path.join(mydata_dir, subfolder,
+                                         f"{SAMPLE}-theft{SF}-adata.h5ad"))
+
+pathways_dict = zh.pws_piled_to_dict(scores_adata.uns['current_pathways_df'],
+                                     "pathway_id",
+                                     mz_or_identity_col="KEGG")
+
 new_kpca_scores = zm.ComputePathwaysScores.run(pathways_dict, adata_new)
-adata_new.write_h5ad(os.path.join(mydata_dir, subfolder,
-                                         f"{SAMPLE}-crazyScores.h5ad"))
 
+
+pws_piled = scores_adata.uns['current_pathways_df']
+scores_adata = score_as_adata(new_kpca_scores,
+                         adata,
+                         scores_adata.var.copy(),
+                         pws_piled,
+                         zh.pws_piled_to_dict(pws_piled, 'pathway_id', 'KEGG'))
+
+scores_adata.write_h5ad(os.path.join(mydata_dir, subfolder,
+                                         f"{SAMPLE}-theft{SF}-Scores.h5ad"))
+
+
+print("Saved new data into:", os.path.join(mydata_dir, subfolder))

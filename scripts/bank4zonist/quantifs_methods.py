@@ -18,9 +18,11 @@ import zonist.helpers as zh
 
 
 
-
-
-def score_as_adata(kpca_scores, adata, pathwaysObj: MetabolicPathways, original_pathways_dict):
+def score_as_adata(kpca_scores, adata,
+                   #pathwaysObj: MetabolicPathways,
+                   pathways_ids_df,
+                   pathways_piled,
+                   original_pathways_dict):
     score_adata = ad.AnnData(
         X=csr_matrix(kpca_scores),
         var=pd.DataFrame(
@@ -30,19 +32,15 @@ def score_as_adata(kpca_scores, adata, pathwaysObj: MetabolicPathways, original_
         obsm=adata.obsm,
         uns=adata.uns
     )
-    tmp = pathwaysObj.pathways_ids.copy()
+    tmp = pathways_ids_df #pathwaysObj.pathways_ids.copy()
     tmp.index = tmp['pathway_id']
     tmp = tmp.loc[score_adata.var['pathway_id'],:]
     score_adata.var = score_adata.var.assign(
         pathway_name=tmp['pathway_name'].tolist())
     score_adata.uns['former_pathways_dict'] = original_pathways_dict
-    score_adata.uns['current_pathways_df'] = pathwaysObj.piled  # has m/z, KEGG and pathway id columns
+    score_adata.uns['current_pathways_df'] = pathways_piled #pathwaysObj.piled  # has m/z, KEGG and pathway id columns
 
     return score_adata
-
-
-
-
 
 
 def compute_mz_binary_df(adata_mz: ad.AnnData):
@@ -88,7 +86,10 @@ def attach_annots_to_adata(adata, annots_df):
     df_ok = annots_df.loc[adata.var['ID'], :]  # rows in same order than in adata.var
     expected_index = adata.var.index.tolist()
     adata.var = pd.merge(adata.var, df_ok,  how='left' , left_on='ID', right_on='KEGG')
-    adata.var.index = adata.var['ID']
+    #adata.var.index = adata.var['ID'].tolist()
+    adata.var.set_index('ID',
+                        drop=False, # whether to drop the ID column
+                        inplace=True)
     assert np.all(np.array(expected_index) == np.array(
         adata.var.index.tolist())), ("all messed up "
                                      "when attaching annots to adata")
