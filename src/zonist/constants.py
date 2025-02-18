@@ -12,7 +12,7 @@ columns_ref_map_expected: List[str] = ["initial_id_unconverted", "KEGG", "databa
 
 
 not_metabolic_reactions_pathways = [
-    "autophagy", "cgmp-pkg signaling",
+    "autophagy", "efferocytosis", "amoebiasis", "cgmp-pkg signaling",
     "phagocytosis",  "necroptosis", "fc gamma", "ri signaling", "mapk",
     "wnt", "notch", "hedgehog",  "erbb", "tgf", "hippo", "vegf", "apelin",
     "jak-stat", "kappa", "tnf", "ras s", "rap1",  "foxo", "mtor", "pi3k-akt",
