@@ -70,7 +70,7 @@ for v1 in tqdm(nodes_list):
     neighs_of_v1 = G.neighbors(v1)
 
     # to go faster, this is to avoid visiting all neighs
-    neighs_of_v1 = [[v for v in neighs_of_v1][0]]   # todo: deactivate
+    neighs_of_v1 = [[v for v in neighs_of_v1][0]]   # TODO: deactivate !!! URGENTLY
     ## end to go faster
     tmp_mx1 = adata[coords_matcher_dict[v1], :].X.todense()
     spot1 = coords_matcher_dict[v1]

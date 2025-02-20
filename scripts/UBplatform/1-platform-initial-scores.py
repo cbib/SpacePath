@@ -10,7 +10,10 @@ import zonist.method as zm
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
 
-from scripts.user_routines import prepare_harmonized_objects
+sys.path.append(os.path.join(os.path.dirname(__file__),
+                             '../'))
+
+from user_routines import prepare_harmonized_objects
 
 from quantifs_methods import *
 from visualization import *
@@ -23,8 +26,8 @@ Bash call:
 mylist=(UBcalibr1 UBcalibr2 UBcalibr3 UBcalibr4 UBcalibr5);for k in ${mylist[*]}; do echo $k; python xxxxx.py $k; done
 """
 
-SAMPLE = "UBcalibr2"
-#"UBcalibr2"
+SAMPLE =  "UBcalibr2" # TODO rerun all the things !!!    #  sys.argv[1]  #   "UBcalibr2"
+
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
@@ -48,15 +51,13 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
 print(adata_mz)
 
-
-verification(adata_mz, me_annots)
+print(np.array(adata_mz.X.todense()).shape)
 
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
     mydata_dir, me_annots, adata_mz)
 print("mz post sync", adata_mz)
 
-#adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,  prefix=f"{SAMPLE}-MZ-V2")  # ====> !!
 
 # the KEGG id adata
 X_metabolites_probs_df = compute_metabolites_probs_df(adata_mz, me_annots.df)
@@ -64,7 +65,6 @@ X_metabolites_probs_df = compute_metabolites_probs_df(adata_mz, me_annots.df)
 adata = build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df,
                                   annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
-#adata = spatial_standard_computations(adata, 12, plot_folder, f"{SAMPLE}-KEGGmetabolites-V2")  # ====> !!
 
 adata.write_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-KEGG_adata.h5ad"))
@@ -74,7 +74,6 @@ kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj.to_dict(), adata)
 
 # save as anndata with associated metadata
 scores_adata = score_as_adata(kpca_scores, adata,
-                              #pathwaysObj,
                               pathwaysObj.pathways_ids,
                               pathwaysObj.piled,
                               orig_pws_dict)

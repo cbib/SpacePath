@@ -201,26 +201,40 @@ def closeness_by_fraction(value1: float, value2: float, fraction: float=0.8) -> 
     return (max_value / min_value) >= fraction
 
 
+
 # todo: change name of this fun:
 def spatial_standard_computations(adata, pca_ncomps=20,
-                                  plot_folder=None, prefix='sample'):
-    # TODO: do not mix 'processing' and 'visualization', instead, do a separate funciton for figures
-    #Xorigin = adata_mz.X.copy()
-    # compute metrics
-    print("computing variable metrics with squidy")
-    try:
-        sc.pp.highly_variable_genes(adata,
-                                    flavor="seurat_v3",
-                                    check_values=False)
-    except ValueError:
-        pass  # TODO :: add by hand variances and means ?
-    print("computing pca")
-    sc.pp.pca(adata, n_comps=pca_ncomps)
+                                  plot_folder=None, prefix='sample', as_log=True,
+                                  top_variable_features_fraction=0.95):
 
-    kmeans = KMeans(n_clusters=pca_ncomps, n_init=10, random_state=0).fit(
-        adata.obsm['X_pca'])
+    if (adata.var.shape[0] > pca_ncomps) and (
+            adata.var.shape[0] > adata.obs.shape[0]):
+        if as_log:
+            sc.pp.log1p(adata)
+            print("Warining: adata.X now is log transformed")
+        try:
+            topn = int(adata.var.shape[0] * top_variable_features_fraction)
+            sc.pp.highly_variable_genes(adata,
+                                        flavor="seurat_v3",
+                                        check_values=False,
+                                        n_top_genes=topn)
+        except ValueError:
+            pass  # TODO :: add log error warning "continued without computing highly variable feat"
+        print("computing pca")
+        sc.pp.pca(adata, n_comps=pca_ncomps)  # use_highly_variable is true by default, but .var['highly_variable'] col was True in all values
+        print("computing kmeans")
+        kmeans = KMeans(n_clusters=pca_ncomps, n_init=10, random_state=0).fit(
+            adata.obsm['X_pca'])
+    else:     # this is the preferred way  for metabo: todo separate into another funcion of standard computs for metabo
+        X = np.array(adata.X.todense())
+        if as_log:
+            X = np.log1p(X)
+        kmeans = KMeans(n_clusters=pca_ncomps, n_init=10,
+                        random_state=0).fit(X)
     adata.obs[f'kmeans{pca_ncomps}'] = kmeans.labels_.astype(str)
-    if plot_folder is not None:  # TODO:  move to a visualization fun
+
+    # TODO: do not mix 'processing' and 'visualization', instead, do a separate funciton for figures:
+    if plot_folder is not None:
         tmpstr = os.path.join(plot_folder, f'{prefix}--Kmeans-{pca_ncomps}.png')
         sq.pl.spatial_scatter(adata, color=[f'kmeans{pca_ncomps}'],
                               img=False, title=f"Kmeans (k={pca_ncomps})",

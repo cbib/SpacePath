@@ -16,6 +16,8 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz):
                        'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv"})
 
     me_refmap.load()
+    #verification(adata_mz, me_annots)
+    me_annots.discard_out_of_tissue_mz()  # NEW !!! highly recommended
     me_annots.convert_ids_to_kegg(me_refmap.table)
     me_annots.treat_mz_multiplets(adata_mz)
 
@@ -30,11 +32,12 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz):
 
     pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
                                                           me_annots,
-                                                          min_pathway_size=2)  # default max is 500
+                                                          min_pathway_size=2)  # TODO: think how to easily re-find those metabs that have min_pathway_size=1
     adata_mz = adata_mz[:, me_annots.df["mz"].astype(
         str).unique()].copy()  # todo this is NOT sync, but like so
 
     return pathwaysObj, me_annots, adata_mz, initial_pws_dict
+
 
 
 def plot_susceptible_of_refinement(refinement_mz_pws_dict, adata_mz, SAMPLE, plot_folder):
