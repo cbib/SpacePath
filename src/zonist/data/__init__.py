@@ -12,7 +12,6 @@ import sspa as sspa
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
-#from pydantic import Extra  #  deprecated, TODO: remove
 
 import zonist.helpers as helpers
 import zonist.processing.pathways_methods as pathways_methods
@@ -99,11 +98,12 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
 class MetabolomeAnnotations(Dataset):
     annotation_files : Dict[str, str]
     delimiter : str = ","  # the metaspace delimiter is comma
-    col_molecule_ids: str = "moleculeIds"
-    col_mz : str = "mz"
-    col_formula : str = "formula"
-    col_molecule_names: str = "moleculeNames"
-    offsample_column: str = "offSample"  # has bool values in feat_classif df
+    molecule_ids_col: str = "moleculeIds"
+    mz_col : str = "mz"
+    formula_col : str = "formula"
+    molecule_names_col: str = "moleculeNames"
+    offsample_column: str = "rawOffSampleProb"
+    total_intens_col: str = "totalIntensity"
     unfiltered: pd.DataFrame = pd.DataFrame()
     df: pd.DataFrame = pd.DataFrame()
     feat_classif: pd.DataFrame = pd.DataFrame()
@@ -131,12 +131,15 @@ class MetabolomeAnnotations(Dataset):
             self.check_expectations_2(df)
 
             try:
-                df = df[[self.col_mz, self.col_formula, self.col_molecule_ids,
-                         self.col_molecule_names, self.offsample_column]]
+                df = df[[self.mz_col, self.formula_col, self.molecule_ids_col,
+                         self.molecule_names_col, self.offsample_column,
+                         self.total_intens_col]]
             except KeyError:
-                df = df[[self.col_mz, self.col_formula, self.col_molecule_ids,
-                         self.col_molecule_names]]
-            df[self.col_mz] = np.around(df[self.col_mz].to_numpy(), decimals=9)
+                df = df[[self.mz_col, self.formula_col, self.molecule_ids_col,
+                         self.molecule_names_col]]
+                auto_remove_offsample = False  # not enough columns to be True
+
+            df[self.mz_col] = np.around(df[self.mz_col].to_numpy(), decimals=9)
             df = df.dropna(how="all")
             df['database'] = anno_key
             if anno_key == "custom_kegg":
@@ -149,31 +152,40 @@ class MetabolomeAnnotations(Dataset):
         self.preloaded = preloaded_annots
 
         self.unfiltered = helpers.spreadout_annotation_df(
-                preloaded_annots, self.col_mz, self.col_formula,
-                self.col_molecule_ids, self.col_molecule_names)
+                preloaded_annots, self.mz_col, self.formula_col,
+                self.molecule_ids_col, self.molecule_names_col)
 
-        self.unfiltered[self.col_mz] = np.around(
-            self.unfiltered[self.col_mz].to_numpy(), decimals=9)
+        self.unfiltered[self.mz_col] = np.around(
+            self.unfiltered[self.mz_col].to_numpy(), decimals=9)
 
-    def run_feat_classif(self):
+    def build_feat_classif_df(self):
         """optional, if offsample column exists"""
-        self.feat_classif = helpers.pull_offsample_info(self.preloaded,
-                                                        self.col_mz,
-                                                        self.offsample_column)
+        self.feat_classif = helpers.pull_offsample_info(
+            self.preloaded, self.mz_col, self.offsample_column,
+            self.total_intens_col)
 
-    def discard_out_of_sample_mz(self):
-        """optional, to discard the mz that are out-of-tissue"""
-         # Tested in 'user-pipeline/drafts': it is NOT possible TO FIND THE PIXELS THAT ARE RICH IN THOSE MZ-TO-BE-DISCARDED unfortunately
-        mz_keep = self.feat_classif.loc[self.feat_classif[self.offsample_column] == False,
-                    self.col_mz].tolist()
-        updated_df = self.unfiltered.loc[
-            self.unfiltered[self.col_mz].isin(mz_keep)]
-        self.unfiltered = updated_df
-        logger.info(' [discard_out_of_sample_mz]> Excluded %s unique '
-                    'features that are "out-of-the-tissue". Retained: %s.',
-                    len(set(self.feat_classif[
-                                self.col_mz].unique()) - set(mz_keep)),
-                    len(set(mz_keep)))
+    def discard_out_of_tissue_mz(self, prob_out=0.9,
+                                 fraction_to_exclude=1):
+        """Recommended (optional), to discard the mz that are out-of-tissue.
+        Among the offsample features (those having >= prob_out)
+        ordered by decreasing total intensity, exclude the defined fraction"""
+        self.build_feat_classif_df()
+        if self.feat_classif[self.offsample_column].max() <= 1:
+            self.feat_classif[self.offsample_column
+            ] = self.feat_classif[self.offsample_column] * 100
+
+        bad_feat_df = self.feat_classif.loc[
+            self.feat_classif[self.offsample_column] >= (prob_out * 100), :]
+
+        bad_feat_df = bad_feat_df.sort_values(
+            by=[self.mz_col, self.total_intens_col], ascending=[True, False])
+        n_bad = int(bad_feat_df.shape[0] * fraction_to_exclude)
+        mz_out = bad_feat_df[self.mz_col].tolist()[:n_bad]
+
+        self.unfiltered = self.unfiltered.loc[~self.unfiltered[
+            self.mz_col].isin(mz_out)]
+        logger.info('[discard_out_of_tissue_mz]: Excluded %s m/z '
+                    'features that are "out-of-the-tissue"',len(mz_out))
 
     def convert_ids_to_kegg(self, ref_table: pd.DataFrame):   # todo: is it possible to make it generalizable and not only KEGG dependent ?
         logger.info('Translating ids in the metabolome annotation'
@@ -184,9 +196,9 @@ class MetabolomeAnnotations(Dataset):
         try:
             self.df = helpers.convert_metabo_annots_tokegg(
                 self.unfiltered, ref_table,
-                self.col_molecule_ids, self.col_mz)
+                self.molecule_ids_col, self.mz_col)
             excess_mz_bool: bool = helpers.identify_multi_mz_to_one_kegg(
-                self.df,  self.col_mz)
+                self.df,  self.mz_col)
             if excess_mz_bool:
                 message_multimz = (
                     "Identified 'multi m/z to one KEGGid' cases!: Please run "
@@ -201,7 +213,7 @@ class MetabolomeAnnotations(Dataset):
         logger.info('[treat_mz_multiplets]: if "multi m/z to one KEGGid", for'
                     ' such KEGGid, the m/z with the top variance is kept.')
         self.df = helpers.compute_one_to_one_mz_keggid_df(
-            self.df, adata_mz, self.col_mz)
+            self.df, adata_mz, self.mz_col)
 
     def check_expectations_1(self):
         if len(set(list(self.annotation_files.keys())).intersection(
@@ -216,8 +228,8 @@ class MetabolomeAnnotations(Dataset):
 
     def check_expectations_2(self, df):
         expected_columns_by_df = [
-            self.col_mz, self.col_formula,
-           self.col_molecule_ids, self.col_molecule_names]
+            self.mz_col, self.formula_col,
+           self.molecule_ids_col, self.molecule_names_col]
 
         if len(list(df.columns)) <= 1:
             logger.error("Error: insuficient columns in annotation dataframe,"
@@ -237,9 +249,9 @@ class MetabolicPathways(BaseModel, extra='allow'):
     custom_file: Optional[str] = ''
     file_style: str = "sspa-kegg"  # for both official and custom pathways
     undesired_substring: str = " - Homo sapiens (human)" # in names
-    col_pathway_id: str = "pathway_id"
-    col_pathway_name: str = "pathway_name"
-    col_molec_ids_in_pathways: str = "KEGG"   #  must match joined annots
+    pathway_id_col: str = "pathway_id"
+    pathway_name_col: str = "pathway_name"
+    molec_ids_in_pathways_col: str = "KEGG"   #  must match joined annots
     piled: pd.DataFrame = pd.DataFrame()
     pathways_ids: pd.DataFrame = pd.DataFrame()
 
@@ -292,8 +304,8 @@ class MetabolicPathways(BaseModel, extra='allow'):
             dfs_dict['custom'] = self.custom
 
         id_name_pathways_df, pws_piled = helpers.gmts_merge_pile_splitid(
-            dfs_dict, self.col_pathway_id, self.col_pathway_name,
-            self.col_molec_ids_in_pathways)
+            dfs_dict, self.pathway_id_col, self.pathway_name_col,
+            self.molec_ids_in_pathways_col)
 
         self.pathways_ids = id_name_pathways_df
         self.piled = pws_piled
@@ -302,8 +314,8 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
     def to_dict(self) -> Dict[str, List[str]]:
         return helpers.pws_piled_to_dict(
-            self.piled, self.col_pathway_id,
-            mz_or_identity_col=self.col_molec_ids_in_pathways)
+            self.piled, self.pathway_id_col,
+            mz_or_identity_col=self.molec_ids_in_pathways_col)
 
     def intersect_with_annotations(self, annots_obj: MetabolomeAnnotations):
         """
@@ -312,8 +324,8 @@ class MetabolicPathways(BaseModel, extra='allow'):
         """
         self.piled = helpers.pathways_and_annots_join(
             self.piled,
-            annots_obj.df[[annots_obj.col_mz, self.col_molec_ids_in_pathways]],
-            self.col_molec_ids_in_pathways)
+            annots_obj.df[[annots_obj.mz_col, self.molec_ids_in_pathways_col]],
+            self.molec_ids_in_pathways_col)
 
     def constrain(self, min_pathway_size, max_pathway_size):
         good_pathways_l = pathways_methods.yield_compliant_pathways(
@@ -323,7 +335,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
         self.piled = self.piled.loc[
             self.piled["pathway_id"].isin(good_pathways_l)]
         self.piled = self.piled.loc[~self.piled[
-            self.col_molec_ids_in_pathways].isin(metabolites_to_eject), :]
+            self.molec_ids_in_pathways_col].isin(metabolites_to_eject), :]
         self.pathways_ids = self.pathways_ids.loc[
                                    self.pathways_ids[
                                        "pathway_id"].isin(good_pathways_l), :]

@@ -21,11 +21,12 @@ not_metabolic_reactions_pathways = [
     "syndrome", "thyroid", "endocrine",  "cushing", "ovarian", "contraction",
     "atherosclerosis", "cardiomyo", "arthritis", "inflammatory", "platelet",
     "lupus erythematosus",  "kaposi", "asthma", "disease", "depression",
-    "longevity regulating", "circadian", "thermogenesis", "photo",
+    "longevity regulating", "circadian", "thermogenesis", "phototransduction",
     "trypanosomiasis", "shigellosis", "infection", "immune", "diabetes",
     "leishmania", "toxoplasmosis", "legionel", "malaria", "tuberculosis",
     "coccus", "virus", "virion", "viral", "measles", "dna adducts",
-    "meiosis", "checkpoint", "receptor", "resistance", "cell"
+    "meiosis", "checkpoint", "receptor", "resistance", "cell",
+    "pathways in cancer"  # new
 ]
 # Explanation of 'not_metabolic_reactions_pathways': any pathway name
 # that contains the specified substrings above, is classified as being

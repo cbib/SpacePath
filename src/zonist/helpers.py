@@ -30,8 +30,8 @@ def combine_frames_identical_columns(dfs_dict : Dict[str, pd.DataFrame]
     return df_out
 
 
-def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str, 
-    col_molecule_ids: str, col_molecule_names: str):
+def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str, 
+    molecule_ids_col: str, molecule_names_col: str):
     """
     Transforms this format:
 
@@ -48,39 +48,38 @@ def spreadout_annotation_df(df: pd.DataFrame, col_mz: str, col_formula: str,
 
     comma_plus_space = ", " ## caution, do not remove the space
 
-    tmp1 = df[[col_mz, col_formula, col_molecule_ids]]
-    tmp2 = df[[col_molecule_names, 'database']]
-    tmp1[col_molecule_ids] = tmp1[col_molecule_ids
+    tmp1 = df[[mz_col, formula_col, molecule_ids_col]]
+    tmp2 = df[[molecule_names_col, 'database']]
+    tmp1[molecule_ids_col] = tmp1[molecule_ids_col
                    ].str.split(comma_plus_space)
-    tmp2[col_molecule_names] = tmp2[col_molecule_names
+    tmp2[molecule_names_col] = tmp2[molecule_names_col
                    ].str.split(comma_plus_space)
 
-    tmp1 = tmp1.explode(col_molecule_ids)
-    tmp2 = tmp2.explode(col_molecule_names)
+    tmp1 = tmp1.explode(molecule_ids_col)
+    tmp2 = tmp2.explode(molecule_names_col)
     df_out = pd.concat([tmp1, tmp2], axis=1)
 
     return df_out
 
-def pull_offsample_info(df, col_mz: str, col_offsample: str):
-    df = df[[col_mz, col_offsample]]
-    df[col_offsample] = df[col_offsample].astype(bool)
-    df = df.sort_values(by=[col_mz, col_offsample],
-                        ascending=[True, True])
-    df = df.drop_duplicates(subset=[col_mz, col_offsample],
-                            keep='first')
+def pull_offsample_info(df, mz_col: str, offsample_col: str,
+                        total_intens_col):
+    df = df[[mz_col, offsample_col, total_intens_col]]
+    df = df.sort_values(by=[mz_col, offsample_col, total_intens_col],
+                        ascending=[True, False, False])
+    df = df.drop_duplicates(subset=[mz_col], keep='first')
     return df
 
 
 def convert_metabo_annots_tokegg(
         annotdf: pd.DataFrame,  mappings_ref_ids: pd.DataFrame,
-        col_molecule_ids: str, col_mz: str) -> pd.DataFrame:
+        molecule_ids_col: str, mz_col: str) -> pd.DataFrame:
     dfs_list = []
     common_notkegg_database = set(annotdf['database'].unique()).intersection(
         set(mappings_ref_ids['database'].unique()))
     for cd in list(common_notkegg_database):
         tmp_df = annotdf.loc[annotdf['database'] == cd, :]
         tmp_ref = mappings_ref_ids.loc[mappings_ref_ids['database'] == cd, :]
-        joined = pd.merge(tmp_df, tmp_ref, left_on=col_molecule_ids,
+        joined = pd.merge(tmp_df, tmp_ref, left_on=molecule_ids_col,
                           right_on='initial_id_unconverted', how='left')
         joined = joined.assign(database=joined.database_y)
         joined = joined.drop(columns=['database_x', 'database_y',
@@ -89,22 +88,22 @@ def convert_metabo_annots_tokegg(
     # end for
     if "KEGG" in annotdf['database'].unique():
         kegg_tmp_df = annotdf.loc[annotdf['database'] == "KEGG", :]
-        kegg_tmp_df = kegg_tmp_df.assign(KEGG=kegg_tmp_df[col_molecule_ids])
+        kegg_tmp_df = kegg_tmp_df.assign(KEGG=kegg_tmp_df[molecule_ids_col])
         dfs_list.append(kegg_tmp_df)
 
     final = pd.concat(dfs_list)
-    final = final.sort_values(by=col_molecule_ids, ascending=True)
-    final = final.drop_duplicates(subset=[col_mz, 'KEGG'], keep='first')
-    final = final.sort_values(by=col_mz, ascending=True)
+    final = final.sort_values(by=molecule_ids_col, ascending=True)
+    final = final.drop_duplicates(subset=[mz_col, 'KEGG'], keep='first')
+    final = final.sort_values(by=mz_col, ascending=True)
 
     return final
 
 
 def identify_multi_mz_to_one_kegg(annotdf: pd.DataFrame,
-                                  col_mz: str) -> bool:
+                                  mz_col: str) -> bool:
     """True if multiple mz for one KEGG id exist in the annotation table"""
     out_bool = False
-    df2 = annotdf[[col_mz, "KEGG"]]
+    df2 = annotdf[[mz_col, "KEGG"]]
     df2 = df2.drop_duplicates()
     df2 = df2.groupby("KEGG", as_index=False).size()
     df2 = df2.loc[df2['size'] >= 2, :].head()
@@ -143,7 +142,7 @@ def resolve_mz_multi_kegg(adata: ad.AnnData, df: pd.DataFrame) -> List[tuple]:
 
 
 def compute_one_to_one_mz_keggid_df(annotdf: pd.DataFrame, adata_mz: ad.AnnData,
-                                       col_mz: str) -> pd.DataFrame:
+                                       mz_col: str) -> pd.DataFrame:
     ok_mz_kegg_tuples = resolve_mz_multi_kegg(adata_mz, annotdf)
     annotdf["keep"] = 0
     for tup in ok_mz_kegg_tuples:
@@ -182,7 +181,7 @@ def purge_pathways(gmt_df, not_metabolic_reactions_pathways: List[str]):
     return gmt_df
 
 
-def gmt_to_piled_form(gmt_df, col_pathway_id: str, col_molecule_id: str):
+def gmt_to_piled_form(gmt_df, pathway_id_col: str, molecule_id_col: str):
     """return df with 2 columns:  pathway name, molecule kegg identifiers"""
     l_1 = []
     l_2 = []
@@ -192,21 +191,21 @@ def gmt_to_piled_form(gmt_df, col_pathway_id: str, col_molecule_id: str):
         l_1 += [p_id for i in range(len(molecules))]
         l_2 += molecules
 
-    piled_df = pd.DataFrame({col_pathway_id: l_1, col_molecule_id: l_2})
+    piled_df = pd.DataFrame({pathway_id_col: l_1, molecule_id_col: l_2})
 
     return piled_df
 
 
-def gmts_merge_pile_splitid(dfs_dict, col_pathway_id: str,
-                            col_pathway_name: str, col_molec_ids_pws: str):
+def gmts_merge_pile_splitid(dfs_dict, pathway_id_col: str,
+                            pathway_name_col: str, molec_ids_pws_col: str):
     pathways_identities_dfs = {}
     for k in dfs_dict.keys():
         tmp = dfs_dict[k]
         pathways_identities_dfs[k] = pd.DataFrame(
-            {col_pathway_id: tmp.iloc[:,0].tolist(),
-             col_pathway_name: tmp.iloc[:,1].tolist()})
+            {pathway_id_col: tmp.iloc[:,0].tolist(),
+             pathway_name_col: tmp.iloc[:,1].tolist()})
         dfs_dict[k] = gmt_to_piled_form(     # is a table in piled form
-            tmp, col_pathway_id, col_molec_ids_pws)
+            tmp, pathway_id_col, molec_ids_pws_col)
     # end for
     pws_piled = combine_frames_identical_columns(dfs_dict)
     id_name_df = combine_frames_identical_columns(pathways_identities_dfs)

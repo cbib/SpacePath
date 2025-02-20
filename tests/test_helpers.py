@@ -26,7 +26,7 @@ class Test(TestCase):
         })
         result = helpers.convert_metabo_annots_tokegg(
             metabolome_annot_df, ref_ids_map_df,
-            col_molecule_ids="moleculeIds", col_mz="mz")
+            molecule_ids_col="moleculeIds", mz_col="mz")
         self.assertListEqual(
             list(result.columns),
             ['mz', 'formula', 'moleculeIds', 'moleculeNames',
