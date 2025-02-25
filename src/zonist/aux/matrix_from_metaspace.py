@@ -22,7 +22,6 @@ def build_coord_names(df) -> List[str]:
     return list(pixels_names_l)
 
 
-
 def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr) -> (
         set, List[pd.DataFrame]):
     mx_dfs = []

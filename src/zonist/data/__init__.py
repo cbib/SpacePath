@@ -159,33 +159,42 @@ class MetabolomeAnnotations(Dataset):
             self.unfiltered[self.mz_col].to_numpy(), decimals=9)
 
     def build_feat_classif_df(self):
-        """optional, if offsample column exists"""
-        self.feat_classif = helpers.pull_offsample_info(
-            self.preloaded, self.mz_col, self.offsample_column,
-            self.total_intens_col)
+        """Builds df, if probability of being outside-of-tissue exists"""
+        if self.offsample_column in self.preloaded.columns.tolist():
+            self.feat_classif = helpers.pull_offsample_info(
+                self.preloaded, self.mz_col, self.offsample_column,
+                self.total_intens_col)
+            if self.feat_classif[self.offsample_column].isnull().all():
+                logger.warning("Useless: %s is NaN", self.offsample_column)
+        else:
+            logger.error("Failed, no %s column", self.offsample_column)
 
-    def discard_out_of_tissue_mz(self, prob_out=0.9,
+    def discard_out_of_tissue_mz(self, prob_out=0.87,
                                  fraction_to_exclude=1):
         """Recommended (optional), to discard the mz that are out-of-tissue.
-        Among the offsample features (those having >= prob_out)
+        Among the off-sample features (those having >= prob_out)
         ordered by decreasing total intensity, exclude the defined fraction"""
         self.build_feat_classif_df()
-        if self.feat_classif[self.offsample_column].max() <= 1:
-            self.feat_classif[self.offsample_column
-            ] = self.feat_classif[self.offsample_column] * 100
+        # if column is not empty NaN entirely, skip:
+        if self.feat_classif[self.offsample_column].isnull().all():
+            logger.warning("Useless: %s is NaN", self.offsample_column)
+        else:
+            if self.feat_classif[self.offsample_column].max() <= 1:
+                self.feat_classif[self.offsample_column
+                ] = self.feat_classif[self.offsample_column] * 100
 
-        bad_feat_df = self.feat_classif.loc[
-            self.feat_classif[self.offsample_column] >= (prob_out * 100), :]
+            bad_feat_df = self.feat_classif.loc[self.feat_classif[
+                self.offsample_column] >= (prob_out * 100), :]
 
-        bad_feat_df = bad_feat_df.sort_values(
-            by=[self.mz_col, self.total_intens_col], ascending=[True, False])
-        n_bad = int(bad_feat_df.shape[0] * fraction_to_exclude)
-        mz_out = bad_feat_df[self.mz_col].tolist()[:n_bad]
+            bad_feat_df = bad_feat_df.sort_values(by=[
+                self.mz_col, self.total_intens_col], ascending=[True, False])
+            n_bad = int(bad_feat_df.shape[0] * fraction_to_exclude)
+            mz_out = bad_feat_df[self.mz_col].tolist()[:n_bad]
 
-        self.unfiltered = self.unfiltered.loc[~self.unfiltered[
-            self.mz_col].isin(mz_out)]
-        logger.info('[discard_out_of_tissue_mz]: Excluded %s m/z '
-                    'features that are "out-of-the-tissue"',len(mz_out))
+            self.unfiltered = self.unfiltered.loc[~self.unfiltered[
+                self.mz_col].isin(mz_out)]
+            logger.info('[discard_out_of_tissue_mz]: Excluded %s m/z '
+                        'features that are "out-of-the-tissue"', len(mz_out))
 
     def convert_ids_to_kegg(self, ref_table: pd.DataFrame):   # todo: is it possible to make it generalizable and not only KEGG dependent ?
         logger.info('Translating ids in the metabolome annotation'
@@ -339,24 +348,3 @@ class MetabolicPathways(BaseModel, extra='allow'):
         self.pathways_ids = self.pathways_ids.loc[
                                    self.pathways_ids[
                                        "pathway_id"].isin(good_pathways_l), :]
-
-
-
-
-
-
-
-
-
-
-      
-
-    
-
-
-
-    
-
-    
-    
-
