@@ -38,12 +38,6 @@ def format_properly_df(df):
     return df, mz_arr
 
 
-def build_coord_names(df):
-    p1 = "x" + df['ion_image_pixel_x'].astype(str).to_numpy()
-    p2 = "_y" + df['ion_image_pixel_y'].astype(str).to_numpy()
-    p3 = p1 + p2
-    return list(p3)
-
 
 def open_coords_file(sample):
     mycoords1 = pd.read_csv(

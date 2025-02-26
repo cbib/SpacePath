@@ -17,7 +17,6 @@ print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "UBplatform"
-#"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 
 
 
@@ -46,9 +45,15 @@ sq.gr.spatial_neighbors(scores, n_neighbors=10,
                         use_rep=None,
                         method='umap', metric='cosine')
 """
-sc.pp.neighbors(scores, n_neighbors=600, n_pcs=None, use_rep=None,
-                method='umap', metric='cosine', random_state=0)
+sc.pp.neighbors(scores,
+                n_neighbors=20,
+                knn=True, method='umap',
+                metric='cosine',
+                random_state=0)
 # creates .obsp["connectivities'] with the cosine dists
+
+# revise all edges
+# if nodes are spatially distant, but the
 
 sc.tl.leiden(scores,
              adjacency=scores.obsp["connectivities"], # is a squared n_obs x n_obs matrix: can be huge!

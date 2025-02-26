@@ -47,11 +47,9 @@ kpca_score_adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-PathwayScores.h5ad"))
 
 kpca_new_obj = kpca_score_adata.copy()
-tmpX = (kpca_new_obj.X.todense() + abs(kpca_new_obj.X.min().min())) * 1e3
-kpca_new_obj.X = csr_matrix(tmpX)
-#kpca_new_obj = spatial_standard_computations(kpca_new_obj, 12,
-#                                                 plot_folder,
-#                                                 prefix=f"{SAMPLE}-PathwaysScores")
+#tmpX = (kpca_new_obj.X.todense() + abs(kpca_new_obj.X.min().min())) * 1e3
+#kpca_new_obj.X = csr_matrix(tmpX)
+#kpca_new_obj = spatial_standard_computations(kpca_new_obj, k=12, as_log=False)
 
 hoho = kpca_new_obj.var.copy().astype(str)
 hyhy = pathwaysObj.pathways_ids.copy().astype(str)

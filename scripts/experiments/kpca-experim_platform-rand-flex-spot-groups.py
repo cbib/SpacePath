@@ -50,7 +50,7 @@ print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "UBplatform"
-#"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
+
 anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
              "LipidMaps": f"{SAMPLE}_lipidmaps.csv"}
 plot_folder = "../../../figures/platform"

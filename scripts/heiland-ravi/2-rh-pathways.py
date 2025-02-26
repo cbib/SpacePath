@@ -103,8 +103,6 @@ kpca_scores = compute_pathways_scores(pathwaysObj, adata,)
 
 print(kpca_scores.iloc[:3,:5])
 
-# TODO: is it always needed to shift the distr to the right ???
-kpca_scores = (kpca_scores + abs(kpca_scores.min().min())) * 1e3 # shift to right and unshrink
 
 kpca_score_adata = ad.AnnData(
     X=csr_matrix(kpca_scores),
@@ -119,8 +117,9 @@ kpca_score_adata = ad.AnnData(
 plot_selected_pathways(kpca_score_adata, biologically_chosen_pathways,
                   f"{SAMPLE}--Picked", plot_folder)
 
-kpca_score_adata = spatial_standard_computations(kpca_score_adata, pca_ncomps=12,
-                                  plot_folder=plot_folder,
+kpca_score_adata = spatial_standard_computations(kpca_score_adata, k=12, as_log=False)
+plot_standard_computs(kpca_score_adata,
+                      plot_folder=plot_folder,
                               prefix=f'{SAMPLE}PathwaysScores')
 
 kpca_score_adata = compute_moran_i(kpca_score_adata, 5)

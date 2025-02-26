@@ -54,12 +54,12 @@ print(len(pws_id_names_dict))
 plot_selected_pathways(kpca_score_adata, pws_id_names_dict,
                            f"{SAMPLE}--", plot_folder)
 
-kpca_scores = (kpca_scores + abs(kpca_scores.min().min())) + 1 # shift to right and unshrink
-kpca_score_adata.X = csr_matrix(kpca_scores)
+# kpca_scores = (kpca_scores + abs(kpca_scores.min().min())) + 1 # shift to right
+# kpca_score_adata.X = csr_matrix(kpca_scores)
 kpca_score_adata = spatial_standard_computations(kpca_score_adata,
-                                                 pca_ncomps=12,
-                                                 plot_folder=plot_folder,
-                                                 prefix=f'{SAMPLE}PathwaysScoresV3')
+                                                 k=12, as_log=False)
+plot_standard_computs(kpca_score_adata, plot_folder=plot_folder,
+                      prefix=f'{SAMPLE}PathwaysScoresV3')
 
 
 

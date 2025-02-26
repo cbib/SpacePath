@@ -135,7 +135,7 @@ local_cosine_sim = cosine_similarity(np.array(tmp_mx1),
 #                 # we do not touch spot 2
 ##
 
-pws01, anns01 = zm.SyncPathwaysAndAnnots.run(pathwaysObj.model_copy(),
+pws01, anns01 = ªzm.SyncPathwaysAndAnnots.run(pathwaysObj.model_copy(),
                                              me_annots.model_copy(),
                                              min_pathway_size=1,
                                              max_pathway_size=1)
@@ -143,4 +143,5 @@ pws01, anns01 = zm.SyncPathwaysAndAnnots.run(pathwaysObj.model_copy(),
 # print(len(pws01.piled['pathway_id'].tolist()))
 # print(len(pws01.piled['pathway_id'].unique()))
 lost_forever = adata_mz[:, anns01.df["mz"].astype(str).unique()].copy()
-spatial_standard_computations(lost_forever, 12, plot_folder, f"{SAMPLE}RejectedMz")
+lost_forever = spatial_standard_computations(lost_forever, k=12)
+plot_standard_computs(lost_forever, k=12, plot_folder=plot_folder, f"{SAMPLE}RejectedMz")

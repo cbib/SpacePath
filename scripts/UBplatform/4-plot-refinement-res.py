@@ -21,7 +21,6 @@ print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "UBplatform"
-#"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 
 
 plot_folder = "../../../figures/platform"
@@ -36,7 +35,8 @@ scores_new = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
 
 print(len(adata_new.uns['refined_metabolites']))
 
-spatial_standard_computations(scores_new, 12, plot_folder, prefix=f'{SAMPLE}-Post{SF}')
+spatial_standard_computations(scores_new, 12, as_log=False)
+plot_standard_computs(adata, k=12, plot_folder=plot_folder, prefix=f'{SAMPLE}-Post{SF}')
 
 print(locura)
 

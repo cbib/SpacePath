@@ -13,7 +13,6 @@ import scanpy as sc
 # 0) all variables, strings and dictionaries, to be used
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 subdir = "tmp"
-#"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 
 anno_dict = {'HMDB': "whole-ellis_hmdb.csv",
              'LipidMaps': "whole-ellis_lipidmaps.csv"}

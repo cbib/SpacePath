@@ -31,6 +31,10 @@ samples = [   "248_T"   , "259_T", "260_T", "262_T", "269_T", "275_T"]
 
 Or use Bash oneliner:
 mylist=(248_T 259_T 260_T 262_T 269_T 275_T);for k in ${mylist[*]}; do echo $k; python 1-rh-describe.py $k; done
+
+
+Note: No need of pixel selection (by spot_quality) because already done by authors.
+
 """
 
 SAMPLE =  "248_T"  # sys.argv[1] #
@@ -63,13 +67,15 @@ pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
     mydata_dir, me_annots, adata_mz)
 print("mz post sync", adata_mz)
 
-#adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder, prefix=f"{SAMPLE}-MZ-V2")  # ====> !!
+#adata_mz = spatial_standard_computations(adata_mz, k=12)
+#plot_standard_computs(adata_mz, k=12, plot_folder=plot_folder, prefix=f"{SAMPLE}-MZ-V2")
 
 # the KEGG id adata
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
 
-#adata = spatial_standard_computations(adata, 12, plot_folder, f"{SAMPLE}-KEGGmetabolitesV2")  # ====> !!
+#adata = spatial_standard_computations(adata, k=12)
+# plot_standard_computs(adata, k=12, plot_folder=plot_folder, f"{SAMPLE}-KEGGmetabolitesV2")  # ====> !!
 
 
 

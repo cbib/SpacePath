@@ -26,13 +26,12 @@ Bash call:
 mylist=(UBcalibr1 UBcalibr2 UBcalibr3 UBcalibr4 UBcalibr5);for k in ${mylist[*]}; do echo $k; python xxxxx.py $k; done
 """
 
-SAMPLE =  "UBcalibr2" # TODO rerun all the things !!!    #  sys.argv[1]  #   "UBcalibr2"
+SAMPLE =  sys.argv[1]  #   "UBcalibr2"
 
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "UBplatform"
-#"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
              "LipidMaps": f"{SAMPLE}_lipidmaps.csv"}
 plot_folder = "../../../figures/platform"
@@ -64,6 +63,7 @@ X_metabolites_probs_df = compute_metabolites_probs_df(adata_mz, me_annots.df)
 
 adata = build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df,
                                   annots_df=me_annots.df)
+
 print("KEGG resolved adata: ", adata)
 
 adata.write_h5ad(os.path.join(mydata_dir, subfolder,

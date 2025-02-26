@@ -8,6 +8,21 @@ import scanpy as sc
 import squidpy as sq
 
 
+def plot_standard_computs(adata, k=8,
+                                  plot_folder=None, prefix='sample')-> None:
+    if plot_folder is not None:
+        tmpstr = os.path.join(plot_folder,
+                              f'{prefix}--Kmeans-{k}.png')
+        sq.pl.spatial_scatter(adata, color=[f'kmeans{k}'],
+                              img=False, title=f"Kmeans (k={k})",
+                              save=os.path.abspath(tmpstr))
+    else:
+        sq.pl.spatial_scatter(adata, color=[f'kmeans{k}'],
+                              img=False, title=f"Kmeans (k={k})"
+                              )
+        plt.show()
+
+
 def plot_selected_kegg_compound_ids(adata, me_annots,
                                     metabolites_kegg_ids: List[str], sample, plot_folder)-> None:
 

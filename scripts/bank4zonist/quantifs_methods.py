@@ -131,6 +131,69 @@ def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
 
     return adata
 
+#
+def adata_mz_mark_spot_quality(# for future: put this as aux_adata_methods because is tooo slow for big nb of spots
+        adata_mz, features_classification_df, cutoff_out_percentage: int=87,
+        tolerated_fraction: float=0.5,
+        mz_col: str='mz', off_col: str='rawOffSampleProb'):
+    """
+    Marks good and bad scores in two steps:
+    a)  Defines a quality score for each spot: it is a ratio computed as
+    the sum of the quantities (signal) of the 'out-of-tissue' m/z features
+    over the total of the quantities of all m/z, for the current spot.
+
+    Note : The out-of-tissue decision is defined by 'percentage' which
+           is the cutoff of 'p * 100' where p is the probability
+           computed by Metaspace of a m/z being outside the tissue.
+
+    The smaller the score, the better the quality of the spot.
+    e.g. 0.5 means that sum of signal of out-of-tissue m/z represent
+    the half of the total sum of signal of all m/z.
+
+    b) The "good" pixel score is inferior or equal to the tolerated_fraction.
+
+    Results stored in adata_mz.obs
+    """
+    df = features_classification_df[[mz_col, off_col]]
+    if df[off_col].max() <= 1:
+        df[off_col] = df[off_col] * 100
+    df_tr = df.T
+    df_tr.index = [mz_col, off_col]
+    df_tr.columns = df[mz_col].tolist()
+    df_tr = df_tr[adata_mz.var[mz_col].tolist()]  # columns in appropriate order
+    allright = np.all(np.array(df_tr.columns.tolist()) == adata_mz.var['mz'].to_numpy())
+    sum_out_tissue_quantities_arr = np.zeros(shape=adata_mz.obs.shape[0])
+    total_arr = np.zeros(shape=adata_mz.obs.shape[0])
+    if allright:
+        for i in range(0, adata_mz.obs.shape[0]):
+            x = adata_mz.obs.index.tolist()[i]
+            tmp = pd.DataFrame({
+                "quantifications": np.array(adata_mz[x, :].X.todense()).flatten(),
+                off_col : df_tr.loc[off_col, :].to_numpy()
+            })
+            sum_out_tissue_quantities_arr[i] = tmp.loc[
+                tmp[off_col] >= cutoff_out_percentage,
+                "quantifications"].sum()
+            total_arr[i] =  tmp["quantifications"].sum()
+        # end for
+
+        ratios_arr = (sum_out_tissue_quantities_arr + 1) / (total_arr + 1)  # avoid zero division error
+        adata_mz.obs = adata_mz.obs.assign(
+            sum_out_tissue_quants=sum_out_tissue_quantities_arr,
+            total_quants=total_arr,
+            ratio_out_tissue__total=ratios_arr)
+        adata_mz.obs['spot_quality'] = "good"
+        adata_mz.obs.loc[adata_mz.obs['ratio_out_tissue__total'] > tolerated_fraction,
+            'spot_quality'] = "bad"
+        # adata_mz.obs.loc[
+        #     adata_mz.obs['ratio_out_tissue__total'].isnull(),
+        #     'spot_quality'] = "bad"
+
+    else:
+        print("impossible to add the spot quality")
+
+    return adata_mz
+
 
 def adata_mz_filter_negligible_abundance(adata_mz, spots_non_zero=5):   #TODO change to 10?
     # TODO: evaluate the nb of zeroes in entire matrix, if too few , fix a minval for converting to zero all values <= minval ??
@@ -202,16 +265,17 @@ def closeness_by_fraction(value1: float, value2: float, fraction: float=0.8) -> 
 
 
 
-# todo: change name of this fun:
-def spatial_standard_computations(adata, pca_ncomps=20,
-                                  plot_folder=None, prefix='sample', as_log=True,
+def spatial_standard_computations(adata, k=8,
+                                  pca_ncomps=12,
+                                  as_log=True,
                                   top_variable_features_fraction=0.95):
 
     if (adata.var.shape[0] > pca_ncomps) and (
             adata.var.shape[0] > adata.obs.shape[0]):
+
         if as_log:
             sc.pp.log1p(adata)
-            print("Warining: adata.X now is log transformed")
+
         try:
             topn = int(adata.var.shape[0] * top_variable_features_fraction)
             sc.pp.highly_variable_genes(adata,
@@ -220,25 +284,21 @@ def spatial_standard_computations(adata, pca_ncomps=20,
                                         n_top_genes=topn)
         except ValueError:
             pass  # TODO :: add log error warning "continued without computing highly variable feat"
+
         print("computing pca")
         sc.pp.pca(adata, n_comps=pca_ncomps)  # use_highly_variable is true by default, but .var['highly_variable'] col was True in all values
         print("computing kmeans")
-        kmeans = KMeans(n_clusters=pca_ncomps, n_init=10, random_state=0).fit(
+        kmeans = KMeans(n_clusters=k, n_init=10, random_state=0).fit(
             adata.obsm['X_pca'])
-    else:     # this is the preferred way  for metabo: todo separate into another funcion of standard computs for metabo
+    else:
+        # this is the preferred way  for metabo: todo separate into another funcion of standard computs for metabo
+        print("skipping PCA: too few features")
         X = np.array(adata.X.todense())
         if as_log:
             X = np.log1p(X)
-        kmeans = KMeans(n_clusters=pca_ncomps, n_init=10,
+        kmeans = KMeans(n_clusters=k, n_init=10,
                         random_state=0).fit(X)
-    adata.obs[f'kmeans{pca_ncomps}'] = kmeans.labels_.astype(str)
-
-    # TODO: do not mix 'processing' and 'visualization', instead, do a separate funciton for figures:
-    if plot_folder is not None:
-        tmpstr = os.path.join(plot_folder, f'{prefix}--Kmeans-{pca_ncomps}.png')
-        sq.pl.spatial_scatter(adata, color=[f'kmeans{pca_ncomps}'],
-                              img=False, title=f"Kmeans (k={pca_ncomps})",
-                              save=os.path.abspath(tmpstr))
+    adata.obs[f'kmeans{k}'] = kmeans.labels_.astype(str)
 
     return adata
 

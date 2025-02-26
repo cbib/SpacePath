@@ -5,6 +5,8 @@ import anndata as ad
 from scipy.sparse import csr_matrix
 import zonist.data as zd
 import zonist.method as zm
+import matplotlib.pyplot as plt
+
 
 
 def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz):
@@ -16,6 +18,7 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz):
                        'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv"})
 
     me_refmap.load()
+
     #verification(adata_mz, me_annots)
     me_annots.discard_out_of_tissue_mz()  # NEW !!! highly recommended
     me_annots.convert_ids_to_kegg(me_refmap.table)
@@ -35,6 +38,9 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz):
                                                           min_pathway_size=2)  # TODO: think how to easily re-find those metabs that have min_pathway_size=1
     adata_mz = adata_mz[:, me_annots.df["mz"].astype(
         str).unique()].copy()  # todo this is NOT sync, but like so
+
+
+
 
     return pathwaysObj, me_annots, adata_mz, initial_pws_dict
 
