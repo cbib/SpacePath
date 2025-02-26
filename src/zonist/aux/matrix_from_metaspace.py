@@ -24,7 +24,7 @@ def build_coord_names(df) -> List[str]:
 
 def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr) -> (
         set, List[pd.DataFrame]):
-    mx_dfs = []
+    matrices_dfs_list = []
     all_mz_with_multiplets = list()
     for key in api_versions.keys():
         adata = metaspace_to_anndata(
@@ -37,45 +37,50 @@ def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr) -> (
         Xdf.columns = mz_arr
         coordinates_names_list = build_coord_names(adata.obs)
         Xdf.index = coordinates_names_list
-        mx_dfs.append(Xdf)
+        matrices_dfs_list.append(Xdf)
         all_mz_with_multiplets += list(mz_arr)
         del adata
 
-    return set(all_mz_with_multiplets), mx_dfs
+    return set(all_mz_with_multiplets), matrices_dfs_list
 
 
 def homogenize_rows_order_mx_dfs(mx_dfs) -> List[pd.DataFrame]:
-    result = [mx_dfs[0]]  # initialize with the first df
+    matrices_dfs_list = [mx_dfs[0]]  # initialize with the first df
     ref_rownames = mx_dfs[0].index.tolist()
     for i in range(1, len(mx_dfs)):
         tmp = mx_dfs[i].T  # transpose to select faster by cols
         tmp = tmp[ref_rownames]
-        result.append(tmp.T)  # transpose to yield original shape
+        matrices_dfs_list.append(tmp.T)  # transpose to yield original shape
 
-    return result
+    return matrices_dfs_list
 
 
 def yield_matrix_dataframe_united(
         ordered_unique_mzs, matrices_dfs_list) -> pd.DataFrame:
     """yields matrix-dataframe with shape: coordinates x features"""
-    united_mx_df = {}
+    united_mx_dict = {}
+    spots_list = matrices_dfs_list[0].index.tolist()
     for mz in tqdm(ordered_unique_mzs):
-        if not mz in united_mx_df.keys():
-            found = False
-            n = 0
-            while (n < len(matrices_dfs_list)) and (found != True):
+        if not mz in united_mx_dict.keys():
+            found_mz = None
+            df_index = 0
+            while (df_index < len(matrices_dfs_list)) and (found_mz is None):
                 try:
-                    found_mz = matrices_dfs_list[n][mz].to_numpy()
-                    found = True
+                    found_mz = matrices_dfs_list[df_index][mz].to_numpy()
+                    try:   # handle repeated rows if any (ok, checked)
+                        if found_mz.shape[1] >= 2:
+                            found_mz = found_mz[:,0]
+                    except IndexError:
+                        pass
                 except KeyError:
                     pass
-                n += 1
+                df_index += 1
             # end while
-            united_mx_df[mz] = found_mz
+            united_mx_dict[mz] = found_mz
         # end if
     # end for
-    out_df = pd.DataFrame(united_mx_df)
-    out_df.index = matrices_dfs_list[0].index.tolist()
+    out_df = pd.DataFrame(united_mx_dict)
+    out_df.index = spots_list
     out_df = out_df.T
     out_df.index.name = "mz"
 
@@ -128,7 +133,7 @@ if __name__ == "__main__":
                    'LipidMaps': ("LipidMaps", "2017-12-12")}
     api_fdr = 0.5
     out_dir = "~/spatial_thesis/spatial_metabolomics/data/whole-ellis/"
-    filename = "whole-ellis_mx" # no extension
+    filename = "whole-ellis" # no extension
 
     out_file = os.path.join(os.path.expanduser(out_dir),
                             filename)
