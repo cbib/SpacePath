@@ -37,7 +37,7 @@ me_annots.load()
 
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 print(adata_mz)
 
 me_annots.build_feat_classif_df()
@@ -76,7 +76,7 @@ if "spot_quality" not in adata_mz.obs.columns.tolist():
         plt.show()
 
         adata_mz.write_h5ad(os.path.join(
-            mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+            mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
         print("saved adata")
     else:
         print("UP:Skipped, the out-of-tissue probabilities are not available")

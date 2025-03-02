@@ -67,7 +67,7 @@ me_annots.load()
 
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
 
 ## reference mappings to get KEGG ids from HMDB and LipidMaps identifiers

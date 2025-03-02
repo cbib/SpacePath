@@ -8,8 +8,10 @@ import scanpy as sc
 import squidpy as sq
 
 
-def plot_standard_computs(adata, k=8,
+def plot_standard_computs(adata,
                                   plot_folder=None, prefix='sample')-> None:
+    k_cols = [u for u in adata.obs.columns.tolist() if u.startswith('kmeans')]
+    k = adata.obs[k_cols[0]].astype(int).max() + 1
     if plot_folder is not None:
         tmpstr = os.path.join(plot_folder,
                               f'{prefix}--Kmeans-{k}.png')

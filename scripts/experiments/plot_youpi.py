@@ -64,6 +64,43 @@ def custom_scater_two_featuresV0(df, feature1, feature2, width, height):
     plt.show()
 
 
+def tsne_for_clustering():
+    # tested with small dataset 2, slightly better but still needs spatial refinement
+
+    from sklearn.manifold import TSNE
+    tsne = TSNE(n_components=2, perplexity=5, n_iter=1000, random_state=42)
+    tsne_arr = tsne.fit_transform(np.asarray(Xnew))
+
+    kmeans = KMeans(n_clusters=3, n_init=10, random_state=0
+                    ).fit(
+        # scores_adata.X
+        tsne_arr  # np.asarray(Xnew) # todo try with pc results:  TODO del
+    )
+    scores_adata.obs[f'kmeans'] = kmeans.labels_.astype(str)
+    closest, _ = pairwise_distances_argmin_min(kmeans.cluster_centers_,
+                                               # scores_adata.X
+                                               tsne_arr
+                                               )
+    tsne_df = pd.DataFrame(data=tsne_arr, columns=["TSNE1", "TSNE2"])
+    tsne_df['Cluster'] = kmeans.labels_.astype(str)
+    for inum_close in closest:
+        tsne_df.iloc[inum_close, -1] = "CENTERS"
+    # print(pc_df.head(2))
+
+    sns.lmplot(x="TSNE1", y="TSNE2",
+               data=tsne_df,
+               fit_reg=False,
+               hue='Cluster',  # color by cluster
+               legend=True,
+               scatter_kws={"s": 30})  # specify the point size
+    plt.show()
+
+    sq.pl.spatial_scatter(scores_adata, img=False, color="kmeans")
+    plt.show()
+
+
+
+
 # Example usage
 if __name__ == "__main__":
     # Sample DataFrame

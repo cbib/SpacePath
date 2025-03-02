@@ -16,7 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__),
 from quantifs_methods import *
 
 
-SAMPLE = sys.argv[1] # ok already done for all 5 samples    #  sys.argv[1]
+SAMPLE = "UBcalibr2"   #sys.argv[1] # ok already done for all 5 samples    #  sys.argv[1]
 
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -28,7 +28,7 @@ plot_folder = "../../../figures/platform"
 
 pixel_class_thresholds_by_sample = {
     'UBcalibr1': None,  # verified has all NaN values in OffSample column
-    'UBcalibr2': [95, 0.8],  # tuned, loose params to avoid losing lots of pixels
+    'UBcalibr2': [95, 0.8],  # (ok !) loose params to avoid losing lots of pixels
     'UBcalibr3': None,  # verified has all NaN values in OffSample column
     'UBcalibr4': [85, 0.4],  # tuned
     'UBcalibr5': [87, 0.5]   # default
@@ -44,7 +44,7 @@ me_annots.load()
 
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 print(adata_mz)
 
 if "spot_quality" not in adata_mz.obs.columns.tolist():
@@ -76,7 +76,7 @@ if "spot_quality" not in adata_mz.obs.columns.tolist():
         plt.show()
 
         adata_mz.write_h5ad(os.path.join(
-                            mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+                            mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
         print("saved adata")
     else:
         print("UP:Skipped, the out-of-tissue probabilities are not available")

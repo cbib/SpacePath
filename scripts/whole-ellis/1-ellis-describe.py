@@ -68,7 +68,7 @@ pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
 adata_mz = adata_mz[:, me_annots.df["mz"].astype(str).unique()].copy() # todo this is NOT sync, but like so
 print("mz post sync", adata_mz)
 
-adata_mz = spatial_standard_computations(adata_mz, 12, plot_folder,
+adata_mz = spatial_standard_computations(adata_mz, k=12, plot_folder=plot_folder,
                                         prefix=f"{SAMPLE}-MZ-V2")  # ====> !!
 
 refinement_mz_pws_dict = ugly_long_function(pathwaysObj.piled.copy())
@@ -76,4 +76,5 @@ refinement_mz_pws_dict = ugly_long_function(pathwaysObj.piled.copy())
 # the KEGG id adata
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
-adata = spatial_standard_computations(adata, 12, plot_folder, f"{SAMPLE}-KEGGmetabolitesV2")  # ====> !!
+adata = spatial_standard_computations(adata, k=12)
+plot_standard_computs(adata,  plot_folder=plot_folder, prefix=f"{SAMPLE}-KEGGmetabolitesV2")  # ====> !!

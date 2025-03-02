@@ -99,7 +99,7 @@ for spot in new_probabs.keys():
 print("ok new probs")
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
 
 adata_new = build_kegg_resolved_adata(adata_mz,

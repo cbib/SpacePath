@@ -8,7 +8,7 @@ api_versions = {'HMDB': ("HMDB", "v4"),
 api_fdr = 0.5
 out_dir = "../../../data/whole-ellis/"  # a relative or absolute dir
 
-filename = "whole-ellis_mx"  # no extension
+filename = "whole-ellis"  # no extension
 
 out_file = os.path.join(os.path.expanduser(out_dir),
                         filename)

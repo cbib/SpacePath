@@ -265,24 +265,20 @@ def closeness_by_fraction(value1: float, value2: float, fraction: float=0.8) -> 
 
 
 
-def spatial_standard_computations(adata, k=8,
-                                  pca_ncomps=12,
-                                  as_log=True,
-                                  top_variable_features_fraction=0.95):
-
-    if (adata.var.shape[0] > pca_ncomps) and (
-            adata.var.shape[0] > adata.obs.shape[0]):
-
+def spatial_standard_computations(
+        adata, k: int=8,  pca_ncomps: int=12, as_log: bool=True,
+        top_variable_features_fraction: float=0.95):
+    if (adata.var.shape[0] > pca_ncomps) and (adata.var.shape[0] > 20):
         if as_log:
+            adata.layers['X_raw'] = adata.X.copy()
             sc.pp.log1p(adata)
-
         try:
             topn = int(adata.var.shape[0] * top_variable_features_fraction)
-            sc.pp.highly_variable_genes(adata,
-                                        flavor="seurat_v3",
-                                        check_values=False,
-                                        n_top_genes=topn)
+            sc.pp.highly_variable_genes(
+                adata, flavor="seurat_v3",
+                check_values=False, n_top_genes=topn)
         except ValueError:
+            print("could not compute highly variable feats, continue but may fail")
             pass  # TODO :: add log error warning "continued without computing highly variable feat"
 
         print("computing pca")
@@ -291,24 +287,25 @@ def spatial_standard_computations(adata, k=8,
         kmeans = KMeans(n_clusters=k, n_init=10, random_state=0).fit(
             adata.obsm['X_pca'])
     else:
-        # this is the preferred way  for metabo: todo separate into another funcion of standard computs for metabo
         print("skipping PCA: too few features")
         X = np.array(adata.X.todense())
         if as_log:
             X = np.log1p(X)
-        kmeans = KMeans(n_clusters=k, n_init=10,
-                        random_state=0).fit(X)
+        kmeans = KMeans(n_clusters=k, n_init=10, random_state=0
+                        ).fit(X)
     adata.obs[f'kmeans{k}'] = kmeans.labels_.astype(str)
 
     return adata
 
 
-def compute_moran_i(adata_mz, n_neighs=10):
+def compute_moran_i(adata_mz, n_neighs=10, n_perms=100):
+    """note: to run Moran's I, through squidpy, the `spatial_connectivities`
+     in `adata.obsp` are required, so spatial neighbors must be run first"""
     print("computing spatial neighbors")
     print('with n_neighs: ', n_neighs)
     sq.gr.spatial_neighbors(adata_mz, n_neighs=n_neighs)
     print("Computing Moran's I")
-    sq.gr.spatial_autocorr(adata_mz, mode="moran", n_perms=100, n_jobs=1)
+    sq.gr.spatial_autocorr(adata_mz, mode="moran", n_perms=n_perms, n_jobs=1)
     print(adata_mz.uns['moranI'].head())
 
     return adata_mz

@@ -49,7 +49,7 @@ me_annots = zd.MetabolomeAnnotations(name=SAMPLE,
 me_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 print(adata_mz)
 
 print(np.array(adata_mz.X.todense()).shape)
@@ -77,10 +77,10 @@ scores_adata = score_as_adata(scores_df,
                               pathwaysObj.piled,
                               orig_pws_dict)
 print("regular kmeans of pathways scores")
-adata = spatial_standard_computations(scores_adata, k=4,
+scores_adata = spatial_standard_computations(scores_adata, k=4,
                               as_log=False,
                                   top_variable_features_fraction=0.95)
-plot_standard_computs(adata, jk=4,
+plot_standard_computs(scores_adata,
                       plot_folder=None, prefix=f"{SAMPLE}-Pwscore-kmeans"
                       )
 plt.show()

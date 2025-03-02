@@ -45,7 +45,7 @@ me_annots = zd.MetabolomeAnnotations(name=SAMPLE,
 me_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 verification(adata_mz, me_annots)  # todo: method me_annots.check_match(adata_mz)
 
 ## reference mappings to get KEGG ids from HMDB and LipidMaps identifiers
@@ -101,7 +101,6 @@ print(kpca_scores.iloc[:3,:5])
 
 biologically_chosen_pathways = yield_specific_typical_pathways()
 
-# kpca_scores = (kpca_scores + abs(kpca_scores.min().min())) * 1e3 # shift to right and unshrink
 #
 # kpca_score_adata = ad.AnnData(
 #     X=csr_matrix(kpca_scores),

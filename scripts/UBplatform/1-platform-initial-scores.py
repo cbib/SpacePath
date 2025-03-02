@@ -26,7 +26,7 @@ Bash call:
 mylist=(UBcalibr1 UBcalibr2 UBcalibr3 UBcalibr4 UBcalibr5);for k in ${mylist[*]}; do echo $k; python xxxxx.py $k; done
 """
 
-SAMPLE =  sys.argv[1]  #   "UBcalibr2"
+SAMPLE = "UBcalibr2"  #  sys.argv[1]
 
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -47,14 +47,20 @@ me_annots.load()
 
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 print(adata_mz)
 
 print(np.array(adata_mz.X.todense()).shape)
 
+if SAMPLE == "UBcalibr2":
+    prob_out = 1  # §§ ok !!for this small dataset ==> when I excluded even with 0.95, Spatially Relevant mz went away !!!
+else:
+    prob_out = 0.87
+
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
-    mydata_dir, me_annots, adata_mz)
+        mydata_dir, me_annots, adata_mz, prob_out=prob_out, min_pw_size=2)
+
 print("mz post sync", adata_mz)
 
 

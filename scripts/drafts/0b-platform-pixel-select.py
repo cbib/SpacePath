@@ -38,19 +38,19 @@ me_annots = zd.MetabolomeAnnotations(name=SAMPLE,
 me_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
 if (SAMPLE == "UBcalibr4") and not os.path.exists(
         os.path.join(mydata_dir, subfolder, f'{SAMPLE}-Old.h5ad')):
     # if not done yet:
-    # replace adata saved file "_mx.h5ad" by a new one with selected pixels
+    # replace adata saved file ".h5ad" by a new one with selected pixels
     # save the Old version in "-Old.h5ad" file
     adata_mz.write(os.path.join(mydata_dir, subfolder, f'{SAMPLE}-Old.h5ad'),
                    compression=None, compression_opts=None)
     obtained_domains_before_purge_pixels_df = visualizing_spatial_domains_before_decision(adata_mz)
     adata_mz = take_decision(adata_mz, obtained_domains_before_purge_pixels_df,
                              not_tissue_spatial_domains=[4])
-    adata_mz.write(os.path.join(mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'),
+    adata_mz.write(os.path.join(mydata_dir, subfolder, f'{SAMPLE}.h5ad'),
                    compression=None, compression_opts=None)
 else:
     print("the pixel selection was already computed, nothing to do")

@@ -20,7 +20,7 @@ in the tissue, but in the background.
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 subdir = "whole-ellis"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
-quantif_file = "whole-ellis_mx.h5ad"
+quantif_file = "whole-ellis.h5ad"
 
 out_file =  "whole-ellis_mx_f1.h5ad"
 

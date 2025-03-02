@@ -48,7 +48,7 @@ assert os.path.exists(plot_folder), "Cannot continue, the plot_folder does not e
 # me_annots.load()
 #
 # adata_mz = ad.read_h5ad(filename=os.path.join(
-#     mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+#     mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 # print(adata_mz)
 #
 # print(np.array(adata_mz.X.todense()).shape)
@@ -90,10 +90,10 @@ coords_df = build_coords_df(scores_adata)
 
 
 print("regular kmeans of pathways scores")
-scores_adata = spatial_standard_computations(scores_adata, k=4,
+scores_adata = spatial_standard_computations(scores_adata, k=3,
                               as_log=False,
                                   top_variable_features_fraction=0.95)
-plot_standard_computs(scores_adata, k=4,
+plot_standard_computs(scores_adata,
                       plot_folder=None, prefix=f"{SAMPLE}-Pwscore-kmeans"
                       )
 plt.show()
@@ -101,14 +101,33 @@ print(scores_adata)
 
 
 ##
-leiden_resol = 0.4
+
 print("computing neighbors by profile (scanpy standard)")
-sc.pp.neighbors(scores_adata, n_neighbors=20, metric='cosine', knn=True, method='umap')  # nearest neighbor graph
+sc.pp.neighbors(scores_adata, n_neighbors=300,  # todo: test 2000 also?
+                metric='cosine',
+                knn=True,
+                method='gauss')  # nearest neighbor graph
+print("ok computed neighbors")
 nn_graph_profiles = scores_adata.obsp["connectivities"]
+print("computing Leiden alg...")
+leiden_resol = 0.1
+sc.tl.leiden(scores_adata,
+             resolution=leiden_resol,
+             flavor="igraph", n_iterations=2,
+             directed=False,
+             adjacency= nn_graph_profiles, #nx.to_scipy_sparse_array(Gderived),
+             key_added=f"squidpy_domains(leiden{leiden_resol})")
+print("done")
+sq.pl.spatial_scatter(
+    scores_adata, color=[f"squidpy_domains(leiden{leiden_resol})"],
+    img=False, title="meh")
+plt.show()
+
 
 # spatial proximity graph
 doit=False
 if doit:
+    leiden_resol = 0.4
     print("spatial edges with tutorial method....slowwwww.....")
     sq.gr.spatial_neighbors(scores_adata,
                             n_neighs=20,
@@ -127,14 +146,6 @@ if doit:
     plt.show()
 ##
 
-
-print("trying something new to fail as usual")
-coordinates_names_str = scores_adata.obs["obs"].tolist()
-coords_matcher_dict = {k: v for k, v in zip(
-    range(0, len(coordinates_names_str)), coordinates_names_str)}
-coords_matcher_rev = {v: k for k, v in coords_matcher_dict.items()}
-
-
 from scipy.spatial import distance
 
 def is_spatially_distant(scorelocal, cutoff_faraway):
@@ -142,57 +153,57 @@ def is_spatially_distant(scorelocal, cutoff_faraway):
         return True
     return False
 
-print("checking spatial info to modulate the profiles edges")
-G = nx.from_scipy_sparse_array(nn_graph_profiles)
-Gderived = nx.Graph()
-edges_list = G.edges()
 
-for edge in edges_list:
-    u = edge[0]
-    v = edge[1]
-    spot_name_1 = coords_matcher_dict[u]
-    spot_name_2 = coords_matcher_dict[v]
-    coords_spot1 = coords_df.loc[spot_name_1, ['x', 'y']].to_numpy().flatten()
-    coords_spot2 = coords_df.loc[spot_name_2, ['x', 'y']].to_numpy().flatten()
-    print(coords_spot1.reshape(1, -1))
-    scorelocal = cosine_similarity(coords_spot1.reshape(1, -1), coords_spot2.reshape(1, -1))
-    print(scorelocal)
-    uou = G.get_edge_data(u, v)
-    edge_weight = uou['weight']
-    # if is_spatially_distant(scorelocal, cutoff_faraway=0.4):  # even if faraway they can still be a functional zone, e.g. symetrical and unconnected
-    #     local_neighs_spot1 = [coords_matcher_dict[x] for x in G.neighbors(u)]
-    #     local_neighs_spot2 = [coords_matcher_dict[w] for w in G.neighbors(v)]
-    #
-    #     expressions_neighborhood1 = np.array(scores_adata[local_neighs_spot1,:].X.todense()).sum(axis=0)
-    #     expressions_neighborhood2 = np.array(scores_adata[local_neighs_spot2,
-    #                                     :].X.todense()).sum(axis=0)
-    #     neighborhoods_similarity = cosine_similarity(expressions_neighborhood1.reshape(1, -1),
-    #                                                  expressions_neighborhood2.reshape(1, -1))
-    #     if neighborhoods_similarity <= 0.5:
-    #         edge_weight = edge_weight  # decrease its weight if distant,  and if local neigborhoods are dissimilar
-    # else:
-    #     edge_weight = edge_weight * 2
-    local_neighs_spot1 = [coords_matcher_dict[x] for x in G.neighbors(u)]
-    local_neighs_spot2 = [coords_matcher_dict[w] for w in G.neighbors(v)]
-    expressions_neighborhood1 = np.array(
-        scores_adata[local_neighs_spot1, :].X.todense()).sum(axis=0)
-    expressions_neighborhood2 = np.array(scores_adata[local_neighs_spot2,
-                                      :].X.todense()).sum(axis=0)
-    neighborhoods_similarity = cosine_similarity(expressions_neighborhood1.reshape(1, -1),
-                                                    expressions_neighborhood2.reshape(1, -1))
-    edge_weight = edge_weight + scorelocal + neighborhoods_similarity
-    Gderived.add_edge(u, v, weight=edge_weight)
+def stupido():
+    print("trying something new to fail as usual")
+    coordinates_names_str = scores_adata.obs["obs"].tolist()
+    coords_matcher_dict = {k: v for k, v in zip(
+        range(0, len(coordinates_names_str)), coordinates_names_str)}
+    coords_matcher_rev = {v: k for k, v in coords_matcher_dict.items()}
+    print("checking spatial info to modulate the profiles edges")
+    G = nx.from_scipy_sparse_array(nn_graph_profiles)
+    Gderived = nx.Graph()
+    edges_list = G.edges()
+    for edge in edges_list:
+        u = edge[0]
+        v = edge[1]
+        spot_name_1 = coords_matcher_dict[u]
+        spot_name_2 = coords_matcher_dict[v]
+        coords_spot1 = coords_df.loc[spot_name_1, ['x', 'y']].to_numpy().flatten()
+        coords_spot2 = coords_df.loc[spot_name_2, ['x', 'y']].to_numpy().flatten()
+        print(coords_spot1.reshape(1, -1))
+        scorelocal = cosine_similarity(coords_spot1.reshape(1, -1), coords_spot2.reshape(1, -1))
+        print(scorelocal)
+        uou = G.get_edge_data(u, v)
+        edge_weight = uou['weight']
+        # if is_spatially_distant(scorelocal, cutoff_faraway=0.4):  # even if faraway they can still be a functional zone, e.g. symetrical and unconnected
+        #     local_neighs_spot1 = [coords_matcher_dict[x] for x in G.neighbors(u)]
+        #     local_neighs_spot2 = [coords_matcher_dict[w] for w in G.neighbors(v)]
+        #
+        #     expressions_neighborhood1 = np.array(scores_adata[local_neighs_spot1,:].X.todense()).sum(axis=0)
+        #     expressions_neighborhood2 = np.array(scores_adata[local_neighs_spot2,
+        #                                     :].X.todense()).sum(axis=0)
+        #     neighborhoods_similarity = cosine_similarity(expressions_neighborhood1.reshape(1, -1),
+        #                                                  expressions_neighborhood2.reshape(1, -1))
+        #     if neighborhoods_similarity <= 0.5:
+        #         edge_weight = edge_weight  # decrease its weight if distant,  and if local neigborhoods are dissimilar
+        # else:
+        #     edge_weight = edge_weight * 2
+        local_neighs_spot1 = [coords_matcher_dict[x] for x in G.neighbors(u)]
+        local_neighs_spot2 = [coords_matcher_dict[w] for w in G.neighbors(v)]
+        expressions_neighborhood1 = np.array(
+            scores_adata[local_neighs_spot1, :].X.todense()).sum(axis=0)
+        expressions_neighborhood2 = np.array(scores_adata[local_neighs_spot2,
+                                          :].X.todense()).sum(axis=0)
+        neighborhoods_similarity = cosine_similarity(expressions_neighborhood1.reshape(1, -1),
+                                                        expressions_neighborhood2.reshape(1, -1))
+        edge_weight = edge_weight + scorelocal + neighborhoods_similarity
+        Gderived.add_edge(u, v, weight=edge_weight)
+        # end def stupido
 
-leiden_resol = 0.1
-sc.tl.leiden(scores_adata,
-             resolution=leiden_resol,
-             adjacency= nn_graph_profiles, #nx.to_scipy_sparse_array(Gderived),
-             key_added=f"squidpy_domains(leiden{leiden_resol})")
 
-sq.pl.spatial_scatter(
-    scores_adata, color=[f"squidpy_domains(leiden{leiden_resol})"],
-    img=False, title="meh")
-plt.show()
+
+
 
 
 

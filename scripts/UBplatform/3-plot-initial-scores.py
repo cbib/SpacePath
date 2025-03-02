@@ -41,7 +41,7 @@ k_dict= {"UBcalibr1": [7, 4],
 
 # mz
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx.h5ad'))
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
 # metaboli
 adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
@@ -62,7 +62,7 @@ adata_mz = spatial_standard_computations(
     adata_mz,
     k=k_dict[SAMPLE][0], top_variable_features_fraction=0.2)
 
-plot_standard_computs(adata_mz, k=k_dict[SAMPLE][0],
+plot_standard_computs(adata_mz,
                       plot_folder=plot_folder, prefix=f"{SAMPLE}-MZ")
 
 
@@ -74,19 +74,22 @@ adata = spatial_standard_computations(
     top_variable_features_fraction=0.2)
 
 plot_standard_computs(adata,
-    k=k_dict[SAMPLE][0], plot_folder=plot_folder, prefix=f"{SAMPLE}-KEGGmetabolites")
+     plot_folder=plot_folder, prefix=f"{SAMPLE}-KEGGmetabolites")
 
 
 # pathways
-scores_adata.X = csr_matrix(scores_adata.X.todense() +
-                            scores_adata.X.todense().min().min() + 1)
+# note : remember this is bad idea to replace .X by the shifted version, only for test, do not save corrupted object!
+# decision: never again do shifting (if so, create shifted_adata).
+#  todo: delete :
+# scores_adata.X = csr_matrix(scores_adata.X.todense() +
+#                            scores_adata.X.todense().min().min() + 1)
 
 scores_adata = spatial_standard_computations(
     scores_adata,
     k=k_dict[SAMPLE][1],
-    as_log=False,   # important !
+    as_log=False,   # important !:  in this way,no need to "shift"
     top_variable_features_fraction=0.2)
 
-plot_standard_computs(scores_adata, k=k_dict[SAMPLE][1],
+plot_standard_computs(scores_adata,
     plot_folder=plot_folder,
     prefix=f"{SAMPLE}-PathwayScores")

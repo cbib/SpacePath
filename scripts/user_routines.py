@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 
 
 
-def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz):
+def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
+                               min_pw_size=2):
     # reference mappings are the same for all my projects
     me_refmap = zd.MetaboliteIdsMappings(
         data_dir=mydata_dir,
@@ -20,7 +21,8 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz):
     me_refmap.load()
 
     #verification(adata_mz, me_annots)
-    me_annots.discard_out_of_tissue_mz()  # NEW !!! highly recommended
+    print("Excludes m/z with out-of-tissue probability >=", prob_out)
+    me_annots.discard_out_of_tissue_mz(prob_out=prob_out)  # NEW !!! highly recommended
     me_annots.convert_ids_to_kegg(me_refmap.table)
     me_annots.treat_mz_multiplets(adata_mz)
 
@@ -35,12 +37,9 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz):
 
     pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
                                                           me_annots,
-                                                          min_pathway_size=2)  # TODO: think how to easily re-find those metabs that have min_pathway_size=1
+                                                          min_pathway_size=min_pw_size)  # TODO: think how to easily re-find those metabs that have min_pathway_size=1
     adata_mz = adata_mz[:, me_annots.df["mz"].astype(
         str).unique()].copy()  # todo this is NOT sync, but like so
-
-
-
 
     return pathwaysObj, me_annots, adata_mz, initial_pws_dict
 

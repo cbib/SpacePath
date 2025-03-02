@@ -16,7 +16,7 @@ from visualization import *
 """
 """
 
-SAMPLE = "whole-ellis"  # f1.h5ad saved by -pixel-selection.py
+SAMPLE = "whole-ellis"  # .h5ad saved by -pixel-selection.py
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 
@@ -35,7 +35,7 @@ me_annots = zd.MetabolomeAnnotations(name="whole-ellis",
 me_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}_mx_f1.h5ad'))  # TODO  : how to avoid forgetting _f1
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))  # TODO  : how to avoid forgetting _f1
 print(adata_mz)
 
 verification(adata_mz, me_annots)
@@ -60,22 +60,37 @@ pathwaysObj = zd.MetabolicPathways(
 pathwaysObj.load()
 initial_pws_dict = pathwaysObj.to_dict()   # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
-pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
-                                                      me_annots,
-                                                      min_pathway_size=2)  # default max is 500
+#####
 
-adata_mz = adata_mz[:, me_annots.df["mz"].astype(str).unique()].copy() # todo this is NOT sync, but like so
+prob_out = 0.87
+pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
+        mydata_dir, me_annots, adata_mz, prob_out=prob_out, min_pw_size=2)
+
 print("mz post sync", adata_mz)
 
+
 # the KEGG id adata
-adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
+X_metabolites_probs_df = compute_metabolites_probs_df(adata_mz, me_annots.df)
+
+adata = build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df,
+                                  annots_df=me_annots.df)
+
 print("KEGG resolved adata: ", adata)
 
-# scores
-kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj, adata)
-# save as anndata to have compression
-kpca_score_adata =
-kpca_score_adata.write_h5ad(os.path.join(mydata_dir, subfolder,
+adata.write_h5ad(os.path.join(mydata_dir, subfolder,
+                                         f"{SAMPLE}-KEGG_adata.h5ad"))
+
+## compute scores
+kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj.to_dict(), adata)
+
+# save as anndata with associated metadata
+scores_adata = score_as_adata(kpca_scores, adata,
+                              pathwaysObj.pathways_ids,
+                              pathwaysObj.piled,
+                              orig_pws_dict)
+
+#####
+scores_adata.write_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-PathwayScores.h5ad"))
 
 

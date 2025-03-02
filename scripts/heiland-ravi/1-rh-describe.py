@@ -68,14 +68,14 @@ pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
 print("mz post sync", adata_mz)
 
 #adata_mz = spatial_standard_computations(adata_mz, k=12)
-#plot_standard_computs(adata_mz, k=12, plot_folder=plot_folder, prefix=f"{SAMPLE}-MZ-V2")
+#plot_standard_computs(adata_mz,  plot_folder=plot_folder, prefix=f"{SAMPLE}-MZ-V2")
 
 # the KEGG id adata
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)
 print("KEGG resolved adata: ", adata)
 
 #adata = spatial_standard_computations(adata, k=12)
-# plot_standard_computs(adata, k=12, plot_folder=plot_folder, f"{SAMPLE}-KEGGmetabolitesV2")  # ====> !!
+# plot_standard_computs(adata,  plot_folder=plot_folder, prefix=f"{SAMPLE}-KEGGmetabolitesV2")  # ====> !!
 
 
 
