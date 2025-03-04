@@ -166,6 +166,10 @@ class MetabolomeAnnotations(Dataset):
                 self.total_intens_col)
             if self.feat_classif[self.offsample_column].isnull().all():
                 logger.warning("Useless: %s is NaN", self.offsample_column)
+            else:
+                if not self.feat_classif[self.offsample_column].max() <= 1:
+                    raise ValueError("Values of %s must be comprised "
+                                     "between 0 and 1", self.offsample_column)
         else:
             logger.error("Failed, no %s column", self.offsample_column)
 

@@ -26,7 +26,9 @@ not_metabolic_reactions_pathways = [
     "leishmania", "toxoplasmosis", "legionel", "malaria", "tuberculosis",
     "coccus", "virus", "virion", "viral", "measles", "dna adducts",
     "meiosis", "checkpoint", "receptor", "resistance", "cell",
-    "pathways in cancer"  # new
+    "pathways in cancer", "ferroptosis", "morphine addiction", "gentamicin",  # new
+    "xenobiotics", "mineral absorption", "digestion and absorption", # new
+    "glucagon signaling", "taste transduction", "drug metabolism" # new
 ]
 # Explanation of 'not_metabolic_reactions_pathways': any pathway name
 # that contains the specified substrings above, is classified as being

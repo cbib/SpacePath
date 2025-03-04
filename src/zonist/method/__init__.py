@@ -89,7 +89,7 @@ class SyncPathwaysAndAnnots:
                     annotsObj.df["KEGG"].isin(
                         pathwaysObj.piled["KEGG"].unique()), :]
 
-        logger.info("syncronized sucessfuly")
+        logger.info("data objects syncronized sucessfuly")
         return pathwaysObj, annotsObj
 
 

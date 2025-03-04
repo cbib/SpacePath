@@ -48,6 +48,7 @@ def compute_kpca(pw_as_df, adata, min_entity=2):
     if is_log_transformed(adata.X):
         df_log_transformed = adata.to_df()
     else:
+        print("log transforming data")
         df_log_transformed = np.log(adata.to_df() + 1) # as sc.pp.log1p does
 
     kpca_scores = kpca_model.fit_transform(df_log_transformed)
