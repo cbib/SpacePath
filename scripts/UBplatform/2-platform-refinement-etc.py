@@ -59,7 +59,7 @@ coords_matcher_dict = {k: v for k, v in zip(
 coords_matcher_rev = {v: k for k, v in coords_matcher_dict.items()}
 
 print(f"parsing spots : for each spot, neighbors at d = {RADIUS} are evaluated")
-COSINE_SIMILARITY_THRESHOLD = 0.7
+COSINE_SIMILARITY_THRESHOLD = 0.6   # tested also 0.7
 G = nx.from_scipy_sparse_array(connectivities_sparse_mx)
 nodes_list = G.nodes()
 

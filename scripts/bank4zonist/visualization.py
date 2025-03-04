@@ -75,11 +75,61 @@ def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
 
 
 
+def custom_scatter_one_feat(df, feature: str, the_ax, spot_size=2):
+
+    my_scatter = the_ax.scatter(df['x'], df['y'],
+                                c=df[feature], cmap='viridis',
+                                vmin=df[feature].min(),
+                                vmax=df[feature].max(),
+                                s=spot_size)
+    the_ax.invert_yaxis()
+    the_ax.set_title(f'{feature}')
+    cbar = plt.colorbar(
+        my_scatter,
+        orientation='vertical',
+        fraction=0.07,
+        aspect=30,
+        pad=0.02, anchor=(0, 0))
+    the_ax.xaxis.set_tick_params(labelbottom=False)
+    the_ax.yaxis.set_tick_params(labelleft=False)
+    the_ax.set_xticks([])
+    the_ax.set_yticks([])
+    plt.tight_layout()
+
+    return the_ax
+
+
+def plot_with_table(tmp, i_mz, sub_df, out_file_path, spot_size=5, dpi=600) -> None:
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+    fig.set_figheight(3)
+    fig.set_figwidth(10)
+
+    ax1 = custom_scatter_one_feat(tmp, i_mz, the_ax=ax1,
+                                  spot_size=spot_size)  # this replaces  sq.pl.spatial_scatter(adata_mz, color=[str(i_mz)], img=False,  ax=ax1)
+
+    ax2.set_axis_off()
+    auto_height = sub_df.shape[0] * 0.12
+    if sub_df.shape[0] == 1:
+        auto_height = 0.17
+    if auto_height >= 10:
+        auto_height = 10
+    auto_width = 0.7
+    table = ax2.table(  # https://www.statology.org/seaborn-table/
+        cellText=sub_df.values, rowLabels=None,
+        colLabels=sub_df.columns,
+        bbox=(-0.08, 0.5, auto_width, auto_height), # [xmin, ymin, width, height]
+        colWidths=(0.2, 0.5), cellLoc='center'
+    )
+    table.set_fontsize(10)
+
+    plt.savefig(out_file_path, dpi=dpi, transparent=True)
+
+
 def custom_scatter_two_features(df, feature1, feature2, width, height,
                                 spot_size=20, save_path:Union[str, None]=None):
     """
     Creates two scatter plots for feature1 and feature with a shared color scale.
-
+    - EXPERIMENTAL -
     Parameters:
     df (pd.DataFrame): DataFrame containing columns [x, y, feature1, feature2].
     """

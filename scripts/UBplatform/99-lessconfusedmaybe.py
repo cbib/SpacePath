@@ -103,7 +103,7 @@ print(scores_adata)
 ##
 
 print("computing neighbors by profile (scanpy standard)")
-sc.pp.neighbors(scores_adata, n_neighbors=300,  # todo: test 2000 also?
+sc.pp.neighbors(scores_adata, n_neighbors=300,
                 metric='cosine',
                 knn=True,
                 method='gauss')  # nearest neighbor graph

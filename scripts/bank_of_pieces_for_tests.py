@@ -145,3 +145,6 @@ pws01, anns01 = zm.SyncPathwaysAndAnnots.run(pathwaysObj.model_copy(),
 lost_forever = adata_mz[:, anns01.df["mz"].astype(str).unique()].copy()
 lost_forever = spatial_standard_computations(lost_forever, k=12)
 plot_standard_computs(lost_forever, plot_folder=plot_folder, f"{SAMPLE}RejectedMz")
+
+# sns.scatterplot(x=np.linspace(3, 10),  y=np.linspace(5, 10),
+#               ax=ax1)

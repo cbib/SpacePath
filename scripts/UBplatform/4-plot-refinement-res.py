@@ -35,10 +35,9 @@ scores_new = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
 
 print(len(adata_new.uns['refined_metabolites']))
 
-adata = spatial_standard_computations(scores_new, 12, as_log=True)
-plot_standard_computs(adata, plot_folder=plot_folder, prefix=f'{SAMPLE}-Post{SF}')
+scores_new = spatial_standard_computations(scores_new, 3, as_log=False)
+plot_standard_computs(scores_new, plot_folder=plot_folder, prefix=f'{SAMPLE}-Post{SF}')
 
-print(locura)
 
 # the former adata and scores:
 adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,

@@ -24,7 +24,7 @@ mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "gb-brain"
 
-k_dict= {"test635_80-400": [7, 4],
+k_dict= {"test635_80-400": [5, 3],
          "???": [4, 3]}
 
 plot_folder = "../../../figures/gb-brain"
@@ -37,6 +37,7 @@ assert os.path.exists(plot_folder), "Cannot continue, the plot_folder does not e
 # # mz
 adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
+
 # problematics = ['259.022442561', '346.055808353']
 # for malo in problematics:
 #     sq.pl.spatial_scatter(adata_mz, color=[malo], img=False)
@@ -51,58 +52,56 @@ scores_adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-PathwayScores.h5ad"))
 #sq.pl.spatial_scatter(scores_adata, color=['hsa00010'], img=False)
 
-print("scores   :::  ", scores_adata)
-print(malditasea)
-#
-# ## plots
-#
-# # mz
-# adata_mz = adata_mz[: , scores_adata.uns[
-#     "current_pathways_df"]["mz"].astype(str).unique() ]  # first subset good mz
-# print(adata_mz)
-#
-# adata_mz = spatial_standard_computations(
-#     adata_mz,
-#     k=k_dict[SAMPLE][0], top_variable_features_fraction=0.2)
-#
-# plot_standard_computs(adata_mz,
-#                       plot_folder=plot_folder, prefix=f"{SAMPLE}-MZ")
-#
-#
-# metaboli
-#
-# adata = spatial_standard_computations(
-#     adata,
-#     k=k_dict[SAMPLE][0],
-#     top_variable_features_fraction=0.2)
-#
-# plot_standard_computs(adata,
-#      plot_folder=plot_folder, prefix=f"{SAMPLE}-KEGGmetabolites")
-tmp2 = scores_adata.uns['current_pathways_df'][["KEGG", "mz"]]
-tmp2.columns = ["ID", "mz"]
-for pw_name, pw_id in zip(scores_adata.var['pathway_name'].tolist(),
-                          scores_adata.var['pathway_id'].tolist()):
-    print(pw_name)
-    kegg_mtbs_ids = scores_adata.uns['current_pathways_df'].loc[
-        scores_adata.uns['current_pathways_df']['pathway_id'] == pw_id, "KEGG"
-    ].tolist()
-    mtbs_df = adata.var.loc[adata.var['ID'].isin(kegg_mtbs_ids), ["ID", "moleculeNames"]]
-    mtbs_df.reset_index(drop=True, inplace=True)
-    mtbs_df.index.name = "index"
-    haha = tmp2.loc[tmp2["ID"].isin(kegg_mtbs_ids), :]
-    haha = haha.drop_duplicates()
-    haha.index = haha["ID"].tolist()
-    mtbs_df = mtbs_df.join(haha, how="left", on="ID", lsuffix="_x", rsuffix="_y")
-    mtbs_df = mtbs_df.drop(columns=["ID_x", "ID_y"])
-    print(mtbs_df)
-    sq.pl.spatial_scatter(scores_adata, color=[pw_id], img=False,
-                          title=pw_name
-                          )
-    plt.show()
-    print()
+print("adata (KEGG)   :::  ", adata)
+
+## plots
+
+# mz
+adata_mz = adata_mz[: , scores_adata.uns[
+    "current_pathways_df"]["mz"].astype(str).unique() ].copy()  # first subset good mz
+print("adata mz : ", adata_mz)
+
+adata_mz = spatial_standard_computations(
+    adata_mz, pca_ncomps=6,
+    k=k_dict[SAMPLE][0], top_variable_features_fraction=0.5)
+
+plot_standard_computs(adata_mz,
+                      plot_folder=plot_folder, prefix=f"{SAMPLE}-MZ")
 
 
+adata = spatial_standard_computations(
+    adata, pca_ncomps=6,
+    k=k_dict[SAMPLE][0],
+    top_variable_features_fraction=0.5)
 
+plot_standard_computs(adata,
+     plot_folder=plot_folder, prefix=f"{SAMPLE}-KEGGmetabolites")
+
+#
+# tmp2 = scores_adata.uns['current_pathways_df'][["KEGG", "mz"]]
+# tmp2.columns = ["ID", "mz"]
+# for pw_name, pw_id in zip(scores_adata.var['pathway_name'].tolist(),
+#                           scores_adata.var['pathway_id'].tolist()):
+#     print(pw_name)
+#     kegg_mtbs_ids = scores_adata.uns['current_pathways_df'].loc[
+#         scores_adata.uns['current_pathways_df']['pathway_id'] == pw_id, "KEGG"
+#     ].tolist()
+#     mtbs_df = adata.var.loc[adata.var['ID'].isin(kegg_mtbs_ids), ["ID", "moleculeNames"]]
+#     mtbs_df.reset_index(drop=True, inplace=True)
+#     mtbs_df.index.name = "index"
+#     haha = tmp2.loc[tmp2["ID"].isin(kegg_mtbs_ids), :]
+#     haha = haha.drop_duplicates()
+#     haha.index = haha["ID"].tolist()
+#     mtbs_df = mtbs_df.join(haha, how="left", on="ID", lsuffix="_x", rsuffix="_y")
+#     mtbs_df = mtbs_df.drop(columns=["ID_x", "ID_y"])
+#     print(mtbs_df)
+#     tmpstr=os.path.join(plot_folder, f'{SAMPLE}-{pw_name}--PwScore.png')
+#     sq.pl.spatial_scatter(scores_adata, color=[pw_id], img=False,
+#                           title=f"{pw_id} {pw_name}",
+#                           save=os.path.abspath(tmpstr)
+#                           )
+#     #plt.show()
+#     #print()
 
 
 # # pathways

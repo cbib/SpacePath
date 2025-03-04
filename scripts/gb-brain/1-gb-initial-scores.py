@@ -49,36 +49,35 @@ print(adata_mz)
 
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
-    mydata_dir, me_annots, adata_mz, prob_out=0.4)
+    mydata_dir, me_annots, adata_mz, prob_out=0.87)
 print("mz post sync", adata_mz)
 
-#adata_mz
-isee = compute_moran_i(kpca_score_adata, 12)
-#
-#
-# # the KEGG id adata
-# X_metabolites_probs_df = compute_metabolites_probs_df(adata_mz, me_annots.df)
-#
-# adata = build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df,
-#                                   annots_df=me_annots.df)
-#
-# print("KEGG resolved adata: ", adata)
-#
-# adata.write_h5ad(os.path.join(mydata_dir, subfolder,
-#                                          f"{SAMPLE}-KEGG_adata.h5ad"))
-#
-# ## compute scores
-# kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj.to_dict(), adata)
-#
-# # save as anndata with associated metadata
-# scores_adata = score_as_adata(kpca_scores, adata,
-#                               pathwaysObj.pathways_ids,
-#                               pathwaysObj.piled,
-#                               orig_pws_dict)
-#
-# # save all relevant objects
-# scores_adata.write_h5ad(os.path.join(mydata_dir, subfolder,
-#                                          f"{SAMPLE}-PathwayScores.h5ad"))
-#
-#
-# print("Saved new data into:", os.path.join(mydata_dir, subfolder))
+adata_mz
+
+
+# the KEGG id adata
+X_metabolites_probs_df = compute_metabolites_probs_df(adata_mz, me_annots.df)
+
+adata = build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df,
+                                  annots_df=me_annots.df)
+
+print("KEGG resolved adata: ", adata)
+
+adata.write_h5ad(os.path.join(mydata_dir, subfolder,
+                                         f"{SAMPLE}-KEGG_adata.h5ad"))
+
+## compute scores
+kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj.to_dict(), adata)
+
+# save as anndata with associated metadata
+scores_adata = score_as_adata(kpca_scores, adata,
+                              pathwaysObj.pathways_ids,
+                              pathwaysObj.piled,
+                              orig_pws_dict)
+
+# save all relevant objects
+scores_adata.write_h5ad(os.path.join(mydata_dir, subfolder,
+                                         f"{SAMPLE}-PathwayScores.h5ad"))
+
+
+print("Saved new data into:", os.path.join(mydata_dir, subfolder))

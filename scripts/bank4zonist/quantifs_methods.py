@@ -18,6 +18,52 @@ import zonist.helpers as zh
 
 
 
+def task1(pw_id, scores_adata, adata):
+    """
+        First phase of prep for plot with table.
+    :param pw_id: the current pathway identifier
+    :param scores_adata: the pathways identifiers and scores object
+    :param adata: the KEGG compound identifiers and quantities object
+    :return: df with KEGG id, metabolite name and mz for the current pw_id
+    """
+    df_mz_metabolites__curr_pw  = scores_adata.uns['current_pathways_df'].loc[
+        scores_adata.uns['current_pathways_df']['pathway_id'] == pw_id,
+        ["mz", "KEGG"]
+    ]
+    df_mz_metabolites__curr_pw = df_mz_metabolites__curr_pw.drop_duplicates()
+    df2 = adata.var[["ID", "moleculeNames"]].copy()
+    df2.columns = ["KEGG", "metabolite name"]
+    df_mz_metabolites__curr_pw = df_mz_metabolites__curr_pw.join(
+        df2, how="left", on="KEGG", lsuffix="_x", rsuffix="_y"
+    )
+    df_mz_metabolites__curr_pw = df_mz_metabolites__curr_pw.drop(
+        columns=["KEGG_x", "KEGG_y"]
+    )
+    return df_mz_metabolites__curr_pw
+
+
+
+def task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df, adata_mz):
+    """
+        Second phase of prep for plot with table.
+
+    :param df_mz_metabolites__curr_pw:
+    :param i_mz:
+    :param adata_mz:
+    :return:
+    """
+    sub_df = df_mz_metabolites__curr_pw.loc[
+             df_mz_metabolites__curr_pw['mz'] == i_mz, :]
+    sub_df = sub_df.drop(columns=["mz"])
+    sub_df = sub_df.drop_duplicates()
+    sub_df['metabolite name'] = sub_df['metabolite name'].str.slice(0, 25)
+    tmp = coords_mz_df.copy()
+    tmp[i_mz] = np.array(adata_mz[:, str(i_mz)].X.todense()).flatten()
+
+    return sub_df, tmp
+
+
+
 def score_as_adata(kpca_scores, adata,
                    #pathwaysObj: MetabolicPathways,
                    pathways_ids_df,
@@ -267,20 +313,33 @@ def closeness_by_fraction(value1: float, value2: float, fraction: float=0.8) -> 
 
 def spatial_standard_computations(
         adata, k: int=8,  pca_ncomps: int=12, as_log: bool=True,
-        top_variable_features_fraction: float=0.95):
+        top_variable_features_fraction: float=0.5):
     if (adata.var.shape[0] > pca_ncomps) and (adata.var.shape[0] > 20):
         if as_log:
             adata.layers['X_raw'] = adata.X.copy()
             sc.pp.log1p(adata)
+        # end if as_log
+        topn = int(adata.var.shape[0] * top_variable_features_fraction)
         try:
-            topn = int(adata.var.shape[0] * top_variable_features_fraction)
             sc.pp.highly_variable_genes(
                 adata, flavor="seurat_v3",
                 check_values=False, n_top_genes=topn)
         except ValueError:
-            print("could not compute highly variable feats, continue but may fail")
-            pass  # TODO :: add log error warning "continued without computing highly variable feat"
-
+            print("Could not compute highly variable feats with scanpy. Computing with sparsefuncs")
+            try:
+                means_vars, variance_computed = sparsefuncs.mean_variance_axis(
+                    adata.X, axis=0)
+                adata.var['variance'] = variance_computed
+                adata.var['tmp_index'] = range(adata.var.shape[0])
+                tmpdf = adata.var.copy()
+                tmpdf = tmpdf.sort_values(by='variance', ascending=False)
+                tmpdf = tmpdf.head(topn).copy()
+                adata.var['highly_variable'] = False
+                adata.var.loc[adata.var['tmp_index'].isin(tmpdf['tmp_index'].tolist()), 'highly_variable'] = True
+                adata.var = adata.var.drop(columns=['tmp_index'])
+            except ValueError:
+                print("impossible to compute highly variable features, marked all as True")
+                adata.var['highly_variable'] = True
         print("computing pca")
         sc.pp.pca(adata, n_comps=pca_ncomps)  # use_highly_variable is true by default, but .var['highly_variable'] col was True in all values
         print("computing kmeans")

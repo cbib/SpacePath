@@ -54,9 +54,6 @@ def build_coords_df(adata):
 
 
 
-from sklearn.cluster import KMeans
-
-
 
 print(scores_adata)
 sq.gr.spatial_neighbors(scores_adata, n_neighs=20)
@@ -71,6 +68,7 @@ for ipw in top_ok:
 
 
 
+from sklearn.cluster import KMeans
 
 k = 3
 pca = decomposition.PCA(n_components=k)
@@ -78,7 +76,7 @@ pc = pca.fit_transform(
     scores_adata.to_df()  # pca only accepts dense representations (never sparse csr_matrix)
     #np.asarray(Xnew)
 )
-print("okis")
+
 pc_df = pd.DataFrame(data = pc ,
         columns = [f'PC{x+1}' for x in range(0,k)])
 

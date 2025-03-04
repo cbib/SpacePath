@@ -74,7 +74,7 @@ def tsne_for_clustering():
     kmeans = KMeans(n_clusters=3, n_init=10, random_state=0
                     ).fit(
         # scores_adata.X
-        tsne_arr  # np.asarray(Xnew) # todo try with pc results:  TODO del
+        tsne_arr  # np.asarray(Xnew)
     )
     scores_adata.obs[f'kmeans'] = kmeans.labels_.astype(str)
     closest, _ = pairwise_distances_argmin_min(kmeans.cluster_centers_,

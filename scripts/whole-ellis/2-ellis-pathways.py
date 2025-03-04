@@ -35,7 +35,7 @@ me_annots = zd.MetabolomeAnnotations(name="whole-ellis",
 me_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
-    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))  # TODO  : how to avoid forgetting _f1
+    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 print(adata_mz)
 
 verification(adata_mz, me_annots)

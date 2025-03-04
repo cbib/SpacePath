@@ -49,7 +49,7 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
 print(adata_mz)
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
-    mydata_dir, me_annots, adata_mz, prob_out=0.4)
+    mydata_dir, me_annots, adata_mz, prob_out=0.87)
 print("mz post sync", adata_mz)
 
 
