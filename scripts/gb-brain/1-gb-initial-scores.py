@@ -23,7 +23,7 @@ from visualization import *
 pathways scores 
 """
 
-SAMPLE = "test635_80-400"
+SAMPLE = "test635_80-400"   # "test635_200-1K"
 
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -49,7 +49,7 @@ print(adata_mz)
 
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
-    mydata_dir, me_annots, adata_mz, prob_out=0.87)
+    mydata_dir, me_annots, adata_mz, prob_out=0.97)
 print("mz post sync", adata_mz)
 
 adata_mz
