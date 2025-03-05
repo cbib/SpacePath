@@ -183,12 +183,11 @@ class MetabolomeAnnotations(Dataset):
         if self.feat_classif[self.offsample_column].isnull().all():
             logger.warning("Useless: %s is NaN", self.offsample_column)
         else:
-            if self.feat_classif[self.offsample_column].max() <= 1:
-                self.feat_classif[self.offsample_column
-                ] = self.feat_classif[self.offsample_column] * 100
+            if not self.feat_classif[self.offsample_column].max() <= 1:
+                raise AssertionError("% must be between 0 and 1", self.offsample_column)
 
             bad_feat_df = self.feat_classif.loc[self.feat_classif[
-                self.offsample_column] >= (prob_out * 100), :]
+                self.offsample_column] >= prob_out, :]
 
             bad_feat_df = bad_feat_df.sort_values(by=[
                 self.mz_col, self.total_intens_col], ascending=[True, False])
