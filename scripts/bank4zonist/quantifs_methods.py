@@ -357,17 +357,17 @@ def spatial_standard_computations(
     return adata
 
 
-def compute_moran_i(adata_mz, n_neighs=10, n_perms=100):
+def compute_moran_i(adata, n_neighs=10, n_perms=5):
     """note: to run Moran's I, through squidpy, the `spatial_connectivities`
      in `adata.obsp` are required, so spatial neighbors must be run first"""
     print("computing spatial neighbors")
     print('with n_neighs: ', n_neighs)
-    sq.gr.spatial_neighbors(adata_mz, n_neighs=n_neighs)
+    sq.gr.spatial_neighbors(adata, n_neighs=n_neighs)
     print("Computing Moran's I")
-    sq.gr.spatial_autocorr(adata_mz, mode="moran", n_perms=n_perms, n_jobs=1)
-    print(adata_mz.uns['moranI'].head())
+    sq.gr.spatial_autocorr(adata, mode="moran", n_perms=n_perms, n_jobs=1, seed=0)
+    print(adata.uns['moranI'].head())
 
-    return adata_mz
+    return adata
 
 
 def get_target_pathways_of_one_mz(subdf, pathways_dict):

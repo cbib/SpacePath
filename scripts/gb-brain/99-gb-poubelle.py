@@ -49,7 +49,7 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
 print(adata_mz)
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
-    mydata_dir, me_annots, adata_mz, prob_out=0.87)
+    mydata_dir, me_annots, adata_mz, prob_out=0.87) ## todo : bad! this was corrected
 print("mz post sync", adata_mz)
 
 
@@ -81,9 +81,9 @@ Thoughts about Moran's I values:
    true positives ok
    false posittives: if there are any artifactual clusters:
         -important to avoid "bubbles" of fake tissue outside true tissue  (right lower corner of 80-400 data)
-        - many noisy 'bands': i think impossible to eject or attenuate unfortunately
+        - many noisy 'stripes': i think impossible to eject or attenuate unfortunately
 - the middle (around zero):
-   - many many noisy 'bands'
+   - many many noisy 'stripes'
    - random
    -  I found at least 2 false negatives!!!, because clustered but slightly dispersed
 - the negative ones:

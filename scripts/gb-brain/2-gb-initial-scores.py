@@ -49,8 +49,9 @@ print(adata_mz)
 
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
-    mydata_dir, me_annots, adata_mz, prob_out=0.97)
+    mydata_dir, me_annots, adata_mz, prob_out=0.95)
 print("mz post sync", adata_mz)
+
 
 adata_mz
 

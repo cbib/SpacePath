@@ -78,30 +78,30 @@ plot_standard_computs(adata,
      plot_folder=plot_folder, prefix=f"{SAMPLE}-KEGGmetabolites")
 
 #
-# tmp2 = scores_adata.uns['current_pathways_df'][["KEGG", "mz"]]
-# tmp2.columns = ["ID", "mz"]
-# for pw_name, pw_id in zip(scores_adata.var['pathway_name'].tolist(),
-#                           scores_adata.var['pathway_id'].tolist()):
-#     print(pw_name)
-#     kegg_mtbs_ids = scores_adata.uns['current_pathways_df'].loc[
-#         scores_adata.uns['current_pathways_df']['pathway_id'] == pw_id, "KEGG"
-#     ].tolist()
-#     mtbs_df = adata.var.loc[adata.var['ID'].isin(kegg_mtbs_ids), ["ID", "moleculeNames"]]
-#     mtbs_df.reset_index(drop=True, inplace=True)
-#     mtbs_df.index.name = "index"
-#     haha = tmp2.loc[tmp2["ID"].isin(kegg_mtbs_ids), :]
-#     haha = haha.drop_duplicates()
-#     haha.index = haha["ID"].tolist()
-#     mtbs_df = mtbs_df.join(haha, how="left", on="ID", lsuffix="_x", rsuffix="_y")
-#     mtbs_df = mtbs_df.drop(columns=["ID_x", "ID_y"])
-#     print(mtbs_df)
-#     tmpstr=os.path.join(plot_folder, f'{SAMPLE}-{pw_name}--PwScore.png')
-#     sq.pl.spatial_scatter(scores_adata, color=[pw_id], img=False,
-#                           title=f"{pw_id} {pw_name}",
-#                           save=os.path.abspath(tmpstr)
-#                           )
-#     #plt.show()
-#     #print()
+tmp2 = scores_adata.uns['current_pathways_df'][["KEGG", "mz"]]
+tmp2.columns = ["ID", "mz"]
+for pw_name, pw_id in zip(scores_adata.var['pathway_name'].tolist(),
+                          scores_adata.var['pathway_id'].tolist()):
+    print(pw_name)
+    kegg_mtbs_ids = scores_adata.uns['current_pathways_df'].loc[
+        scores_adata.uns['current_pathways_df']['pathway_id'] == pw_id, "KEGG"
+    ].tolist()
+    mtbs_df = adata.var.loc[adata.var['ID'].isin(kegg_mtbs_ids), ["ID", "moleculeNames"]]
+    mtbs_df.reset_index(drop=True, inplace=True)
+    mtbs_df.index.name = "index"
+    haha = tmp2.loc[tmp2["ID"].isin(kegg_mtbs_ids), :]
+    haha = haha.drop_duplicates()
+    haha.index = haha["ID"].tolist()
+    mtbs_df = mtbs_df.join(haha, how="left", on="ID", lsuffix="_x", rsuffix="_y")
+    mtbs_df = mtbs_df.drop(columns=["ID_x", "ID_y"])
+    print(mtbs_df)
+    tmpstr=os.path.join(plot_folder, f'{SAMPLE}-{pw_name}--PwScore.png')
+    sq.pl.spatial_scatter(scores_adata, color=[pw_id], img=False,
+                          title=f"{pw_id} {pw_name}",
+                          save=os.path.abspath(tmpstr)
+                          )
+    plt.close()
+    #print()
 
 
 # # pathways

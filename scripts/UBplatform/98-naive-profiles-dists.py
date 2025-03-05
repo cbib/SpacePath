@@ -57,7 +57,7 @@ def build_coords_df(adata):
 
 print(scores_adata)
 sq.gr.spatial_neighbors(scores_adata, n_neighs=20)
-sq.gr.spatial_autocorr(scores_adata, mode="moran", n_perms=100, n_jobs=1)
+sq.gr.spatial_autocorr(scores_adata, mode="moran", n_perms=100, n_jobs=1, seed=0)
 scores_adata.uns['moranI']['pathway_id'] = scores_adata.uns['moranI'].index.tolist()
 top_ok = scores_adata.uns['moranI'].head(10)["pathway_id"].tolist()
 

@@ -44,7 +44,7 @@ scores_adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
 
 print(scores_adata)
 sq.gr.spatial_neighbors(scores_adata, n_neighs=20)  # needed for Moran's I
-sq.gr.spatial_autocorr(scores_adata, mode="moran", n_perms=100, n_jobs=1)
+sq.gr.spatial_autocorr(scores_adata, mode="moran", n_perms=100, n_jobs=1, seed=0)
 scores_adata.uns['moranI']['pathway_id'] = scores_adata.uns['moranI'].index.tolist()
 top_spatial_features = scores_adata.uns['moranI'].head(
     5  # when using 10 was horrible
