@@ -22,7 +22,9 @@ from quantifs_methods import *
 from visualization import *
 
 """
-Re-writes the rawOffSampleProb of the annotation files
+Metaspace, unfortunately did not compute rawOffSampleProb for this dataset.
+This script:
+  Re-writes the rawOffSampleProb of the annotation files (custom approach) 
 """
 def compare_out_vs_in_groups_of_spots(adata_mz):
     ratios_res = []
@@ -78,7 +80,7 @@ def compute_fast_probs(res_df):
 
 ## start
 
-SAMPLE = sys.argv[1] # "test635_200-1K"#"test635_80-400" # todo
+SAMPLE = sys.argv[1] # "test635_200-1K"#
 
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -88,11 +90,11 @@ anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
              "KEGG": f"{SAMPLE}_kegg.csv"}
 plot_folder = "../../../figures/gb-brain"
 kmeans_k = {
-    "test635_80-400" : 5,
+    "test635_80-400" : 7, # had to increase it because many little zones around difficult to classify
     "test635_200-1K": 4
 }
 params_clus_choices = {
-    "test635_80-400" : {"in": ['0'], "out":['1', '2', '3', '4']},
+    "test635_80-400" : {"in": ['1', '4'], "out":['0', '2', '3', '5', '6']},
     "test635_200-1K" : {"in": ['0', '2'], "out":['1','3']}
 }
 
@@ -122,8 +124,8 @@ print(adata_mz)
 
 k = kmeans_k[SAMPLE]
 adata_mz = spatial_standard_computations(   # ok, random_state=0 in fun def
-    adata_mz, k=k,  pca_ncomps=8,
-    as_log=True, top_variable_features_fraction=0.7)
+    adata_mz, k=k,  pca_ncomps=12,
+    as_log=True, top_variable_features_fraction=0.8)
 
 adata_mz.X = csr_matrix(adata_mz.X.todense() + 1) #  csr to avoid: ImplicitModificationWarning: X should not be a np.matrix, use np.ndarray instead.
 

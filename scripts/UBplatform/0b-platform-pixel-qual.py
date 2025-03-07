@@ -28,10 +28,10 @@ plot_folder = "../../../figures/platform"
 
 pixel_class_thresholds_by_sample = {
     'UBcalibr1': None,  # verified has all NaN values in OffSample column
-    'UBcalibr2': [95, 0.8],  # (ok !) loose params to avoid losing lots of pixels
+    'UBcalibr2': [0.95, 0.8],  # (ok !) loose params to avoid losing lots of pixels
     'UBcalibr3': None,  # verified has all NaN values in OffSample column
-    'UBcalibr4': [85, 0.4],  # tuned
-    'UBcalibr5': [87, 0.5]   # default
+    'UBcalibr4': [0.85, 0.4],  # tuned
+    'UBcalibr5': [0.87, 0.5]   # default
 }
 
 assert os.path.exists(plot_folder), "Cannot continue, the plot_folder does not exist"
@@ -55,7 +55,7 @@ if "spot_quality" not in adata_mz.obs.columns.tolist():
     if not me_annots.feat_classif[me_annots.offsample_column].isnull().all():
         adata_mz = adata_mz_mark_spot_quality(
             adata_mz, me_annots.feat_classif,
-            cutoff_out_percentage=pixel_class_thresholds_by_sample[SAMPLE][0],
+            cutoff_out_prob=pixel_class_thresholds_by_sample[SAMPLE][0],
             tolerated_fraction=pixel_class_thresholds_by_sample[SAMPLE][1]
             )
 

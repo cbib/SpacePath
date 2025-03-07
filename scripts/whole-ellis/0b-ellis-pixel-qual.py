@@ -54,7 +54,7 @@ if "spot_quality" not in adata_mz.obs.columns.tolist():
 
         adata_mz = adata_mz_mark_spot_quality(
             adata_mz, me_annots.feat_classif,
-            cutoff_out_percentage=50,
+            cutoff_out_prob=0.5,
             tolerated_fraction=0.05)
 
         tmpstr = os.path.join(plot_folder,

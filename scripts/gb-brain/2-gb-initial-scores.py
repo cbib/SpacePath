@@ -45,15 +45,14 @@ me_annots.load()
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
-print(adata_mz)
+print("after sweep: ",adata_mz)
 
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
-    mydata_dir, me_annots, adata_mz, prob_out=0.95)
+    mydata_dir, me_annots, adata_mz, prob_out=0.9)
 print("mz post sync", adata_mz)
 
 
-adata_mz
 
 
 # the KEGG id adata
@@ -66,6 +65,7 @@ print("KEGG resolved adata: ", adata)
 
 adata.write_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-KEGG_adata.h5ad"))
+
 
 ## compute scores
 kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj.to_dict(), adata)

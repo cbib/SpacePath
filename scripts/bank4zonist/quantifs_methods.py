@@ -179,30 +179,30 @@ def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
 
 #
 def adata_mz_mark_spot_quality(# for future: put this as aux_adata_methods because is tooo slow for big nb of spots
-        adata_mz, features_classification_df, cutoff_out_percentage: int=87,
+        adata_mz, features_classification_df, cutoff_out_prob: float=0.87,
         tolerated_fraction: float=0.5,
         mz_col: str='mz', off_col: str='rawOffSampleProb'):
     """
-    Marks good and bad scores in two steps:
-    a)  Defines a quality score for each spot: it is a ratio computed as
-    the sum of the quantities (signal) of the 'out-of-tissue' m/z features
-    over the total of the quantities of all m/z, for the current spot.
+    Marks good and bad pixels in two steps:
+    a)  Defines a quality ratio for each spot: it is a ratio computed as
+    the sum of the quantities (signal) of the 'out-of-tissue' m/z (mz) features
+    over the total of the quantities of all mz, for the current spot.
 
-    Note : The out-of-tissue decision is defined by 'percentage' which
-           is the cutoff of 'p * 100' where p is the probability
-           computed by Metaspace of a m/z being outside the tissue.
+    Note : The out-of-tissue decision is defined by cutoff_out_prob which is
+           the cutoff of the probability of an m/z being outside the tissue,
+           computed by Metaspace.
 
-    The smaller the score, the better the quality of the spot.
-    e.g. 0.5 means that sum of signal of out-of-tissue m/z represent
-    the half of the total sum of signal of all m/z.
+    The smaller the ratio, the better the quality of the spot. e.g.:
+    ratio_out_tissue__total = 0.5 means that sum of signal of out-of-tissue
+    mzs represent the half of the total sum of signal of all mzs.
 
     b) The "good" pixel score is inferior or equal to the tolerated_fraction.
 
     Results stored in adata_mz.obs
     """
     df = features_classification_df[[mz_col, off_col]]
-    if df[off_col].max() <= 1:
-        df[off_col] = df[off_col] * 100
+    if not df[off_col].max() <= 1:
+        raise AssertionError(f"values of {off_col} must be in [0, 1]")
     df_tr = df.T
     df_tr.index = [mz_col, off_col]
     df_tr.columns = df[mz_col].tolist()
@@ -218,7 +218,7 @@ def adata_mz_mark_spot_quality(# for future: put this as aux_adata_methods becau
                 off_col : df_tr.loc[off_col, :].to_numpy()
             })
             sum_out_tissue_quantities_arr[i] = tmp.loc[
-                tmp[off_col] >= cutoff_out_percentage,
+                tmp[off_col] >= cutoff_out_prob,
                 "quantifications"].sum()
             total_arr[i] =  tmp["quantifications"].sum()
         # end for
@@ -231,9 +231,6 @@ def adata_mz_mark_spot_quality(# for future: put this as aux_adata_methods becau
         adata_mz.obs['spot_quality'] = "good"
         adata_mz.obs.loc[adata_mz.obs['ratio_out_tissue__total'] > tolerated_fraction,
             'spot_quality'] = "bad"
-        # adata_mz.obs.loc[
-        #     adata_mz.obs['ratio_out_tissue__total'].isnull(),
-        #     'spot_quality'] = "bad"
 
     else:
         print("impossible to add the spot quality")
@@ -257,9 +254,9 @@ def update_annotation_tomatch_adatamz(annotationsObj: MetabolomeAnnotations, ada
     me_annots = annotationsObj.model_copy()  # copy is deprecated
     okmz = adata_mz.var['mz']
     me_annots.preloaded = me_annots.preloaded.loc[
-        me_annots.preloaded['mz'].isin(okmz)]
+        me_annots.preloaded['mz'].isin(okmz),:]
     me_annots.unfiltered = me_annots.unfiltered.loc[
-        me_annots.unfiltered['mz'].isin(okmz)]
+        me_annots.unfiltered['mz'].isin(okmz),:]
 
     return me_annots
 
@@ -370,11 +367,13 @@ def compute_moran_i(adata, n_neighs=10, n_perms=5):
     return adata
 
 
-def get_target_pathways_of_one_mz(subdf, pathways_dict):
+def get_target_pathways_of_one_mz(my_mz: str, subdf, pathways_dict, pws_mz_dict):
     """
+    :param: my_mz: current mz
     :param subdf: represents only *one mz* dataframe (cols: pathway_id, KEGG),
        being KEGG the metabolite identifier.
     :param: pathways_dict: keys are pathway ids, values are all the kegg ids
+    :param: pws_mz_dict: keys are pathway ids, values are all the mzs
     :return: a dict where the keys are the compared pairs of pathways, e.g.
        {('hsa0230', 'hsa4976'): {'hsa0230': ['C00212'], 'hsa4976': ['C07210']}
 
@@ -387,8 +386,10 @@ def get_target_pathways_of_one_mz(subdf, pathways_dict):
     Also takes into account the total KEGG ids of k and h pathways (not ony the current mz).
 
     If (k, h) pathways had an empty intersection related to the kegg of the current mz,
-    and if there are, in each pathway, a total of kegg ids that is superior or equal to the
-    n+1 kegg ids of the current mz, then both (k, h) pathways go into target dict.
+               !?                 if there are, in each pathway, a total of kegg ids that is superior or equal to the
+                 ?               n+1 kegg ids of the current mz,
+    and if mzs other than current mz are in each pathway,
+    then both (k, h) pathways go into target dict.
     """
     adict_curr_mz: Dict[str, set] = dict()
     pathways_to_target = dict()
@@ -396,19 +397,18 @@ def get_target_pathways_of_one_mz(subdf, pathways_dict):
         if row["pathway_id"] not in adict_curr_mz.keys():
             adict_curr_mz[row["pathway_id"]] = {row["KEGG"]}
         adict_curr_mz[row["pathway_id"]].update([row["KEGG"]])
-    for k in adict_curr_mz.keys():
-        for h in adict_curr_mz.keys():
+    for k in adict_curr_mz.keys():  # k is a pathway id
+        for h in adict_curr_mz.keys():  # h is also a pathway id
             if k != h:
-                pw1_allkegg = set(pathways_dict[k])  # total k
-                pw2_allkegg = set(pathways_dict[h])   # total h
-                a: set = adict_curr_mz[k] - adict_curr_mz[h]
-                b: set = adict_curr_mz[h] - adict_curr_mz[k]
+                other_mz_pw1 = set(pws_mz_dict[k]) - set([my_mz])
+                other_mz_pw2 = set(pws_mz_dict[h]) - set([my_mz])
+                a: set = adict_curr_mz[k] - adict_curr_mz[h]  # a is a set of kegg ids
+                b: set = adict_curr_mz[h] - adict_curr_mz[k]  # b is also a set of kegg ids
                 intersect_k_h :set = adict_curr_mz[h].intersection(adict_curr_mz[k])
-
-                if (len(a) >= 1 ) and (len(b) >= 1):   ##  (len(a) == 1 ) and (len(b) == 1): #
-                    if (len(intersect_k_h) == 0) and (
-                            len(pw1_allkegg) >= (len(a) + 1)) and (
-                            len(pw2_allkegg) >= (len(b) + 1)):
+                if (len(a) >= 1) and (len(b) >= 1) and (len(intersect_k_h) == 0):
+                    if ((len(other_mz_pw1) >= 1) and (len(other_mz_pw2) >= 2) or (
+                            len(other_mz_pw1) >= 2) and (len(other_mz_pw2) >= 1)
+                    )and (len(other_mz_pw1.intersection(other_mz_pw2)) == 0):
                         pathways_to_target[(k,h)] = {k: list(a), h: list(b)}
 
     return pathways_to_target
@@ -424,7 +424,7 @@ def message_factory_1(total_nb, kegg_oneormore__one_pathway,
     print("susceptible_of_refinement: ", susceptible_of_refinement)
 
 
-def ugly_long_function(mz_met_pathway_piled: pd.DataFrame) :
+def ugly_long_function(mz_met_pathway_piled: pd.DataFrame):
     """
     :param mz_met_pathway_piled: The df with the correspondences of mz,
         metabolites KEGG ids, and pathways KEGG ids.
@@ -435,6 +435,8 @@ def ugly_long_function(mz_met_pathway_piled: pd.DataFrame) :
     """
     pathways_dict = zh.pws_piled_to_dict(mz_met_pathway_piled,
                                          'pathway_id', 'KEGG')
+    pws_mz_dict = zh.pws_piled_to_dict(mz_met_pathway_piled,
+                                         'pathway_id', 'mz')
     kegg_oneormore__one_pathway = 0
     one_kegg_multiple_pathways = 0
     multiple_kegg_shared = 0
@@ -455,7 +457,7 @@ def ugly_long_function(mz_met_pathway_piled: pd.DataFrame) :
         elif (len(subdf["KEGG"].unique()) > 1) and (
                 len(subdf["pathway_id"].unique()) > 1):
             subdf = subdf.drop_duplicates("KEGG")
-            pws_ok = get_target_pathways_of_one_mz(subdf, pathways_dict)
+            pws_ok = get_target_pathways_of_one_mz(str(mz), subdf, pathways_dict, pws_mz_dict)
             if len(pws_ok) > 0:
                 susceptible_of_refinement += 1
                 final_dict[str(mz)] = pws_ok

@@ -16,12 +16,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__),
 from quantifs_methods import *
 
 
-SAMPLE =  "test635_80-400"   #sys.argv[1] #  "test635_80-400"
+SAMPLE =  sys.argv[1] ##   "test635_80-400"  "test635_80-400"
 
 
 choices_dict = {
-    "test635_80-400" : [40, 0.3],  # more stringent to mark spots as bad quality
-    "test635_200-1K" : [50, 0.3] # modify if needed  todo
+    "test635_80-400" : [0.4, 0.3],   # 0.4, 0.3
+    "test635_200-1K" : [0.5, 0.3]
 }
 
 print(SAMPLE)
@@ -58,7 +58,7 @@ if "spot_quality" not in adata_mz.obs.columns.tolist():
         print("marking spot quality with params: ", choices_dict[SAMPLE])
         adata_mz = adata_mz_mark_spot_quality(
             adata_mz, me_annots.feat_classif,
-            cutoff_out_percentage=choices_dict[SAMPLE][0],
+            cutoff_out_prob=choices_dict[SAMPLE][0],
             tolerated_fraction=choices_dict[SAMPLE][1]
             )
 
