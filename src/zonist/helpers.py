@@ -61,11 +61,11 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
 
     return df_out
 
-def pull_offsample_info(df, mz_col: str, offsample_col: str,
-                        total_intens_col):
-    df = df[[mz_col, offsample_col, total_intens_col]]
-    df = df.sort_values(by=[mz_col, offsample_col, total_intens_col],
-                        ascending=[True, False, False])
+def pull_mz_quality_info(df, mz_col: str, offsample_col: str,
+                         total_intens_col: str, fdr_column: str) -> pd.DataFrame:
+    df = df[[mz_col, offsample_col, total_intens_col, fdr_column ]]
+    df = df.sort_values(by=[mz_col, offsample_col, fdr_column],
+                        ascending=[True, False, True])
     df = df.drop_duplicates(subset=[mz_col], keep='first')
     return df
 

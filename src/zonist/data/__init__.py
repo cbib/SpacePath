@@ -104,9 +104,10 @@ class MetabolomeAnnotations(Dataset):
     molecule_names_col: str = "moleculeNames"
     offsample_column: str = "rawOffSampleProb"
     total_intens_col: str = "totalIntensity"
+    fdr_column: str= "fdr"
     unfiltered: pd.DataFrame = pd.DataFrame()
     df: pd.DataFrame = pd.DataFrame()
-    feat_classif: pd.DataFrame = pd.DataFrame()
+    mz_quality: pd.DataFrame = pd.DataFrame()
 
     def load(self):
         logger.info("Loading annotations")
@@ -133,10 +134,10 @@ class MetabolomeAnnotations(Dataset):
             try:
                 df = df[[self.mz_col, self.formula_col, self.molecule_ids_col,
                          self.molecule_names_col, self.offsample_column,
-                         self.total_intens_col]]
+                         self.total_intens_col, self.fdr_column]]
             except KeyError:
                 df = df[[self.mz_col, self.formula_col, self.molecule_ids_col,
-                         self.molecule_names_col]]
+                         self.molecule_names_col, self.fdr_column]]
                 auto_remove_offsample = False  # not enough columns to be True
 
             df[self.mz_col] = np.around(df[self.mz_col].to_numpy(), decimals=9)
@@ -158,16 +159,16 @@ class MetabolomeAnnotations(Dataset):
         self.unfiltered[self.mz_col] = np.around(
             self.unfiltered[self.mz_col].to_numpy(), decimals=9)
 
-    def build_feat_classif_df(self):
+    def do_mz_quality_df(self):
         """Builds df, if probability of being outside-of-tissue exists"""
         if self.offsample_column in self.preloaded.columns.tolist():
-            self.feat_classif = helpers.pull_offsample_info(
+            self.mz_quality = helpers.pull_mz_quality_info(
                 self.preloaded, self.mz_col, self.offsample_column,
-                self.total_intens_col)
-            if self.feat_classif[self.offsample_column].isnull().all():
+                self.total_intens_col, self.fdr_column)
+            if self.mz_quality[self.offsample_column].isnull().all():
                 logger.warning("Useless: %s is NaN", self.offsample_column)
             else:
-                if not self.feat_classif[self.offsample_column].max() <= 1:
+                if not self.mz_quality[self.offsample_column].max() <= 1:
                     raise ValueError("Values of %s must be comprised "
                                      "between 0 and 1", self.offsample_column)
         else:
@@ -178,15 +179,15 @@ class MetabolomeAnnotations(Dataset):
         """Recommended (optional), to discard the mz that are out-of-tissue.
         Among the off-sample features (those having >= prob_out)
         ordered by decreasing total intensity, exclude the defined fraction"""
-        self.build_feat_classif_df()
+        self.do_mz_quality_df()
         # if column is not empty NaN entirely, skip:
-        if self.feat_classif[self.offsample_column].isnull().all():
+        if self.mz_quality[self.offsample_column].isnull().all():
             logger.warning("Useless: %s is NaN", self.offsample_column)
         else:
-            if not self.feat_classif[self.offsample_column].max() <= 1:
+            if not self.mz_quality[self.offsample_column].max() <= 1:
                 raise AssertionError("% must be between 0 and 1", self.offsample_column)
 
-            bad_feat_df = self.feat_classif.loc[self.feat_classif[
+            bad_feat_df = self.mz_quality.loc[self.mz_quality[
                 self.offsample_column] >= prob_out, :]
 
             bad_feat_df = bad_feat_df.sort_values(by=[
