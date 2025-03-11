@@ -10,13 +10,14 @@ import matplotlib.pyplot as plt
 from bank4zonist.quantifs_methods import update_annotation_tomatch_adatamz, verification
 
 def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
-                               min_pw_size=2):
+                               min_pw_size=2, max_pw_size=100):
     # reference mappings are the same for all my projects
     me_refmap = zd.MetaboliteIdsMappings(
         data_dir=mydata_dir,
         subfolder="metabolites-mappings",
         mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
-                       'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv"})
+                       'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv",
+                       'CoreMetabolome': "CoreMetabolome-to-KEGG_05-07-24.tsv"})
 
     me_refmap.load()
     ##
@@ -38,7 +39,8 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
 
     pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
                                                           me_annots,
-                                                          min_pathway_size=min_pw_size)  # TODO: think how to easily re-find those metabs that have min_pathway_size=1
+                                                          min_pathway_size=min_pw_size,
+                                                          max_pathway_size=max_pw_size)  # TODO: think how to easily re-find those metabs that have min_pathway_size=1
     ll = [str(z) for z in sorted(me_annots.df["mz"].astype(float).unique())]
 
     adata_mz = adata_mz[:, ll].copy()  # todo this is NOT sync, but like so

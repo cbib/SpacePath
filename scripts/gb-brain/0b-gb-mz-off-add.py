@@ -87,15 +87,17 @@ mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "gb-brain"
 anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
-             "KEGG": f"{SAMPLE}_kegg.csv"}
+             "KEGG": f"{SAMPLE}_kegg.csv",
+             "CoreMetabolome": f"{SAMPLE}_CoreMetabolome.csv"}
+
 plot_folder = "../../../figures/gb-brain"
 kmeans_k = {
     "test635_80-400" : 7, # had to increase it because many little zones around difficult to classify
-    "test635_200-1K": 4
+    "test635_200-1K": 6
 }
 params_clus_choices = {
     "test635_80-400" : {"in": ['1', '4'], "out":['0', '2', '3', '5', '6']},
-    "test635_200-1K" : {"in": ['0', '2'], "out":['1','3']}
+    "test635_200-1K" : {"in": ['1', '3', '4'], "out":['0', '2', '5']}
 }
 
 assert os.path.exists(plot_folder), "Cannot continue, the plot_folder does not exist"
@@ -121,13 +123,10 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 print(adata_mz)
 
-
 k = kmeans_k[SAMPLE]
 adata_mz = spatial_standard_computations(   # ok, random_state=0 in fun def
     adata_mz, k=k,  pca_ncomps=12,
     as_log=True, top_variable_features_fraction=0.8)
-
-adata_mz.X = csr_matrix(adata_mz.X.todense() + 1) #  csr to avoid: ImplicitModificationWarning: X should not be a np.matrix, use np.ndarray instead.
 
 # manually set after viz:
 clusters_out = params_clus_choices[SAMPLE]["out"]
@@ -153,6 +152,9 @@ else:
     adata_mz.obs['location'] = ''
     adata_mz.obs.loc[adata_mz.obs[f'kmeans{k}'].isin(clusters_in), 'location'] = 'in'
     adata_mz.obs.loc[adata_mz.obs[f'kmeans{k}'].isin(clusters_out), 'location'] = 'out'
+    # sum 1 to avoid zero errors in the comparisons "out vs. inside" groups of spots
+    adata_mz.X = csr_matrix(
+        adata_mz.X.todense() + 1)  # csr to avoid: ImplicitModificationWarning: X should not be a np.matrix, use np.ndarray instead.
 
     res_df = compare_out_vs_in_groups_of_spots(adata_mz)
     res_df = compute_fast_probs(res_df)

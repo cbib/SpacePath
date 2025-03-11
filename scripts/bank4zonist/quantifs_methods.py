@@ -627,6 +627,13 @@ def subset_m_probs_curr_pw(metabolites_probs_here, pathwaysObj, pw):  # TODO is 
     return metabolites_probs_here[list(real_compounds_in_pw)].T
 
 
+def build_coords_df(adata):
+    df = pd.DataFrame(data=adata.obsm['spatial'],
+                 columns=['x', 'y'],
+                 index=adata.obs.index.tolist())
+    return df
+
+
 if __name__ == "__main__":
     import time
     t0 = time.time()

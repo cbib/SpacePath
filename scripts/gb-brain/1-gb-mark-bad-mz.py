@@ -24,14 +24,16 @@ from visualization import *
 clear off not-spatially relevant, or misleading, mz
 """
 
-SAMPLE = "test635_80-400"   # "test635_200-1K"  # todo: pending to sweep the larger mz range file
+SAMPLE = sys.argv[1]#"test635_80-400"   # "test635_200-1K"  # todo: pending to sweep the larger mz range file
+
 
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "gb-brain"
 anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
-             "KEGG": f"{SAMPLE}_kegg.csv"}
+             "KEGG": f"{SAMPLE}_kegg.csv",
+             "CoreMetabolome": f"{SAMPLE}_CoreMetabolome.csv"}
 moran_I_threshold = 0.02 # this is loose, so define by hand those that are visually not clustered at all, or noisy
 moran_padj_cutoff = 0.05
 
@@ -54,10 +56,25 @@ wrong_mz_manually_defined_dict = {
     'test635_200-1K': [] # nothing yet for this other slice
                              }
 
+print(f"Will mark quality of mz features with parameters:\n"
+      f"Moran's I value >= {moran_I_threshold}\n"
+      f"Adjusted p-value (BH) of Moran's I <= {moran_padj_cutoff}")
+if len(wrong_mz_manually_defined_dict[SAMPLE]) > 0:
+    print(f"and a list of {len(wrong_mz_manually_defined_dict[SAMPLE])} "
+          f"manually defined misleading mz")
+
 adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
+print(adata_mz)
 
+# todo: this is temporal
+try:
+    adata_mz.var = adata_mz.var.drop(columns="mz_quality") # todo: del
+    adata_mz.var = adata_mz.var.drop(columns="mz_initial_quality")  # todo: del
+except:
+    pass
 
+## ok
 print("using stats to define spatially relevant mzs")
 if not "moranI" in list(adata_mz.uns.keys()):
     adata_mz = compute_moran_i(adata_mz, n_neighs=20, n_perms=50) # TODO : make sure of doing at least 50 perms to have padj ok
@@ -70,13 +87,26 @@ moran_mz_df['mz'] = moran_mz_df.index.astype(str).tolist()
 
 moran_mz_df.to_csv(f"{SAMPLE}.csv", sep='\t', header=True, index=False)
 
+
+# ## now check the fdr computed by metaspace  # todo ??????
+# todo: rescue the mz that have good fdr ????
+#  annotations to be used for several purposes
+me_annots = zd.MetabolomeAnnotations(name=SAMPLE,
+                                data_dir=mydata_dir,
+                                subfolder=subfolder,
+                                annotation_files=anno_dict)
+me_annots.load()
+#
+
+## 1:  "good" by moran's metrics
 good_mz_spatial = moran_mz_df.loc[
     (moran_mz_df['I'] >= moran_I_threshold) & (
      moran_mz_df['pval_sim_fdr_bh'] <= moran_padj_cutoff),
     "mz"].astype(str).unique()
-
 print(f" {len(good_mz_spatial)} msz, are within Moran's related defined thresholds")
 
+
+## aux: visual picking todo: think if doing appart
 if do_step_viz_pick_wrong:  # step 1: manually complete wrong list:
     def plotem(adata_mz, me_annots, good_mz_spatial) -> None:
         import scanpy as sc
@@ -99,11 +129,7 @@ if do_step_viz_pick_wrong:  # step 1: manually complete wrong list:
             plt.show()
         # returns none
 
-    me_annots = zd.MetabolomeAnnotations(name=SAMPLE,
-                                data_dir=mydata_dir,
-                                subfolder=subfolder,
-                                annotation_files=anno_dict)
-    me_annots.load()
+
     plotem(adata_mz, me_annots, good_mz_spatial)
 
     answer = input("finished step1, continue?")
@@ -112,17 +138,34 @@ if do_step_viz_pick_wrong:  # step 1: manually complete wrong list:
     # end if
 # endif
 
+## 2 :  good by fdr ??? todo ????
+me_annots.do_mz_quality_df()
+#
+# metrics_interest = moran_mz_df.join(me_annots.mz_quality, .....
+# todo: make clear we transfer fdr from annotations quality infos to adataMZ
+tmpdf = me_annots.mz_quality.copy()
+tmpdf.index = [str(x) for x in tmpdf['mz'].tolist()]
+tmpdf = tmpdf.loc[adata_mz.var.index.tolist(),:]
+adata_mz.var["fdr"] = tmpdf[me_annots.fdr_column].tolist()
+del tmpdf
+print(adata_mz.var.head())
+## 3: "bad" by manual definition
 wrong_mz_manually_defined = wrong_mz_manually_defined_dict[SAMPLE]
-print(wrong_mz_manually_defined)
 wrong_mz_manually_defined = [str(z) for z in wrong_mz_manually_defined]
 good_mz_spatial = list(set(good_mz_spatial) - set(wrong_mz_manually_defined))
-adata_mz = adata_mz[:, good_mz_spatial].copy()
 
-print(f"after custom rejection, remain:   {len(good_mz_spatial)} mzs")
-print("final object:", adata_mz)
+# adata_mz = adata_mz[:, good_mz_spatial].copy()
+# print(f"after custom rejection, remain:   {len(good_mz_spatial)} mzs")
+# print("final object:", adata_mz)
+adata_mz.var["mz_initial_quality"] = "bad"
+print(adata_mz.var.columns)
 
+adata_mz.var.loc[adata_mz.var['mz'].isin(
+    [float(i) for i in good_mz_spatial]), "mz_initial_quality"] = "good"
+print("quality marked as follows:")
+print(adata_mz.var.groupby('mz_initial_quality').size().reset_index(name='counts'))
 # # save
-answer = input("Filtered AnnData object ready to save. Continue?")
+answer = input("Continue?")#input("Filtered AnnData object ready to save. Continue?")
 if not answer.lower() in ["y", "yes"]:
     print("Aborted")
 else:

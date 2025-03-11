@@ -87,8 +87,8 @@ for pw_id in top_spatial_features:
         sub_df, tmp = task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df,
                            adata_mz)
 
-        plot_with_table(tmp, i_mz, sub_df,
-                        out_file_path=os.path.join(plot_folder,
+        plot_with_table(tmp, i_mz, '', # third positional arg is title_note
+                        sub_df, out_file_path=os.path.join(plot_folder,
                              f'{SAMPLE}-{pw_id}-{i}.png'), spot_size=3.8, dpi=300)
 
 

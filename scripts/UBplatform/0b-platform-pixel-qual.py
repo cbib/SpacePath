@@ -51,10 +51,10 @@ if "spot_quality" not in adata_mz.obs.columns.tolist():
     print(f"computing spot quality across {adata_mz.obs.shape[0]} pixels... ")
     if adata_mz.obs.shape[0] > 30000:
         print("be patient, large dataset in process...")
-    me_annots.build_feat_classif_df()   ## NEW
-    if not me_annots.feat_classif[me_annots.offsample_column].isnull().all():
+    me_annots.do_mz_quality_df()   ## NEW
+    if not me_annots.mz_quality[me_annots.offsample_column].isnull().all():
         adata_mz = adata_mz_mark_spot_quality(
-            adata_mz, me_annots.feat_classif,
+            adata_mz, me_annots.mz_quality,
             cutoff_out_prob=pixel_class_thresholds_by_sample[SAMPLE][0],
             tolerated_fraction=pixel_class_thresholds_by_sample[SAMPLE][1]
             )

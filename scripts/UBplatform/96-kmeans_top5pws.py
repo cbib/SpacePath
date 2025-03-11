@@ -109,7 +109,7 @@ print(scores_adata)
 print("computing Profile's graph with scanpy method")
 sc.pp.neighbors(scores_adata, n_neighbors=1000, # authors say shoud be in range 2 to 100, larger values more global communities
                 #knn=True, method="umap",
-                knn=True, method="umap", #slower but XXXXXX
+                knn=True, method="umap",
                 metric="jaccard" # used euclidean default, also minkowski, cosine: all not good
                 # jaccard gives relatively good clusters
 )

@@ -29,7 +29,8 @@ mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "gb-brain"
 anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
-             "LipidMaps": f"{SAMPLE}_kegg.csv"}
+             "LipidMaps": f"{SAMPLE}_kegg.csv",
+             "CoreMetabolome": f"{SAMPLE}_CoreMetabolome.csv"}
 plot_folder = "../../../figures/gb-brain"
 
 
@@ -51,13 +52,13 @@ if "spot_quality" not in adata_mz.obs.columns.tolist():
     print(f"computing spot quality across {adata_mz.obs.shape[0]} pixels... ")
     if adata_mz.obs.shape[0] > 30000:
         print("be patient, large dataset in process...")
-    me_annots.build_feat_classif_df()   ## NEW
-    print(me_annots.feat_classif.head(2))
-    if not me_annots.feat_classif[me_annots.offsample_column].isnull().all():
+    me_annots.do_mz_quality_df()   ## NEW
+    print(me_annots.mz_quality.head(2))
+    if not me_annots.mz_quality[me_annots.offsample_column].isnull().all():
 
         print("marking spot quality with params: ", choices_dict[SAMPLE])
         adata_mz = adata_mz_mark_spot_quality(
-            adata_mz, me_annots.feat_classif,
+            adata_mz, me_annots.mz_quality,
             cutoff_out_prob=choices_dict[SAMPLE][0],
             tolerated_fraction=choices_dict[SAMPLE][1]
             )

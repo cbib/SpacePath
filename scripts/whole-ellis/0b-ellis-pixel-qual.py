@@ -40,20 +40,20 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 print(adata_mz)
 
-me_annots.build_feat_classif_df()
+me_annots.do_mz_quality_df()
 
 if "spot_quality" not in adata_mz.obs.columns.tolist():
     print(f"computing spot quality across {adata_mz.obs.shape[0]} pixels... ")
     if adata_mz.obs.shape[0] > 30000:
         print("be patient, large dataset in process...")
-    me_annots.build_feat_classif_df()   ## NEW
-    if not me_annots.feat_classif[me_annots.offsample_column].isnull().all():
+    me_annots.do_mz_quality_df()   ## NEW
+    if not me_annots.mz_quality[me_annots.offsample_column].isnull().all():
 
         #random_spots = np.random.choice(adata_mz.obs['obs'].to_numpy(), 5000, replace=False)# keep deactivated
         #adata_mz = adata_mz[random_spots,:]# keep deactivated
 
         adata_mz = adata_mz_mark_spot_quality(
-            adata_mz, me_annots.feat_classif,
+            adata_mz, me_annots.mz_quality,
             cutoff_out_prob=0.5,
             tolerated_fraction=0.05)
 

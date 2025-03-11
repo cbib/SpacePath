@@ -75,15 +75,22 @@ def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
 
 
 
-def custom_scatter_one_feat(df, feature: str, the_ax, spot_size=2):
+def custom_scatter_one_feat(df, feature: str, title_note:str,  the_ax, spot_size=2,
+                            marker="o"):
 
     my_scatter = the_ax.scatter(df['x'], df['y'],
                                 c=df[feature], cmap='viridis',
                                 vmin=df[feature].min(),
                                 vmax=df[feature].max(),
-                                s=spot_size)
+                                s=spot_size,
+                                marker=marker,
+                                linewidth=0,
+                                )
+    my_title = f'{feature}'
+    if title_note is not None:
+        my_title = f'{feature} ({title_note})'
     the_ax.invert_yaxis()
-    the_ax.set_title(f'{feature}')
+    the_ax.set_title(my_title)
     cbar = plt.colorbar(
         my_scatter,
         orientation='vertical',
@@ -99,30 +106,33 @@ def custom_scatter_one_feat(df, feature: str, the_ax, spot_size=2):
     return the_ax
 
 
-def plot_with_table(tmp, i_mz, sub_df, out_file_path, spot_size=5, dpi=600) -> None:
+def plot_with_table(tmp, i_mz, title_note, sub_df, out_file_path, spot_size=2,
+                    dpi=600, marker="o") -> None:
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
     fig.set_figheight(3)
     fig.set_figwidth(10)
 
-    ax1 = custom_scatter_one_feat(tmp, i_mz, the_ax=ax1,
-                                  spot_size=spot_size)  # this replaces  sq.pl.spatial_scatter(adata_mz, color=[str(i_mz)], img=False,  ax=ax1)
-
+    ax1 = custom_scatter_one_feat(tmp, i_mz, title_note=title_note,the_ax=ax1,
+                                  spot_size=spot_size, # this replaces  sq.pl.spatial_scatter(adata_mz, color=[str(i_mz)], img=False,  ax=ax1)
+                                  marker=marker)
     ax2.set_axis_off()
     auto_height = sub_df.shape[0] * 0.12
     if sub_df.shape[0] == 1:
         auto_height = 0.17
-    if auto_height >= 10:
-        auto_height = 10
+    if auto_height >= 1.2:
+        auto_height = 1.2
     auto_width = 0.7
+    start_y = 0.15
     table = ax2.table(  # https://www.statology.org/seaborn-table/
         cellText=sub_df.values, rowLabels=None,
         colLabels=sub_df.columns,
-        bbox=(-0.08, 0.5, auto_width, auto_height), # [xmin, ymin, width, height]
+        bbox=(-0.08, start_y, auto_width, auto_height), # [xmin, ymin, width, height]
         colWidths=(0.2, 0.5), cellLoc='center'
     )
     table.set_fontsize(10)
 
     plt.savefig(out_file_path, dpi=dpi, transparent=True)
+
 
 
 def custom_scatter_two_features(df, feature1, feature2, width, height,
