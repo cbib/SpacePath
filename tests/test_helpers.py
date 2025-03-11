@@ -19,8 +19,9 @@ class Test(TestCase):
             "database": ["HMDB", "KEGG", "LipidMaps", "HMDB"]
         })
         ref_ids_map_df = pd.DataFrame({
-            "initial_id_unconverted": ["HMDB0001259", "HMDB0000214", "LMGL03010536",
-                            "LMTG9999", "LMPE8888"],
+            "initial_id_unconverted": ["HMDB0001259", "HMDB0000214",
+                                       "LMGL03010536",
+                                       "LMTG9999", "LMPE8888"],
             "KEGG": ["C00232", "C00077", "CXXXXYY", "C0101010", "C999999"],
             "database": ["HMDB", "HMDB", "LipidMaps", "LipidMaps", "HMDB"]
         })
@@ -62,15 +63,15 @@ class Test(TestCase):
 
     def test_purge_pathways(self):  #
         data = [
-            ['IDpath1', 'Fatty Oxidation', 'm1', 'm3', 'm4', 'm6',  np.nan],
+            ['IDpath1', 'Fatty Oxidation', 'm1', 'm3', 'm4', 'm6', np.nan],
             ['IDpath2', 'Meiosis', 'm2', 'm3', np.nan, np.nan, np.nan],
             ['IDpath3', 'TCA cycle', 'm3', 'm4', 'm5', 'm7', np.nan],
             ['IDpath4', 'Yersinia Infection', 'm8', 'm9', 'm15', 'm1', 'm2']]
-        not_strictly_metabolical =  ["meiosis", "infection"]
+        not_strictly_metabolical = ["meiosis", "infection"]
         numerical_column_names = range(0, 7)
         gmt = pd.DataFrame(data, columns=numerical_column_names)
         result = helpers.purge_pathways(gmt, not_strictly_metabolical)
-        self.assertListEqual(['IDpath1',  'IDpath3'],
+        self.assertListEqual(['IDpath1', 'IDpath3'],
                              result.iloc[:, 0].tolist())
         self.assertListEqual(
             ['Fatty Oxidation', 'TCA cycle'],
@@ -122,7 +123,7 @@ class Test(TestCase):
         self.assertListEqual(list(result.keys()),
                              ["one", "two"])
         self.assertTrue(np.all(np.array(result["one"]) == np.array(
-                ["102.0317", "588.56", "132.0899"])))
+            ["102.0317", "588.56", "132.0899"])))
 
     def test_generate_coordinates_arr(self):
         coords_l: List[str] = ['x4_y1', 'x4_y2', 'x5_y3', 'x6_y8', 'x6_y9']
@@ -132,3 +133,13 @@ class Test(TestCase):
         self.assertTrue(np.all(result[:, 1] == np.array([1, 2, 3, 8, 9])))
 
 
+    def test_pull_mz_quality_info(self):
+        df = pd.DataFrame({'mz': [300.77, 300.77, 300.77, 456.2, 456.2],
+                           'rawOffSampleProb': [0.42, 0.43, 0.44, 0.3, 0.29],
+                           'totalIntensity':[888, 999, 898, 4576, 4700],
+                           'fdr': [0.5, 0.2, 0.5, 0.2, 0.2]})
+        res = helpers.pull_mz_quality_info(
+            df, 'mz', 'rawOffSampleProb',
+            'totalIntensity', 'fdr')
+        print(res)
+        assert False

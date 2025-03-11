@@ -145,6 +145,8 @@ class MetabolomeAnnotations(Dataset):
             df['database'] = anno_key
             if anno_key == "custom_kegg":
                 df['database'] = "KEGG"  # ok
+            #elif anno_key == "CoreMetabolome":
+            #    df['database'] = "HMDB"  # ok
             dfs_dict[anno_key] = df
 
         preloaded_annots = \

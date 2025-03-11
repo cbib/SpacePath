@@ -145,8 +145,12 @@ def yield_compliant_pathways(pathways_dict,
                              max_pathway_size=500) -> List[str]:
     """TODO doc"""
     pathways_sizes = {k: len(pathways_dict[k]) for k in pathways_dict.keys()}
-    good_pathways_sizes = {k: v for k, v in pathways_sizes.items()
+    if min_pathway_size != max_pathway_size:
+        good_pathways_sizes = {k: v for k, v in pathways_sizes.items()
                   if ((v >= min_pathway_size) and (v <= max_pathway_size)) }
+    else:
+        good_pathways_sizes = {k: v for k, v in pathways_sizes.items()
+                               if v == min_pathway_size}
     good_pathways: List[str] = list(good_pathways_sizes.keys())
 
     return good_pathways
