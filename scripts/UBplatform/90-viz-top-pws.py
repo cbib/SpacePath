@@ -21,7 +21,7 @@ from zonist.aux.matrix_from_metaspace import build_coord_names
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
 from visualization import custom_scatter_one_feat, plot_with_table
-from quantifs_methods import task1, task2
+from quantifs_methods import mold_data_for_plot__task1, mold_data_for_plot__task2
 
 
 
@@ -80,11 +80,11 @@ for pw_id in top_spatial_features:
                              title=f"{pw_id} {pw_name}",
                           legend_loc='lower center',
                               save=os.path.abspath(tmpstr))
-    df_mz_metabolites__curr_pw = task1(pw_id,  scores_adata, adata)
+    df_mz_metabolites__curr_pw = mold_data_for_plot__task1(pw_id,  scores_adata, adata)
     unique_mzs =  df_mz_metabolites__curr_pw["mz"].unique()
     for i in range(len(unique_mzs)):
         i_mz  = unique_mzs[i]
-        sub_df, tmp = task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df,
+        sub_df, tmp = mold_data_for_plot__task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df,
                            adata_mz)
 
         plot_with_table(tmp, i_mz, '', # third positional arg is title_note

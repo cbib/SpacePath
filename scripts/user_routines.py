@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from bank4zonist.quantifs_methods import update_annotation_tomatch_adatamz, verification
 
 def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
-                               min_pw_size=2, max_pw_size=100):
+                               min_pw_size=1, max_pw_size=100):
     # reference mappings are the same for all my projects
     me_refmap = zd.MetaboliteIdsMappings(
         data_dir=mydata_dir,
@@ -21,7 +21,7 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
 
     me_refmap.load()
     ##
-    me_annots = update_annotation_tomatch_adatamz(me_annots, adata_mz)  # todo: mark as new
+    me_annots = update_annotation_tomatch_adatamz(me_annots, adata_mz)
     verification(adata_mz, me_annots)  # todo del
     print("Excludes m/z with out-of-tissue probability >=", prob_out)
     me_annots.discard_out_of_tissue_mz(prob_out=prob_out)
@@ -40,14 +40,12 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
     pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
                                                           me_annots,
                                                           min_pathway_size=min_pw_size,
-                                                          max_pathway_size=max_pw_size)  # TODO: think how to easily re-find those metabs that have min_pathway_size=1
+                                                          max_pathway_size=max_pw_size)
     ll = [str(z) for z in sorted(me_annots.df["mz"].astype(float).unique())]
 
     adata_mz = adata_mz[:, ll].copy()  # todo this is NOT sync, but like so
 
-
     return pathwaysObj, me_annots, adata_mz, initial_pws_dict
-
 
 
 def plot_susceptible_of_refinement(refinement_mz_pws_dict, adata_mz, SAMPLE, plot_folder):

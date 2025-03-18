@@ -16,12 +16,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__),
 from quantifs_methods import *
 
 
-SAMPLE =  sys.argv[1] ##   "test635_80-400"  "test635_80-400"
+SAMPLE =  "test635_80-400"   ## sys.argv[1]  "test635_80-400"
 
 
 choices_dict = {
-    "test635_80-400" : [0.4, 0.3],   # 0.4, 0.3
-    "test635_200-1K" : [0.5, 0.3]
+    "test635_80-400" : 1,  #  deprecated params :[0.2, 0.8],   # 0.4, 0.3
 }
 
 print(SAMPLE)
@@ -29,7 +28,7 @@ mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "gb-brain"
 anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
-             "LipidMaps": f"{SAMPLE}_kegg.csv",
+             "KEGG": f"{SAMPLE}_kegg.csv",
              "CoreMetabolome": f"{SAMPLE}_CoreMetabolome.csv"}
 plot_folder = "../../../figures/gb-brain"
 
@@ -52,16 +51,18 @@ if "spot_quality" not in adata_mz.obs.columns.tolist():
     print(f"computing spot quality across {adata_mz.obs.shape[0]} pixels... ")
     if adata_mz.obs.shape[0] > 30000:
         print("be patient, large dataset in process...")
-    me_annots.do_mz_quality_df()   ## NEW
+    me_annots.pull_mz_quality_df()   ## NEW
     print(me_annots.mz_quality.head(2))
     if not me_annots.mz_quality[me_annots.offsample_column].isnull().all():
 
         print("marking spot quality with params: ", choices_dict[SAMPLE])
         adata_mz = adata_mz_mark_spot_quality(
-            adata_mz, me_annots.mz_quality,
-            cutoff_out_prob=choices_dict[SAMPLE][0],
-            tolerated_fraction=choices_dict[SAMPLE][1]
+            adata_mz, me_annots.mz_quality
             )
+
+        adata_mz.obs['spot_quality'] = "good"
+        adata_mz.obs.loc[adata_mz.obs['ratio_in_out'] < choices_dict[SAMPLE],
+        'spot_quality'] = "bad"
 
         tmpstr = os.path.join(plot_folder, f'{SAMPLE}-pixBefore.png')
         sq.pl.spatial_scatter(

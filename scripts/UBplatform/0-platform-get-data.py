@@ -27,11 +27,11 @@ out_dir = "../../../data/UBplatform/"  # a relative or absolute dir
 
 ### NEW
 metaspace_registries_and_files = {
-   # "2024-04-30_16h21m48s": "UBcalibr1",
-    "2024-08-13_09h45m45s": "UBcalibr2"#,
-   # "2024-07-18_09h33m42s": "UBcalibr3",
-   # "2024-06-11_16h33m34s": "UBcalibr4",
-   # "2024-04-19_11h59m34s": "UBcalibr5"
+   "2024-04-30_16h21m48s": "UBcalibr1",
+    "2024-08-13_09h45m45s": "UBcalibr2",
+   "2024-07-18_09h33m42s": "UBcalibr3",
+   "2024-06-11_16h33m34s": "UBcalibr4",
+   "2024-04-19_11h59m34s": "UBcalibr5"
 }
 
 
@@ -47,5 +47,5 @@ for metaspace_registry, filename in metaspace_registries_and_files.items():
         mfm.save_quantifications_anndata(out_df, out_file)
         print(f"Saved: {out_file}.h5ad")
     else:
-        print("exists, nothing to do")
+        print(f"{out_file}.h5ad exists, nothing to do")
 

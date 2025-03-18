@@ -38,7 +38,7 @@ scores_adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-PathwayScores.h5ad"))
 
 
-refinement_mz_pws_dict = ugly_long_function(scores_adata.uns['current_pathways_df'])
+refinement_mz_pws_dict = find_features_for_refinement(scores_adata.uns['current_pathways_df'])
 
 
 X_metabolites_probs_df = pd.DataFrame(data=adata.layers['X_probabilities'],

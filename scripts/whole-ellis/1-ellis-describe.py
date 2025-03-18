@@ -71,7 +71,7 @@ print("mz post sync", adata_mz)
 adata_mz = spatial_standard_computations(adata_mz, k=12, plot_folder=plot_folder,
                                         prefix=f"{SAMPLE}-MZ-V2")  # ====> !!
 
-refinement_mz_pws_dict = ugly_long_function(pathwaysObj.piled.copy())
+refinement_mz_pws_dict = find_features_for_refinement(pathwaysObj.piled.copy())
 
 # the KEGG id adata
 adata = build_kegg_resolved_adata(adata_mz, annots_df=me_annots.df)

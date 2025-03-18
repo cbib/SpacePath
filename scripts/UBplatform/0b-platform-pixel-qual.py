@@ -14,9 +14,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
 
 from quantifs_methods import *
+"""
+call:
+mylist=(UBcalibr1 UBcalibr2 UBcalibr3 UBcalibr4 UBcalibr5);for k in ${mylist[*]}; do echo $k; python xxxxx.py $k; done
 
+"""
 
-SAMPLE = "UBcalibr2"   #sys.argv[1] # ok already done for all 5 samples    #  sys.argv[1]
+SAMPLE = "UBcalibr2"   #   #  sys.argv[1]
 
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -26,13 +30,21 @@ anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
              "LipidMaps": f"{SAMPLE}_lipidmaps.csv"}
 plot_folder = "../../../figures/platform"
 
-pixel_class_thresholds_by_sample = {
+choices_dict = {
     'UBcalibr1': None,  # verified has all NaN values in OffSample column
-    'UBcalibr2': [0.95, 0.8],  # (ok !) loose params to avoid losing lots of pixels
+    'UBcalibr2': -1,  # this deactivates the filter and just save the computed metrics
     'UBcalibr3': None,  # verified has all NaN values in OffSample column
-    'UBcalibr4': [0.85, 0.4],  # tuned
-    'UBcalibr5': [0.87, 0.5]   # default
+    'UBcalibr4': 1,  # nice
+    'UBcalibr5': 1    # nice
 }
+
+# DEPRECated_thresholds_by_sample = {
+#     'UBcalibr1': None,  # verified has all NaN values in OffSample column
+#     'UBcalibr2': [0.95, 0.8],  # (ok !) loose params to avoid losing lots of pixels
+#     'UBcalibr3': None,  # verified has all NaN values in OffSample column
+#     'UBcalibr4': [0.85, 0.4],  # tuned
+#     'UBcalibr5': [0.87, 0.5]   # default
+# }
 
 assert os.path.exists(plot_folder), "Cannot continue, the plot_folder does not exist"
 
@@ -51,13 +63,15 @@ if "spot_quality" not in adata_mz.obs.columns.tolist():
     print(f"computing spot quality across {adata_mz.obs.shape[0]} pixels... ")
     if adata_mz.obs.shape[0] > 30000:
         print("be patient, large dataset in process...")
-    me_annots.do_mz_quality_df()   ## NEW
+    me_annots.pull_mz_quality_df()   ## NEW
     if not me_annots.mz_quality[me_annots.offsample_column].isnull().all():
         adata_mz = adata_mz_mark_spot_quality(
-            adata_mz, me_annots.mz_quality,
-            cutoff_out_prob=pixel_class_thresholds_by_sample[SAMPLE][0],
-            tolerated_fraction=pixel_class_thresholds_by_sample[SAMPLE][1]
+            adata_mz, me_annots.mz_quality
             )
+
+        adata_mz.obs['spot_quality'] = "good"
+        adata_mz.obs.loc[adata_mz.obs['ratio_in_out'] < choices_dict[SAMPLE],
+        'spot_quality'] = "bad"
 
         tmpstr = os.path.join(plot_folder,
                               f'{SAMPLE}-pixBefore.png')

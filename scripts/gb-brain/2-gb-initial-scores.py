@@ -22,7 +22,7 @@ from visualization import *
 pathways scores 
 """
 
-SAMPLE = "test635_200-1K"   # ""  "test635_80-400"
+SAMPLE = "test635_80-400"   # ""  ""
 
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
@@ -47,7 +47,7 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
 # todo: exclude from this analysis the mz that are not good
-good_mzs = adata_mz.var.loc[adata_mz.var['mz_initial_quality'] == "good", "mz"].tolist()
+good_mzs = adata_mz.var.loc[adata_mz.var['final_quality'] == "good", "mz"].tolist()
 adata_mz = adata_mz[:, [str(i) for i in good_mzs]].copy()
 print("adata (good mzs only) ",adata_mz)
 
@@ -59,7 +59,7 @@ print("adata (good mzs only) ",adata_mz)
 
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
-    mydata_dir, me_annots, adata_mz, prob_out=0.95, min_pw_size=min_pw_size,
+    mydata_dir, me_annots, adata_mz, prob_out=0.4, min_pw_size=1,
 max_pw_size=max_pw_size)  # todo: redo, with 1 ! save figures separated folders
 print("mz post sync", adata_mz)
 print("pathways remaining:", len(pathwaysObj.piled['pathway_id'].unique()))
@@ -75,10 +75,11 @@ adata = build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df,
 print("KEGG resolved adata: ", adata)
 
 adata.write_h5ad(os.path.join(mydata_dir, subfolder,
-                                         f"{SAMPLE}-KEGG_adata-sz{min_pw_size}.h5ad"))
+                                         f"{SAMPLE}-KEGG_adata.h5ad"))
 
 
 ## compute scores
+zm.ComputePathwaysScoresConfig.min_entity = min_pw_size  # make sure of this config
 kpca_scores = zm.ComputePathwaysScores.run(pathwaysObj.to_dict(), adata)
 
 # save as anndata with associated metadata

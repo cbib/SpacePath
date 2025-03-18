@@ -12,13 +12,43 @@ from sklearn.utils import sparsefuncs
 from zonist.data import MetabolicPathways, MetabolomeAnnotations
 import zonist.helpers as zh
 
+def custom_join_left(df1, df2, keycol='mz'):
+    df1 = df1.copy()
+    df2 = df2.copy()
+    df2[keycol] = df2[keycol].astype(str)
+    df2 = df2.drop_duplicates(subset=keycol)
+    df2 = df2.set_index(keycol)
+    df2 = df2.loc[df1[keycol].astype(str).tolist(), :]  # same row order as 1
+    assert np.all(df2.index.astype(str).to_numpy(
+        ) == df1[keycol].astype(str).to_numpy()), "fatal (no match), Abort !"
+    for col in df2.columns:
+        df1[col] = df2[col]
+    return df1
 
 
-# todo: a new module named assignments_refine in :  zonist.src.zonist.processing
+
+def tic_normalization(intensity_matrix, obs_names, mz_names):
+    """
+    Perform Total Ion Count (TIC) normalization on a raw 2D intensity matrix
+    :param intensity_matrix: rows are spots, columns are mz features
+    :return:  TIC normalized intensity matrix
+    """
+    # Calculate total ion count (TIC)
+    assert intensity_matrix.shape == (
+        len(obs_names), len(mz_names)), f"wrong intensity array dimensions"
+    total_ion_count = intensity_matrix.sum(axis=1)
+    scale_factor = np.median(np.array(total_ion_count))
+    print(total_ion_count)
+    print(scale_factor)
+    # Avoid division by zero
+    total_ion_count = np.array(total_ion_count) + 1  # avoid any zero error div
+    # Normalize the intensity matrix
+    normalized_matrix = scale_factor * (intensity_matrix / total_ion_count)
+
+    return normalized_matrix
 
 
-
-def task1(pw_id, scores_adata, adata):
+def mold_data_for_plot__task1(pw_id, scores_adata, adata):
     """
         First phase of prep for plot with table.
     :param pw_id: the current pathway identifier
@@ -43,7 +73,7 @@ def task1(pw_id, scores_adata, adata):
 
 
 
-def task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df, adata_mz):
+def mold_data_for_plot__task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df, adata_mz):
     """
         Second phase of prep for plot with table.
 
@@ -177,8 +207,47 @@ def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
 
     return adata
 
+def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
+        mz_col: str='mz', off_col: str='rawOffSampleProb', fdr_column= 'fdr',
+                               intensity_col='totalIntensity'
+):
+    """
+
+    :return:
+    """
+    def give_sum_array(adata_mz, mz_list):
+        tmp = adata_mz[:, mz_list].copy()
+        sarray = tmp.X.sum(axis=1)
+
+        return np.array(sarray).flatten()
+
+    df = features_classification_df[[mz_col, off_col, intensity_col, fdr_column]]
+    if not df[off_col].max() <= 1:
+        raise AssertionError(f"values of {off_col} must be in [0, 1]")
+    df = df.loc[df[fdr_column] <= 0.1, :].sort_values(by=off_col)
+    df_in = df.loc[df[off_col] <= 0.2, :].copy()
+    n_sample = 100
+    if df_in.shape[0] < n_sample:
+        n_sample = df_in.shape[0]
+    df_in = df_in.sort_values(by=[off_col, intensity_col, fdr_column],
+                              ascending=[True, False, True])
+    df_in = df_in.head(n=n_sample)
+    df_out = df.loc[df[off_col] >= 0.8, :].copy()
+    df_out = df_out.sort_values(by=[off_col, intensity_col, fdr_column],
+                                ascending=[True, True, False]) # not eq to in
+    df_out = df_out.tail(n=n_sample)
+    in_sum_arr = give_sum_array(adata_mz, df_in['mz'].astype(str).tolist())
+    out_sum_arr = give_sum_array(adata_mz, df_out['mz'].astype(str).tolist())
+    ratios_arr = (in_sum_arr + 1) / (out_sum_arr + 1)
+    adata_mz.obs = adata_mz.obs.assign(
+        sum_out_tissue_quants=in_sum_arr,
+        sum_in_tissue_quants=out_sum_arr,
+        ratio_in_out=ratios_arr)
+
+    return adata_mz
+
 #
-def adata_mz_mark_spot_quality(# for future: put this as aux_adata_methods because is tooo slow for big nb of spots
+def adata_mz_deprecated_spot_quality(# for future: put this as aux_adata_methods because is tooo slow for big nb of spots
         adata_mz, features_classification_df, cutoff_out_prob: float=0.87,
         tolerated_fraction: float=0.5,
         mz_col: str='mz', off_col: str='rawOffSampleProb'):
@@ -249,9 +318,15 @@ def adata_mz_filter_negligible_abundance(adata_mz, spots_non_zero=5):   #TODO ch
     return adata_mz
 
 
-def update_annotation_tomatch_adatamz(annotationsObj: MetabolomeAnnotations, adata_mz):  # zd.MetabolomeAnnotations
+def update_annotation_tomatch_adatamz(annotationsObj: MetabolomeAnnotations, adata_mz: ad.AnnData):  # zd.MetabolomeAnnotations
     # update the annotations to match with the adata_mz mz features
-    me_annots = annotationsObj.model_copy()  # copy is deprecated
+    """
+    Updates two attributes of the annotations object:
+        .preloaded
+        .unfiltered
+      making them match with the mz features of adata_mz object
+    """
+    me_annots = annotationsObj.model_copy()  # copy is deprecated for pydantic classes
     okmz = adata_mz.var['mz']
     me_annots.preloaded = me_annots.preloaded.loc[
         me_annots.preloaded['mz'].isin(okmz),:]
@@ -289,22 +364,6 @@ def get_rid_of_poor_var_mz(adata_mz):
     adata_mz = adata_mz[:, [str(i) for i in good_mz]]
 
     return adata_mz
-
-
-def closeness_by_fraction(value1: float, value2: float, fraction: float=0.8) -> bool:
-    """
-    Checks if two values are close to each other, by their max/min quotient
-
-    :param value1: First value
-    :param value2: Second value
-    :param fraction: The x in [0.5, 1] expected for max_value/min_value ratio
-    :return: True if the values are close (ratio >= fraction), False otherwise
-    """
-    assert 0.5 <= fraction <= 1, "'fraction' must be in the interval [0.5, 1]"
-    max_value = max(value1, value2)
-    min_value = min(value1, value2)
-
-    return (max_value / min_value) >= fraction
 
 
 
@@ -362,7 +421,7 @@ def compute_moran_i(adata, n_neighs=10, n_perms=5):
     sq.gr.spatial_neighbors(adata, n_neighs=n_neighs)
     print("Computing Moran's I")
     sq.gr.spatial_autocorr(adata, mode="moran", n_perms=n_perms, n_jobs=1, seed=0)
-    print(adata.uns['moranI'].head())
+    print(adata.uns['moranI'].head(2))
 
     return adata
 
@@ -421,10 +480,10 @@ def message_factory_1(total_nb, kegg_oneormore__one_pathway,
     print("kegg_oneormore__one_pathway: ", kegg_oneormore__one_pathway)
     print("one_kegg_multiple_pathways: ", one_kegg_multiple_pathways)
     print("multiple_kegg_shared: ", multiple_kegg_shared)
-    print("susceptible_of_refinement: ", susceptible_of_refinement)
+    # print("susceptible_of_refinement: ", susceptible_of_refinement)
 
 
-def ugly_long_function(mz_met_pathway_piled: pd.DataFrame):
+def find_features_for_refinement(mz_met_pathway_piled: pd.DataFrame):
     """
     :param mz_met_pathway_piled: The df with the correspondences of mz,
         metabolites KEGG ids, and pathways KEGG ids.

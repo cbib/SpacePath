@@ -21,20 +21,20 @@ from zonist.aux.matrix_from_metaspace import build_coord_names
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../bank4zonist'))
 from visualization import custom_scatter_one_feat, plot_with_table
-from quantifs_methods import task1, task2, build_coords_df
+from quantifs_methods import mold_data_for_plot__task1, mold_data_for_plot__task2, build_coords_df
 
 
 
 
 
-SAMPLE = "test635_200-1K"  #""  "test635_80-400"
+SAMPLE = "test635_80-400"  #""  ""
 size_file = "sz2"
 print(SAMPLE)
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 subfolder = "gb-brain"
 anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
-             "LipidMaps": f"{SAMPLE}_lipidmaps.csv",
+             "KEGG": f"{SAMPLE}_kegg.csv",
              "CoreMetabolome": f"{SAMPLE}_CoreMetabolome.csv"}
 plot_folder = f"../../../figures/gb-brain/{SAMPLE}_{size_file}"
 
@@ -66,7 +66,7 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
 
 # metaboli
 adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
-                                         f"{SAMPLE}-KEGG_adata-{size_file}.h5ad"))
+                                         f"{SAMPLE}-KEGG_adata.h5ad"))
 
 coords_mz_df = build_coords_df(adata_mz)
 
@@ -88,11 +88,11 @@ for pw_id in scores_adata.var.index.tolist():
                               save=os.path.abspath(tmpstr),
                           dpi=400)
     plt.close()
-    df_mz_metabolites__curr_pw = task1(pw_id,  scores_adata, adata)
+    df_mz_metabolites__curr_pw = mold_data_for_plot__task1(pw_id,  scores_adata, adata)
     unique_mzs =  df_mz_metabolites__curr_pw["mz"].unique()
     for i in range(len(unique_mzs)):
         i_mz  = unique_mzs[i]
-        sub_df, tmp = task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df,
+        sub_df, tmp = mold_data_for_plot__task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df,
                            adata_mz)
         fdr = adata_mz.var.loc[str(i_mz), "fdr"].item()
         title_note = f"FDR={np.around(fdr,4)}"

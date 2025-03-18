@@ -37,19 +37,7 @@ assert os.path.exists(plot_folder), "Cannot continue, the plot_folder does not e
 
 adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
-
-wrong_mz_manually_defined = [135.029896921, 138.032729825, 140.048379889, 153.043628857, 163.027978793,
-                             167.059278921, 166.038877825, 180.054527889, 202.050966713, 204.054527889,
-                             219.978325273, 259.022442561,
-                             274.033341593, 267.072155657, 277.059672845, 218.992655905,  292.076136075,
-                             299.116793797, 330.125943161 , 341.108935089,
-                             377.085612821, # bad border
-                              351.119774545, 266.070381999,
-                              368.092667239, 374.965451185, 274.033341593,
-                             349.037828277, 333.042977395,   # small ball
-                             295.110645797, 297.126295861, # too much noise
-                              267.081538569
-                             ]   ##  note: this is nice clusered but with artifact :  346.055808353, 300.048991657,  kept for now
+  ##  note: this is nice clusered but with artifact :  346.055808353, 300.048991657,  kept for now
 wrong_mz_manually_defined = [str(z) for z in wrong_mz_manually_defined]
 
 
@@ -62,3 +50,36 @@ for i in wrong_mz_manually_defined:
     sq.pl.spatial_scatter(adata_mz, color=str(i), img=False, title=str(i),
                           save=os.path.abspath(os.path.join(plot_folder, f'{i}--BAD.png')))
     plt.show()
+
+
+## aux: visual picking todo: think if doing appart
+if do_step_viz_pick_wrong:  # step 1: manually complete wrong list:
+    def plotem(adata_mz, me_annots, good_mz_spatial) -> None:
+        import scanpy as sc
+        import squidpy as sq
+        adata_tmp = adata_mz.copy()
+
+        adata_tmp = adata_tmp[:, good_mz_spatial]
+        pathwaysObj, me_annots, adata_tmp, initial_pws_dic = prepare_harmonized_objects(
+            mydata_dir, me_annots, adata_tmp, prob_out=0.9,
+            min_pw_size=2)
+        foo = pathwaysObj.piled["mz"].unique()
+        foo = np.array(foo)
+        print(
+            f"visualizing {len(foo)} the features  (only those mapping to any pathway)"
+            "after visualizing, please manually complete the list 'wrong_mz_manually_defined'")
+        sc.pp.log1p(adata_tmp)
+        for i in foo:
+            sq.pl.spatial_scatter(adata_tmp, color=str(i), img=False,
+                                  title=str(i))
+            plt.show()
+        # returns none
+
+
+    plotem(adata_mz, me_annots, good_mz_spatial)
+
+    answer = input("finished step1, continue?")
+    if not answer.lower() in ["y", "yes"]:
+        print("Aborted")
+    # end if
+# endif

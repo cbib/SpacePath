@@ -12,15 +12,15 @@ The .h5ad files are saved
 
 #metaspace_registry = "2024-06-11_16h33m34s"
 api_versions = {'HMDB': ("HMDB", "v4"),
-                'KEGG': ("KEGG", "v1")}
+                'KEGG': ("KEGG", "v1"),
+                'CoreMetabolome': ('CoreMetabolome', 'v3')}
 api_fdr = 0.5
 out_dir = "../../../data/gb-brain/"  # a relative or absolute dir
 
 
 ### NEW
 metaspace_registries_and_files = {
-    "2025-02-14_15h08m00s": "test635_80-400",
-    "2025-02-24_10h42m03s": "test635_200-1K"
+    "2025-02-26_11h29m37s": "test635_80-400",
 }
 
 for metaspace_registry, filename in metaspace_registries_and_files.items():
@@ -34,7 +34,8 @@ for metaspace_registry, filename in metaspace_registries_and_files.items():
         mfm.save_quantifications_anndata(out_df, out_file)
         print(f"Saved: {out_file}.h5ad")
     else:
-        print("exists, nothing to do")
+        print(f"{out_file}.h5ad exists, nothing to do")
+
 
 
 

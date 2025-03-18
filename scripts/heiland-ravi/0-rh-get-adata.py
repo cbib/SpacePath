@@ -29,6 +29,7 @@ from scipy.sparse import csr_matrix
 
 def format_properly_df(df):
     df = df.sort_values(by='mz', ascending=True)
+    df['mz'] = np.around(df['mz'].astype(float).to_numpy(), decimals=6)
     df.index.name = "hmdb"
     df = df.reset_index()
     df = df.drop(columns=["hmdb"])
@@ -36,7 +37,6 @@ def format_properly_df(df):
     mz_arr = df['mz'].astype(float).to_numpy()
     df = df.set_index('mz')
     return df, mz_arr
-
 
 
 def open_coords_file(sample):
@@ -68,7 +68,7 @@ def as_adata_custom(df, mz_arr, coords_df):
     return adata
 
 
-def shift_all_matrices_to_right_and_save(dict_of_dfs, dict_of_mz_arrs):
+def shift_all_matrices_to_right_and_save(dict_of_dfs, dict_of_mz_arrs, min_value):
     """shifts to avoid negative floats
     and saves adata objects files"""
     print("shifting all matrices to the right")
@@ -107,7 +107,7 @@ for i, r in cool.iterrows():
 
 dict_of_dfs = dict()
 dict_of_mz_arrs = dict()
-print("establishing the min of all the matrices")
+print("finding the min value of all the matrices")
 min_value = 999 # arbitrary initial value 999
 for k in samples:
     df = pd.read_csv(
@@ -123,7 +123,8 @@ for k in samples:
     dict_of_dfs[k] = df
 
 
-shift_all_matrices_to_right_and_save(dict_of_dfs, dict_of_mz_arrs)
+shift_all_matrices_to_right_and_save(dict_of_dfs, dict_of_mz_arrs, min_value)
+print("done")
 
 """
 Deprecated tsv save:

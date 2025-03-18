@@ -18,4 +18,5 @@ if not os.path.exists(f'{out_file}.h5ad'):
     mfm.save_quantifications_anndata(out_df, out_file)
     print(f"Saved: {out_file}.h5ad")
 else:
-    print("exists, nothing to do")
+    print(f"{out_file}.h5ad exists, nothing to do")
+

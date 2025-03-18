@@ -18,7 +18,7 @@ from visualization import *
 
 """
 """
-print("oooo")
+
 SAMPLE = "whole-ellis"  # f1.h5ad saved by -pixel-selection.py
 mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 #"/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"

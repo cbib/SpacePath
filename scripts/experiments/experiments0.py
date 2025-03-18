@@ -29,7 +29,7 @@ X_metabolites_probs_df = compute_metabolites_probs_df(X_mz_binary_df,
 
 #is_it_well_done(X_metabolites_probs_df, adata_mz, adata, me_annots_OKdf)
 
-refinement_mz_pws_dict = ugly_long_function(pathwaysObj.piled.copy(), pathwaysObj.to_dict())
+refinement_mz_pws_dict = find_features_for_refinement(pathwaysObj.piled.copy(), pathwaysObj.to_dict())
 
 for t in refinement_mz_pws_dict.keys():
     print(t)

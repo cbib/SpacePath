@@ -74,6 +74,48 @@ def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
                 m_id, pw_name))
 
 
+def only_for_subset_plot_moran(SAMPLE: str, adata_mz, mz_selection, plot_folder: str):
+    mz_selection = list(np.array(mz_selection, dtype=str))
+    adata_subcopy = adata_mz[:, mz_selection].copy()
+    dfmo = adata_subcopy.uns['moranI']
+    dfmo = dfmo.loc[mz_selection,:]
+    adata_subcopy.uns['moranI'] = dfmo
+    print(adata_subcopy)
+    plot_moran_results(adata_subcopy, plot_folder, SAMPLE)
+
+    return None
+
+def plot_moran_results(adata_mz, plot_folder, SAMPLE):
+    moran_df = adata_mz.uns['moranI'].copy()
+    moran_df['mz'] = moran_df.index.tolist()
+    moran_df = moran_df.sort_values(by=['I'], ascending=False)
+
+    positives = moran_df.head(5)
+    middle = moran_df.loc[(moran_df["I"] > 0) & (moran_df["I"] < 0.1),
+             :]
+    if middle.shape[0] > 5:
+        middle = middle.sample(5)
+    negatives = moran_df.tail(5)
+
+    def plot_that(df, plot_folder, title):
+        for i_mz in df["mz"].tolist():
+            tmp_str = os.path.join(plot_folder, f'{title}-{i_mz}.png')
+            morani = df.loc[i_mz, "I"].item()
+            sq.pl.spatial_scatter(adata_mz,
+                                  color=[i_mz],
+                                  img=False,
+                                  size=1.5, shape="square",
+                                  title=f'{title} - {i_mz} - {morani}',
+                                  save=os.path.abspath(tmp_str))
+            plt.close()
+
+    plot_that(positives, plot_folder, f"{SAMPLE}-MoranPos")
+    plot_that(middle, plot_folder, f"{SAMPLE}-MoranMid")
+    plot_that(negatives, plot_folder, f"{SAMPLE}-MoranNeg")
+
+
+
+
 
 def custom_scatter_one_feat(df, feature: str, title_note:str,  the_ax, spot_size=2,
                             marker="o"):
