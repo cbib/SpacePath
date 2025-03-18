@@ -2,9 +2,9 @@
 from typing import List, Dict
 
 #
+mz_decimal_places=6
 
-supported_mappings: List[str] = ["LipidMaps", "HMDB"]  # this list >
-# > states the types of ref tables that match all not-kegg IDs with KEGG ones
+
 
 supported_annotations: List[str] = ["LipidMaps",
                                     "CoreMetabolome",  # new
@@ -36,3 +36,9 @@ not_metabolic_reactions_pathways = [
 # that contains the specified substrings above, is classified as being
 # NOT strictly associated to the sets of metabolic reactions.
 # Such substrings refer to disease, signaling, regulation or endocrine system.
+
+
+supported_mappings: List[str] = ["LipidMaps",
+                                 "CoreMetabolome",  # new
+                                 "HMDB"]  # this list >
+# > states the types of ref tables that match all not-kegg IDs with KEGG ones

@@ -26,6 +26,8 @@ import os
 import sys
 import pickle
 
+from zonist.constants import mz_decimal_places
+
 
 def open_spectra(imzml_fn, ibd_fn):
     """"credits: pyimzml by Alexandrov team"""
@@ -70,7 +72,8 @@ def files2blocks(spectra_obj, barcode_prefix ):
     # end for
     intensities_mx = np.array(intensities_list)
     intensities_df = pd.DataFrame(intensities_mx.T)
-    intensities_df.index = list(mzs)
+    intensities_df.index = list(np.around(np.array(mzs, dtype=float),
+                                          decimals=mz_decimal_places))
     intensities_df.columns = coord_str_list
            
     return np.array(coordinates_list), np.array(mzs), intensities_df
@@ -87,6 +90,7 @@ def load_run(data_dir, base_filename, prefix, output_dir):
         spectra, prefix
     )
     print(intensities_df.head())
+
     adata = ad.AnnData(X = csr_matrix(intensities_df.T),
                        obs=pd.DataFrame({"obs": list(coordinates_arr)},
                                         index=list(coordinates_arr)),

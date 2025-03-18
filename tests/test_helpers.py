@@ -133,13 +133,24 @@ class Test(TestCase):
         self.assertTrue(np.all(result[:, 1] == np.array([1, 2, 3, 8, 9])))
 
 
-    def test_pull_mz_quality_info(self):
+    def test_pick_mz_quality_infos(self):
         df = pd.DataFrame({'mz': [300.77, 300.77, 300.77, 456.2, 456.2],
-                           'rawOffSampleProb': [0.42, 0.43, 0.44, 0.3, 0.29],
+                           'rawOffSampleProb': [0.1, 0.1, 0.44, 0.3, 0.15],
                            'totalIntensity':[888, 999, 898, 4576, 4700],
-                           'fdr': [0.5, 0.2, 0.5, 0.2, 0.2]})
-        res = helpers.pull_mz_quality_info(
+                           'msm': [0.7, 0.7, 0.1, 0.8, 0.7],
+                           'fdr': [0.5, 0.2, 0.5, 0.5, 0.2],
+                           'isobars': [0, 0 ,0, 0, 0],
+                           'database': ["KEGG", "HMDB", "C", "HMDB", "KEGG"]})
+        res = helpers.pick_mz_quality_infos(
             df, 'mz', 'rawOffSampleProb',
-            'totalIntensity', 'fdr')
-        print(res)
-        assert False
+            'totalIntensity', 'fdr', 'msm',
+         'database')
+        self.assertEqual(res.shape[0], 2)
+        self.assertTrue(np.all(np.array(
+            res['fdr'].to_numpy()
+        ) == np.array( [0.2, 0.2] )))
+        self.assertTrue(
+            np.all(np.array(
+                res['rawOffSampleProb'].to_numpy()
+            ) == np.array([0.1, 0.15]))
+        )

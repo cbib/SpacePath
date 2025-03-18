@@ -61,11 +61,15 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
 
     return df_out
 
-def pull_mz_quality_info(df, mz_col: str, offsample_col: str,
-                         total_intens_col: str, fdr_column: str) -> pd.DataFrame:
-    df = df[[mz_col, offsample_col, total_intens_col, fdr_column ]]
-    df = df.sort_values(by=[mz_col, fdr_column, offsample_col],
-                        ascending=[True, True, False])
+
+def pick_mz_quality_infos(df, mz_col: str, offsample_col: str,
+                         total_intens_col: str, fdr_column: str,
+                         msm_column,  database) -> pd.DataFrame:
+    """ """
+    df = df[[mz_col, offsample_col, total_intens_col, fdr_column,
+             msm_column,  database]]
+    df = df.sort_values(by=[mz_col, offsample_col, fdr_column, msm_column],
+                        ascending=[True, True, True, False])
     df = df.drop_duplicates(subset=[mz_col], keep='first')
     return df
 
@@ -129,21 +133,23 @@ def resolve_mz_multi_kegg(adata: ad.AnnData, df: pd.DataFrame) -> List[tuple]:
     ok_mz_kegg_tuples = [tuple(t) for t in df.loc[
         df['KEGG'].isin(unique_kegg_ids), ["mz", "KEGG"]].to_numpy()]
     repeated_kegg_ids = df2.loc[df2['size'] >= 2, "KEGG"].unique()
+    mz_redundant: List[str] = []
     for a_kegg in repeated_kegg_ids:
         multi_annot_df = df.loc[df["KEGG"] == a_kegg, :]
         df_with_v_metric = adata.var.loc[
                adata.var['mz'].isin(multi_annot_df["mz"].tolist()),:]
         df_with_v_metric = df_with_v_metric.sort_values(
             by='computed_variance', ascending=False)
-        mz_best = df_with_v_metric["mz"].tolist()[0] # first item mz
+        mz_best = df_with_v_metric["mz"].tolist()[0] # first item mz keep
+        mz_redundant += df_with_v_metric["mz"].astype(str).tolist()[1:]
         ok_mz_kegg_tuples.append([mz_best, a_kegg])
         # end for
-    return ok_mz_kegg_tuples
+    return ok_mz_kegg_tuples, mz_redundant
 
 
 def compute_one_to_one_mz_keggid_df(annotdf: pd.DataFrame, adata_mz: ad.AnnData,
                                        mz_col: str) -> pd.DataFrame:
-    ok_mz_kegg_tuples = resolve_mz_multi_kegg(adata_mz, annotdf)
+    ok_mz_kegg_tuples, mz_redundant = resolve_mz_multi_kegg(adata_mz, annotdf)
     annotdf["keep"] = 0
     for tup in ok_mz_kegg_tuples:
         mz_i = tup[0]
@@ -154,7 +160,7 @@ def compute_one_to_one_mz_keggid_df(annotdf: pd.DataFrame, adata_mz: ad.AnnData,
     annotdf = annotdf.loc[annotdf["keep"] == 1]
     annotdf = annotdf.drop(columns=["keep"])
 
-    return annotdf
+    return annotdf, mz_redundant
 
 
 def prettify_gmt(gmt_df, undesired_name_substring: Union[str, None]):

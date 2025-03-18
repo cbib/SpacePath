@@ -20,9 +20,9 @@ class PathwaysForTests:
             "KEGG": ["9", "8", "7", "6", "5", "4", "3"]
         }).astype(str)
 
-    def to_dict(self) -> Dict[str, List[str]]:
+    def to_dict(self, mz_or_id="KEGG") -> Dict[str, List[str]]:
         return helpers.pws_piled_to_dict(
-            self.piled, "pathway_id", mz_or_identity_col="KEGG")
+            self.piled, "pathway_id", mz_or_identity_col=mz_or_id)
 
 
 class Test(TestCase):

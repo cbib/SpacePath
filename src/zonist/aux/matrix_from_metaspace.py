@@ -13,6 +13,7 @@ import anndata as ad
 from metaspace_converter import metaspace_to_anndata
 from scipy.sparse import csr_matrix
 import zonist.helpers as helpers
+from zonist.constants import mz_decimal_places
 
 
 def build_coord_names(df) -> List[str]:
@@ -33,7 +34,8 @@ def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr) -> (
             database=api_versions[key]  # ("HMDB", "v4")
         )
         Xdf = pd.DataFrame(adata.X)
-        mz_arr = np.around(adata.var["mz"].astype(float).to_numpy(), 9)
+        mz_arr = np.around(adata.var["mz"].astype(float).to_numpy(),
+                           decimals=mz_decimal_places)
         Xdf.columns = mz_arr
         coordinates_names_list = build_coord_names(adata.obs)
         Xdf.index = coordinates_names_list
@@ -91,6 +93,7 @@ def steps_get_united_df(metaspace_registry: str, api_versions: dict,
          api_fdr: float) -> pd.DataFrame:
     """returns a df with shape: coordinates (rows) x features (columns)"""
     print("fetching data with metaspace-converter (T Alexandrov lab package)")
+
     unique_mzs, matrices_dfs_list = adatas_to_matrices_list(
         metaspace_registry, api_versions, api_fdr)
 

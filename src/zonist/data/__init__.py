@@ -18,7 +18,8 @@ import zonist.processing.pathways_methods as pathways_methods
 
 from zonist.constants import (supported_mappings, supported_annotations,
                               columns_ref_map_expected,
-                              not_metabolic_reactions_pathways)
+                              not_metabolic_reactions_pathways,
+                              mz_decimal_places)
 
 logger = logging.getLogger(__name__)
 logger = helpers.reset_log_config(logger)
@@ -104,7 +105,8 @@ class MetabolomeAnnotations(Dataset):
     molecule_names_col: str = "moleculeNames"
     offsample_column: str = "rawOffSampleProb"
     total_intens_col: str = "totalIntensity"
-    fdr_column: str= "fdr"
+    fdr_column: str = "fdr"
+    msm_column: str = "msm"
     unfiltered: pd.DataFrame = pd.DataFrame()
     df: pd.DataFrame = pd.DataFrame()
     mz_quality: pd.DataFrame = pd.DataFrame()
@@ -134,19 +136,18 @@ class MetabolomeAnnotations(Dataset):
             try:
                 df = df[[self.mz_col, self.formula_col, self.molecule_ids_col,
                          self.molecule_names_col, self.offsample_column,
-                         self.total_intens_col, self.fdr_column]]
+                         self.total_intens_col, self.fdr_column, self.msm_column]]
             except KeyError:
                 df = df[[self.mz_col, self.formula_col, self.molecule_ids_col,
-                         self.molecule_names_col, self.fdr_column]]
-                auto_remove_offsample = False  # not enough columns to be True
+                         self.molecule_names_col]]
 
-            df[self.mz_col] = np.around(df[self.mz_col].to_numpy(), decimals=9)
+            df[self.mz_col] = np.around(df[self.mz_col].to_numpy(),
+                                        decimals=mz_decimal_places)
+
             df = df.dropna(how="all")
             df['database'] = anno_key
             if anno_key == "custom_kegg":
                 df['database'] = "KEGG"  # ok
-            #elif anno_key == "CoreMetabolome":
-            #    df['database'] = "HMDB"  # ok
             dfs_dict[anno_key] = df
 
         preloaded_annots = \
@@ -159,29 +160,33 @@ class MetabolomeAnnotations(Dataset):
                 self.molecule_ids_col, self.molecule_names_col)
 
         self.unfiltered[self.mz_col] = np.around(
-            self.unfiltered[self.mz_col].to_numpy(), decimals=9)
+            self.unfiltered[self.mz_col].to_numpy(), decimals=mz_decimal_places)
 
-    def do_mz_quality_df(self):
-        """Builds df, if probability of being outside-of-tissue exists"""
-        if self.offsample_column in self.preloaded.columns.tolist():
-            self.mz_quality = helpers.pull_mz_quality_info(
+    def pull_mz_quality_df(self):
+        """Builds df, if quality columns exist"""
+        try:
+            self.mz_quality = helpers.pick_mz_quality_infos(
                 self.preloaded, self.mz_col, self.offsample_column,
-                self.total_intens_col, self.fdr_column)
+                self.total_intens_col, self.fdr_column, self.msm_column,
+                "database"
+            )
             if self.mz_quality[self.offsample_column].isnull().all():
                 logger.warning("Useless: %s is NaN", self.offsample_column)
             else:
                 if not self.mz_quality[self.offsample_column].max() <= 1:
                     raise ValueError("Values of %s must be comprised "
                                      "between 0 and 1", self.offsample_column)
-        else:
-            logger.error("Failed, no %s column", self.offsample_column)
+        except KeyError:
+            logger.error("Failed, one or more of required columns (%s) are missing", [
+                self.offsample_column, self.total_intens_col, self.fdr_column, self.msm_column
+                ])
 
     def discard_out_of_tissue_mz(self, prob_out=0.87,
                                  fraction_to_exclude=1):
         """Recommended (optional), to discard the mz that are out-of-tissue.
         Among the off-sample features (those having >= prob_out)
         ordered by decreasing total intensity, exclude the defined fraction"""
-        self.do_mz_quality_df()
+        self.pull_mz_quality_df()
         # if column is not empty NaN entirely, skip:
         if self.mz_quality[self.offsample_column].isnull().all():
             logger.warning("Useless: %s is NaN", self.offsample_column)
@@ -227,7 +232,7 @@ class MetabolomeAnnotations(Dataset):
         ## TODO : add a check to see if the adata_mz has the same mz values as the ones in the annotation
         logger.info('[treat_mz_multiplets]: if "multi m/z to one KEGGid", for'
                     ' such KEGGid, the m/z with the top variance is kept.')
-        self.df = helpers.compute_one_to_one_mz_keggid_df(
+        self.df, self.mz_redundant = helpers.compute_one_to_one_mz_keggid_df(
             self.df, adata_mz, self.mz_col)
 
     def check_expectations_1(self):
@@ -327,10 +332,21 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
         logger.info("success, attributes : piled, pathways_ids")
 
-    def to_dict(self) -> Dict[str, List[str]]:
+    def get_name(self, a_pathway_id):
+        pathway_name = self.pathways_ids.loc[
+            self.pathways_ids['pathway_id'] == a_pathway_id,
+            "pathway_name"].item()
+        return pathway_name
+
+    def to_dict(self, option="id") -> Dict[str, List[str]]:
+        if option=="id":
+            mz_or_id = self.molec_ids_in_pathways_col
+        elif option=="mz":
+            mz_or_id = "mz"
+        else:
+            logger.error("unrecognized option, must be 'id' or 'mz'")
         return helpers.pws_piled_to_dict(
-            self.piled, self.pathway_id_col,
-            mz_or_identity_col=self.molec_ids_in_pathways_col)
+            self.piled, self.pathway_id_col, mz_or_identity_col=mz_or_id)
 
     def intersect_with_annotations(self, annots_obj: MetabolomeAnnotations):
         """
