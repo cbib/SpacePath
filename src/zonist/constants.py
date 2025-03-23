@@ -2,8 +2,7 @@
 from typing import List, Dict
 
 #
-mz_decimal_places=6
-
+mz_decimal_places = 6
 
 
 supported_annotations: List[str] = ["LipidMaps",

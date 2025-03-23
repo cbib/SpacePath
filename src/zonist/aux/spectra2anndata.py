@@ -24,8 +24,7 @@ import pyimzml.ImzMLParser as imzmlp
 from tqdm import tqdm
 import os
 import sys
-import pickle
-
+from scipy.sparse import csr_matrix
 from zonist.constants import mz_decimal_places
 
 
@@ -39,16 +38,12 @@ def open_spectra(imzml_fn, ibd_fn):
     return spectra_obj
 
 
-def files2blocks(spectra_obj, barcode_prefix ):
+def files2blocks(spectra_obj):
     """returns  features (np.array) , coordinates (np.array) and intensities_df.
     Note: intensities_df row names match perfectly -in content and order- to features list"""
     mzs0, intensities = spectra_obj.getspectrum(0)
     coordinates_list = list()
     coord_str_list = list()
-
-    coordinates_list = [[int(spectra_obj.coordinates[0][0]),
-                         int(spectra_obj.coordinates[0][1])]]
-    coord_str_list = [f'x{spectra_obj.coordinates[0][0]}_y{spectra_obj.coordinates[0][1]}']
     intensities_list = list()
 
     unwarped_data_message = ("ERROR: unaligned features (please perform data "
@@ -56,12 +51,19 @@ def files2blocks(spectra_obj, barcode_prefix ):
 
     print("Assembling intensities arrays into 2D array. Parsing",
           len(spectra_obj.coordinates), "pixels")
-    for i in tqdm(range(0, len(spectra_obj.coordinates))):  # 
+    for i in tqdm(range(0, len(spectra_obj.coordinates) )):  #
         mzs, intensities = spectra_obj.getspectrum(i)
+
         assert len(np.array(mzs)) == len(np.array(mzs0)), (
             unwarped_data_message)
         assert np.all(np.array(mzs) == np.array(mzs0)), (
             unwarped_data_message)
+
+        try:
+            if (intensities.shape[0] > 1) and (intensities.shape[1] == len(mzs)):
+                intensities = intensities[0]
+        except IndexError:
+            pass
         # only 2 dimensions:
         coord_str_list.append(
             f'x{spectra_obj.coordinates[i][0]}_y{spectra_obj.coordinates[i][1]}')
@@ -79,7 +81,7 @@ def files2blocks(spectra_obj, barcode_prefix ):
     return np.array(coordinates_list), np.array(mzs), intensities_df
 
 
-def load_run(data_dir, base_filename, prefix, output_dir):
+def load_run(data_dir, base_filename, output_dir):
     data_dir = os.path.expanduser(data_dir)
     # file names
     imzml_fn = os.path.join(data_dir, f"{base_filename}.imzML")
@@ -87,13 +89,14 @@ def load_run(data_dir, base_filename, prefix, output_dir):
 
     spectra = open_spectra(imzml_fn, ibd_fn)
     coordinates_arr, features, intensities_df = files2blocks(
-        spectra, prefix
+        spectra
     )
-    print(intensities_df.head())
+    print(intensities_df.head(3))
 
     adata = ad.AnnData(X = csr_matrix(intensities_df.T),
-                       obs=pd.DataFrame({"obs": list(coordinates_arr)},
-                                        index=list(coordinates_arr)),
+                       obs=pd.DataFrame(
+                           {"obs": intensities_df.columns.tolist()},
+                           index=intensities_df.columns.tolist()),
                        var=pd.DataFrame(
                            {"mz": np.array(features, dtype=np.float32)},
                            index=list(features)
@@ -106,7 +109,7 @@ def load_run(data_dir, base_filename, prefix, output_dir):
                                 'tissue_hires_scalef': 0.5,
                                 'tissue_lowres_scalef': 0.5}}}
 
-    outfile = outfile + ".h5ad"
+    outfile = base_filename + ".h5ad"
     adata.write(outfile, compression=None, compression_opts=None)
     print(f"End: file saved to '{outfile}'")
 
@@ -116,11 +119,9 @@ if __name__ == "__main__":
     print("   important: requires aligned and recalibrated spectra (otherwise, use 'matrix_from_metaspace')")
     print(" data_dir:", sys.argv[1], '\n',
           "base_filename:", sys.argv[2], '\n',
-          "prefix:", sys.argv[3], '\n',
-          "output_dir:", sys.argv[4])
+          "output_dir:", sys.argv[3])
 
     load_run(data_dir=sys.argv[1], base_filename=sys.argv[2],
-             prefix=sys.argv[3], output_dir=sys.argv[4])
+              output_dir=sys.argv[3])
 
-    #load_run("tutorial_publicdata/example_data", "example_data", "ED", "output/objects")
-    #load_run("data/imzML","Ctrl_NEDC_NEG", "Ctrl", "output/objects")
+    #load_run("data/imzML","Ctrl_NEDC_NEG", "output/objects")
