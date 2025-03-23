@@ -74,6 +74,7 @@ def files2blocks(spectra_obj):
     # end for
     intensities_mx = np.array(intensities_list)
     intensities_df = pd.DataFrame(intensities_mx.T)
+    del intensities_mx
     intensities_df.index = list(np.around(np.array(mzs, dtype=float),
                                           decimals=mz_decimal_places))
     intensities_df.columns = coord_str_list
@@ -91,6 +92,7 @@ def load_run(data_dir, base_filename, output_dir):
     coordinates_arr, features, intensities_df = files2blocks(
         spectra
     )
+    del spectra
     print(intensities_df.head(3))
 
     adata = ad.AnnData(X = csr_matrix(intensities_df.T),
