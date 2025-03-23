@@ -109,7 +109,7 @@ def load_run(data_dir, base_filename, output_dir):
                                 'tissue_hires_scalef': 0.5,
                                 'tissue_lowres_scalef': 0.5}}}
 
-    outfile = base_filename + ".h5ad"
+    outfile = os.path.join(output_dir, f'{base_filename}.h5ad')
     adata.write(outfile, compression=None, compression_opts=None)
     print(f"End: file saved to '{outfile}'")
 
