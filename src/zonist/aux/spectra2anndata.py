@@ -76,11 +76,12 @@ def files2blocks(spectra_obj):
     intensities_mx = np.array(intensities_list)
     intensities_df = pd.DataFrame(intensities_mx.T)
     del intensities_mx
-    intensities_df.index = list(np.around(np.array(mzs, dtype=float),
-                                          decimals=mz_decimal_places))
+    features = np.around(np.array(mzs, dtype=float),
+              decimals=mz_decimal_places)
+    intensities_df.index = list(features)
     intensities_df.columns = coord_str_list
            
-    return np.array(coordinates_list), np.array(mzs), intensities_df
+    return np.array(coordinates_list), features, intensities_df
 
 
 def load_run(data_dir, base_filename, output_dir):
@@ -102,8 +103,8 @@ def load_run(data_dir, base_filename, output_dir):
                            {"obs": intensities_df.columns.tolist()},
                            index=intensities_df.columns.tolist()),
                        var=pd.DataFrame(
-                           {"mz": np.array(features, dtype=np.float32)},
-                           index=list(features)
+                           {"mz": features},
+                           index=features
                        ),
                        obsm={"spatial": coordinates_arr} )
     del intensities_df
