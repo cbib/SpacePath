@@ -26,6 +26,7 @@ import os
 import sys
 from scipy.sparse import csr_matrix
 from zonist.constants import mz_decimal_places
+import gc
 
 
 def open_spectra(imzml_fn, ibd_fn):
@@ -92,8 +93,9 @@ def load_run(data_dir, base_filename, output_dir):
     coordinates_arr, features, intensities_df = files2blocks(
         spectra
     )
-    del spectra
     print(intensities_df.head(3))
+    del spectra
+    gc.collect()
 
     adata = ad.AnnData(X = csr_matrix(intensities_df.T),
                        obs=pd.DataFrame(
@@ -104,6 +106,8 @@ def load_run(data_dir, base_filename, output_dir):
                            index=list(features)
                        ),
                        obsm={"spatial": coordinates_arr} )
+    del intensities_df
+    gc.collect()
     adata.uns['spatial'] = {
         'MY_SLICE7_NAME': {'scalefactors':
                                {'fiducial_diameter_fullres': 100,
