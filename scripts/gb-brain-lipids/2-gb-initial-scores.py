@@ -60,8 +60,10 @@ print("adata (good mzs only) ",adata_mz)
 
 
 pathwaysObj, me_annots, adata_mz, orig_pws_dict = prepare_harmonized_objects(
-    mydata_dir, me_annots, adata_mz, prob_out=0.4, min_pw_size=1,
-max_pw_size=max_pw_size)  # todo: redo, with 1 ! save figures separated folders
+    mydata_dir, me_annots, adata_mz, prob_out=0.4, min_pw_size=1, # todo : make sure always 1
+max_pw_size=max_pw_size)
+temporalvariable1 = len(pathwaysObj.piled['pathway_id'].unique())
+temporalvariable2 = len(me_annots.df['mz'].unique())
 print("mz post sync", adata_mz)
 print("pathways remaining:", len(pathwaysObj.piled['pathway_id'].unique()))
 # answer = input("ok?")

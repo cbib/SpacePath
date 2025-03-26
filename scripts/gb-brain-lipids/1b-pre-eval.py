@@ -34,7 +34,7 @@ anno_dict = {'HMDB': f"{SAMPLE}_hmdb.csv",
              "CoreMetabolome": f"{SAMPLE}_CoreMetabolome.csv",
              "LipidMaps": f"{SAMPLE}_lipidmaps.csv"}
 plot_folder = "../../../figures/gb-brain"
-prob_out = 0.2
+prob_out = 0.4
 min_pathway_size = 1
 assert os.path.exists(plot_folder), "Cannot continue, the plot_folder does not exist"
 
