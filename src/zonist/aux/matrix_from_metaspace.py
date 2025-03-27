@@ -2,7 +2,7 @@
 # Get the aligned & recalibrated matrix of all pixels spectra from Metaspace
 # (preferred if the given raw imzML+ibd are unaligned & not-recalibrated)
 import os
-from typing import List
+from typing import List, Tuple
 
 from tqdm import tqdm
 
@@ -26,6 +26,7 @@ def build_coord_names(df) -> List[str]:
 def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr) -> (
         set, List[pd.DataFrame]):
     matrices_dfs_list = []
+    annotations_dfs_dict = {}
     all_mz_with_multiplets = list()
     for key in api_versions.keys():
         adata = metaspace_to_anndata(
@@ -33,6 +34,10 @@ def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr) -> (
             fdr=api_fdr,
             database=api_versions[key]  # ("HMDB", "v4")
         )
+        if "formula" not in adata.var.columns:
+            adata.var["formula"] = adata.var.index.tolist()
+        adata.var = adata.var.drop(columns=["isotopeImages"])
+        annotations_dfs_dict[key] = adata.var.copy()
         Xdf = pd.DataFrame(adata.X)
         mz_arr = np.around(adata.var["mz"].astype(float).to_numpy(),
                            decimals=mz_decimal_places)
@@ -43,7 +48,7 @@ def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr) -> (
         all_mz_with_multiplets += list(mz_arr)
         del adata
 
-    return set(all_mz_with_multiplets), matrices_dfs_list
+    return set(all_mz_with_multiplets), matrices_dfs_list, annotations_dfs_dict
 
 
 def homogenize_rows_order_mx_dfs(mx_dfs) -> List[pd.DataFrame]:
@@ -90,19 +95,19 @@ def yield_matrix_dataframe_united(
 
 
 def steps_get_united_df(metaspace_registry: str, api_versions: dict,
-         api_fdr: float) -> pd.DataFrame:
+         api_fdr: float) -> Tuple[pd.DataFrame, dict]:
     """returns a df with shape: coordinates (rows) x features (columns)"""
     print("fetching data with metaspace-converter (T Alexandrov lab package)")
 
-    unique_mzs, matrices_dfs_list = adatas_to_matrices_list(
+    unique_mzs, matrices_dfs_list, annotations_dfs_dict = adatas_to_matrices_list(
         metaspace_registry, api_versions, api_fdr)
-
+    # note: annotations from Metaspace python API: no offSampleProb floats (instead only offSample bool)
     matrices_dfs_list = homogenize_rows_order_mx_dfs(matrices_dfs_list)
     ordered_unique_mzs = sorted(list(unique_mzs))
 
     outdf = yield_matrix_dataframe_united(ordered_unique_mzs,
                                           matrices_dfs_list)
-    return outdf
+    return outdf, annotations_dfs_dict
 
 
 def save_quantifications_anndata(outdf, outfile) -> None:
@@ -130,7 +135,7 @@ def save_quantifications_anndata(outdf, outfile) -> None:
 
 
 if __name__ == "__main__":
-    #  my vars
+    # TODO: change for a smaller dataset
     metaspace_registry = "2022-08-16_10h14m23s"
     api_versions = {'HMDB': ("HMDB", "v4"),
                    'LipidMaps': ("LipidMaps", "2017-12-12")}
@@ -140,7 +145,5 @@ if __name__ == "__main__":
 
     out_file = os.path.join(os.path.expanduser(out_dir),
                             filename)
-    # start
-    out_df = steps_get_united_df(
+    out_df, annotations_dfs_dict = steps_get_united_df(
         metaspace_registry, api_versions, api_fdr)
-    #save_quantifications_to_tsv(out_df, out_file)  # is slow

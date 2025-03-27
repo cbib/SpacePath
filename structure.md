@@ -21,7 +21,7 @@ The `data` folder must contain:
   * The gmt file(s) that we need to use. A gmt file contains a list of pathways and their sets of molecules' identifiers within each pathway. In our workflow, these molecules are the metabolites' KEGG identifiers. Several gmt file(s) can be added, making sure that pathways names are unique across all files (should be merged programmatically).
   * The identifiers as they appear in HMDB database, organized in tables, and containing their correspondances to KEGG identifiers. Other tables (LIPIDMAPS, SWISSPROT, etc) can be also saved here. To reproduce our workflow, the idenfitiers table(s) must allways map to KEGG identifiers because the GMT file is given with KEGG identifiers. We provide a table with HMDB identifiers to KEGG ones, and another table with LIPIDMAPS to KEGG identifiers.
 
-  
+  TODO: check good structure and names of files
 ```
 data
 ├── brain-ellis ---> one MSI acquisition of normal brain (from Metaspace)
