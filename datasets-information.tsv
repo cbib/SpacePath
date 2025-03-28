@@ -1,6 +1,6 @@
 dataset_name	metaspace_registry	organism	organ	condition	MALDI_matrix	polarity	instrument	search_criteria	permissions
 MET-kidney1	2019-04-20_01h02m45s	xenograft (mmu/hsa)	kidney	?	9-AA	positive	orbitrap	Orbitrap+ MALDI+positive+9-AA	public
-MET-kidney2	2019-04-20_00h55m20s  	xenograft (mmu/hsa)	kidney	?	9-AA	positive	orbitrap	Orbitrap+ MALDI+positive+9-AA	public
+MET-kidney2	2019-04-20_00h55m20s	xenograft (mmu/hsa)	kidney	?	9-AA	positive	orbitrap	Orbitrap+ MALDI+positive+9-AA	public
 MET-heart	2023-10-24_17h13m08s	hsa	heart	?	DHB	positive	orbitrap	Orbitrap+MALDI+positive+DHB	public
 MET-lung	2018-10-04_14h21m09s	mmu	lung	?	DHB	positive	orbitrap	Orbitrap+MALDI+positive+DHB	public
 MET-brain-rat	2018-08-22_11h26m11s	rno	brain	?	DHB	positive	orbitrap	Orbitrap+MALDI+positive+DHB	public

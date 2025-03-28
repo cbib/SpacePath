@@ -1,5 +1,5 @@
 dataset_name	metaspace_registry	annotations_to_use	annotations_download	TIC_normalization	perform_pixel_selection	offSample_cutoff	msm_cutoff	fdr_cutoff	min_pathway_size	k_for_kmeans
-MET-kidney1	2019-04-20_01h02m45s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	5
+MET-kidney1	2019-04-20_01h02m45s	HMDB LipidMaps	manual	TRUE	FALSE	default	default	0.5	2	5
 MET-kidney2	2019-04-20_00h55m20s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	5
 MET-heart	2023-10-24_17h13m08s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	5
 MET-lung	2018-10-04_14h21m09s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	5

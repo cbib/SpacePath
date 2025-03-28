@@ -40,7 +40,15 @@ for i, r in datasets_parameters_df.iterrows():
         os.makedirs(path_out)
 
     if not os.path.exists(expected_out_file):
+
+        if not len(set(annotations_to_use).intersection(
+            set(list(whole_api_versions.keys()))
+        )        ) == len(set(annotations_to_use)):
+            print("will fail: one or more annotations_to_use is not supported")
+
         api_versions = {k: whole_api_versions[k] for k in annotations_to_use}
+        print("    will fetch quantification matrices of:", list(api_versions.keys()))
+
 
         print(f"Processing: {metaspace_registry}")
 
