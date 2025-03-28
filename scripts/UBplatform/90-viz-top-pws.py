@@ -25,11 +25,7 @@ from quantifs_methods import mold_data_for_plot__task1, mold_data_for_plot__task
 
 
 
-def build_coords_df(adata):
-    df = pd.DataFrame(data=adata.obsm['spatial'],
-                 columns=['x', 'y'],
-                 index=adata.obs.index.tolist())
-    return df
+
 
 SAMPLE =  "UBcalibr2"
 

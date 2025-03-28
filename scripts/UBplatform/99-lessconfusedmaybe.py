@@ -79,11 +79,6 @@ scores_adata = ad.read_h5ad(os.path.join(mydata_dir, subfolder,
                                          f"{SAMPLE}-PathwayScores.h5ad"))
 
 
-def build_coords_df(adata):
-    df = pd.DataFrame(data=adata.obsm['spatial'],
-                 columns=['x', 'y'],
-                 index=adata.obs.index.tolist())
-    return df
 
 
 coords_df = build_coords_df(scores_adata)

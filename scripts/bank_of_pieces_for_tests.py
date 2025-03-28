@@ -11,7 +11,7 @@ fake = ad.AnnData(X=csr_matrix(np.array([[1,0,11,0], [55,88,6,7], [0,2,4,0], [78
                   var=pd.DataFrame({"mz": [9.1, 8.1, 7.1, 6.1]},
                                    index=[str(x) for x in [9.1, 8.1, 7.1, 6.1]]),
                    obs = pd.DataFrame({"obs": ["x1y1", "x2y2", "x3y3", "x4y4"]}))
-fake = adata_mz_filter_negligible_abundance(fake)
+
 print(fake.to_df())
 #    9.1  8.1  7.1
 # 0    1    0   11

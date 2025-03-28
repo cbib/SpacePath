@@ -1,0 +1,24 @@
+dataset_name	metaspace_registry	organism	organ	condition	MALDI_matrix	polarity	instrument	search_criteria	permissions
+MET-kidney1	2019-04-20_01h02m45s	xenograft (mmu/hsa)	kidney	?	9-AA	positive	orbitrap	Orbitrap+ MALDI+positive+9-AA	public
+MET-kidney2	2019-04-20_00h55m20s  	xenograft (mmu/hsa)	kidney	?	9-AA	positive	orbitrap	Orbitrap+ MALDI+positive+9-AA	public
+MET-heart	2023-10-24_17h13m08s	hsa	heart	?	DHB	positive	orbitrap	Orbitrap+MALDI+positive+DHB	public
+MET-lung	2018-10-04_14h21m09s	mmu	lung	?	DHB	positive	orbitrap	Orbitrap+MALDI+positive+DHB	public
+MET-brain-rat	2018-08-22_11h26m11s	rno	brain	?	DHB	positive	orbitrap	Orbitrap+MALDI+positive+DHB	public
+MET-skin-cancer-1	2018-07-23_12h19m37s	hsa	skin	cancer	DHB	positive	orbitrap	Orbitrap+MALDI+positive	public
+MET-stomach	2017-11-09_11h42m17s	rno	stomach	?	DHB	positive	orbitrap	Orbitrap+MALDI+positive	public
+MET-liver-cancer	2017-11-17_14h52m42s	hsa	liver	cancer	DHB	positive	orbitrap	Orbitrap+MALDI+positive	public
+MET-brain-mouse	2017-07-11_11h29m36s	mmu	brain	WT	Unknown	positive	orbitrap	Orbitrap+MALDI+positive	public
+MET-breast-cancer-1	2023-11-22_10h40m34s	hsa	breast	cancer	DHB	positive	orbitrap	Orbitrap+AP-SMALDI 5+positive	public
+MET-skin-cancer-2	2023-05-25_10h07m40s	hsa	skin	cancer	DHB	positive	orbitrap	Orbitrap+AP-SMALDI 5+positive	public
+MET-breast-cancer-2	2023-06-02_10h47m47s	hsa	breast	cancer	DAN	positive	orbitrap	Orbitrap+AP-SMALDI 5+positive	public
+MET-eye	2018-03-20_11h02m36s	mmu	eye	WT	DAN	positive	orbitrap	Orbitrap+ MALDI+positive+DAN	public
+MET-gut	2022-07-06_09h33m52s	mmu	gut	WT	SDHB	positive	orbitrap	Orbitrap+AP-SMALDI5 AF+positive	public
+UBcalibr1	2024-04-30_16h21m48s	mmu	brain	WT			orbitrap	NA	private
+UBcalibr2	2024-08-13_09h45m45s	mmu	brain	WT			orbitrap	NA	private
+UBcalibr4	2024-06-11_16h33m34s	mmu	brain	WT			orbitrap	NA	private
+MALDI_248_T	not provided	hsa	brain	cancer	9-AA	negative	FT-ICR	NA	partially public
+MALDI_259_T	not provided	hsa	brain	cancer	10-AA	negative	FT-ICR	NA	partially public
+MALDI_260_T	not provided	hsa	brain	cancer	11-AA	negative	FT-ICR	NA	partially public
+MALDI_262_T	not provided	hsa	brain	cancer	12-AA	negative	FT-ICR	NA	partially public
+MALDI_269_T	not provided	hsa	brain	cancer	13-AA	negative	FT-ICR	NA	partially public
+MALDI_275_T	not provided	hsa	brain	cancer	14-AA	negative	FT-ICR	NA	partially public

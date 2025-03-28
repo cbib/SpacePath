@@ -42,7 +42,7 @@ for metaspace_registry, filename in metaspace_registries_and_files.items():
     if not os.path.exists(f'{out_file}.h5ad'):
         print(f"Processing: {metaspace_registry}")
 
-        out_df = mfm.steps_get_united_df(metaspace_registry,
+        out_df, annotations_dfs_dict = mfm.steps_get_united_df(metaspace_registry,
                                          api_versions, api_fdr)
         mfm.save_quantifications_anndata(out_df, out_file)
         print(f"Saved: {out_file}.h5ad")

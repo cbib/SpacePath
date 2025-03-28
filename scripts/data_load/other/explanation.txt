@@ -1,0 +1,28 @@
+
+   * Brain cancer samples from Ravi, Heiland, et al., Cell, 2022 *
+
+The raw imzML + ibd files were kindly provided by the authors after request.
+The adata objects (.h5ad files) were generated as follows:
+
+Part A:
+
+The rscript.zip contains the R script to perform spectra warping (with MALDIquant), and also:
+    a.corrected batch effect.
+    b.repeated the rows in the quantifications data to accomodate to the fact that several HMDB identifiers correspond to one m/z.
+    c.assigned HMDB identifiers (instead m/z names (*)) to the data.
+
+Finally it saves the .tsv files of both intensities, and 'x,y' coordinates, in separate files, for each patient sample.
+
+Part B: 
+
+The script `customGB-tsvs-reformat.py` does the following:
+
+1) Reassigns m/z names to the quantifications tables, using the annotations file (.csv).
+2) Deduplicates the rows.
+2) Saves the resulting adata objects (.h5ad files)
+
+   
+- - 
+
+Notes: 
+(*) Such m/z names are written in numbers but are considered as discrete variables in downstream analysis.

@@ -247,75 +247,8 @@ def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
     return adata_mz
 
 #
-def adata_mz_deprecated_spot_quality(# for future: put this as aux_adata_methods because is tooo slow for big nb of spots
-        adata_mz, features_classification_df, cutoff_out_prob: float=0.87,
-        tolerated_fraction: float=0.5,
-        mz_col: str='mz', off_col: str='rawOffSampleProb'):
-    """
-    Marks good and bad pixels in two steps:
-    a)  Defines a quality ratio for each spot: it is a ratio computed as
-    the sum of the quantities (signal) of the 'out-of-tissue' m/z (mz) features
-    over the total of the quantities of all mz, for the current spot.
-
-    Note : The out-of-tissue decision is defined by cutoff_out_prob which is
-           the cutoff of the probability of an m/z being outside the tissue,
-           computed by Metaspace.
-
-    The smaller the ratio, the better the quality of the spot. e.g.:
-    ratio_out_tissue__total = 0.5 means that sum of signal of out-of-tissue
-    mzs represent the half of the total sum of signal of all mzs.
-
-    b) The "good" pixel score is inferior or equal to the tolerated_fraction.
-
-    Results stored in adata_mz.obs
-    """
-    df = features_classification_df[[mz_col, off_col]]
-    if not df[off_col].max() <= 1:
-        raise AssertionError(f"values of {off_col} must be in [0, 1]")
-    df_tr = df.T
-    df_tr.index = [mz_col, off_col]
-    df_tr.columns = df[mz_col].tolist()
-    df_tr = df_tr[adata_mz.var[mz_col].tolist()]  # columns in appropriate order
-    allright = np.all(np.array(df_tr.columns.tolist()) == adata_mz.var['mz'].to_numpy())
-    sum_out_tissue_quantities_arr = np.zeros(shape=adata_mz.obs.shape[0])
-    total_arr = np.zeros(shape=adata_mz.obs.shape[0])
-    if allright:
-        for i in range(0, adata_mz.obs.shape[0]):
-            x = adata_mz.obs.index.tolist()[i]
-            tmp = pd.DataFrame({
-                "quantifications": np.array(adata_mz[x, :].X.todense()).flatten(),
-                off_col : df_tr.loc[off_col, :].to_numpy()
-            })
-            sum_out_tissue_quantities_arr[i] = tmp.loc[
-                tmp[off_col] >= cutoff_out_prob,
-                "quantifications"].sum()
-            total_arr[i] =  tmp["quantifications"].sum()
-        # end for
-
-        ratios_arr = (sum_out_tissue_quantities_arr + 1) / (total_arr + 1)  # avoid zero division error
-        adata_mz.obs = adata_mz.obs.assign(
-            sum_out_tissue_quants=sum_out_tissue_quantities_arr,
-            total_quants=total_arr,
-            ratio_out_tissue__total=ratios_arr)
-        adata_mz.obs['spot_quality'] = "good"
-        adata_mz.obs.loc[adata_mz.obs['ratio_out_tissue__total'] > tolerated_fraction,
-            'spot_quality'] = "bad"
-
-    else:
-        print("impossible to add the spot quality")
-
-    return adata_mz
 
 
-def adata_mz_filter_negligible_abundance(adata_mz, spots_non_zero=5):   #TODO change to 10?
-    # TODO: evaluate the nb of zeroes in entire matrix, if too few , fix a minval for converting to zero all values <= minval ??
-    non_zero_counts = adata_mz.X.getnnz(axis=0)
-    mz_df = adata_mz.var.copy()
-    mz_df['bool_arr'] = [1 if x >= spots_non_zero
-                         else 0 for x in non_zero_counts]
-    adata_mz = adata_mz[:,
-               mz_df.loc[mz_df['bool_arr'] == 1, "mz"].astype(str).tolist()]
-    return adata_mz
 
 
 def update_annotation_tomatch_adatamz(annotationsObj: MetabolomeAnnotations, adata_mz: ad.AnnData):  # zd.MetabolomeAnnotations
@@ -473,6 +406,7 @@ def get_target_pathways_of_one_mz(my_mz: str, subdf, pathways_dict, pws_mz_dict)
     return pathways_to_target
 
 
+
 def message_factory_1(total_nb, kegg_oneormore__one_pathway,
                        one_kegg_multiple_pathways,  multiple_kegg_shared,
                       susceptible_of_refinement) -> None:
@@ -530,59 +464,8 @@ def find_features_for_refinement(mz_met_pathway_piled: pd.DataFrame):
     return final_dict
 
 
-def my_switch(x: int):
-    match x:
-        case x if x == 0:
-            return "unchanged"
-        case x if (x >= 1) and (x <= 5):
-            return "1to5Kegg"
-        case x if (x >= 6) and (x <= 10):
-            return "6to10Kegg"
-        case x if x > 10:
-            return "11andmoreKegg"
-        case _:
-            return "FAILED"
 
 
-def find_category_by_nb_kegg(x: int):
-    out = ""
-    if x == 0:
-        out = "unchanged"
-    elif (x >= 1) and (x <= 5):
-        out = "1to5Kegg"
-    elif (x >= 6) and (x <= 10):
-        out = "6to10Kegg"
-    elif x > 10:
-        out = "11andmoreKegg"
-    return out
-
-
-def evaluate_spot1_change(refinement_mz_pws_dict, Xbinary_pathways,
-                             X_metabolites_probs_df, spot1, spot2):
-
-    present_pathway = 1
-    absent_pathway = 0
-    the_mz_for_refinement_list = list(refinement_mz_pws_dict.keys())
-    modifiable_keggs = set()
-    for one_mz in the_mz_for_refinement_list:
-        pws_tuples_l = list(refinement_mz_pws_dict[str(one_mz)].keys())
-        for pws_tuple in pws_tuples_l:
-            pw1 = pws_tuple[0];   pw2 = pws_tuple[1]
-            metabolites_pw1 = refinement_mz_pws_dict[str(one_mz)][pws_tuple][pw1]
-            metabolites_pw2 = refinement_mz_pws_dict[str(one_mz)][pws_tuple][pw2]
-            pw1andpw2_metabolites = list(set(
-                metabolites_pw1).union(set(metabolites_pw2)))
-            pw_score = Xbinary_pathways.loc[[spot1, spot2], [pw1, pw2]]
-            metabo_probs_local = X_metabolites_probs_df.loc[
-                [spot1, spot2], pw1andpw2_metabolites]
-            if (metabo_probs_local.sum().sum()) == 0:  # impossible to proceed, all values are zero
-                continue
-            else:
-                if pw_score.loc[spot1, pw1] == present_pathway:
-                    if pw_score.loc[spot2, pw1] == present_pathway:
-                        modifiable_keggs = modifiable_keggs.union(set(metabolites_pw1))
-
-    return modifiable_keggs
 
 
 def inner_fun_probs_updater(pw_score: pd.DataFrame, spot1: str, spot2: str, pw1: str, pw2: str,
@@ -677,14 +560,6 @@ def probabilities_updater(refinement_mz_pws_dict, pathways_scores_df,
     return updated_probs_spot1
 
 
-def subset_m_probs_curr_pw(metabolites_probs_here, pathwaysObj, pw):  # TODO is this used ?
-
-    theor_compounds_in_pw = pathwaysObj.to_dict()[pw]
-    real_compounds_in_pw = set(theor_compounds_in_pw).intersection(
-        set(metabolites_probs_here.columns.tolist()))
-
-    return metabolites_probs_here[list(real_compounds_in_pw)].T
-
 
 def build_coords_df(adata):
     df = pd.DataFrame(data=adata.obsm['spatial'],
@@ -694,17 +569,20 @@ def build_coords_df(adata):
 
 
 if __name__ == "__main__":
-    import time
-    t0 = time.time()
-    print(my_switch(5))
-    elapsed1 = time.time() - t0
-    t0 = time.time()
-    print(find_category_by_nb_kegg(5))
-    elapsed2 = time.time() - t0
-    if elapsed1 < elapsed2:
-        print(elapsed1)
-        print("switch is faster")
-    elif elapsed2 < elapsed1:
-        print("switch is slooooower")
-    print(elapsed1)
-    print(elapsed2)
+    intensity_matrix = np.array([[100.44, 400.55, 700.33],
+                                 [200.2, 500.7, 800.5],
+                                 [0., 0., 0.],
+                                 [300.4, 600.1,
+                                  900.3]])  # 3 features(peaks), 4 spots (each spectrum is a row (spot))
+
+    intensity_matrix = csr_matrix(intensity_matrix)
+
+    # Perform TIC normalization
+    normalized_matrix = tic_normalization(intensity_matrix,
+                                          ["s1", "s2", "s3", "s4"],
+                                          [84.66, 88.31, 150.55])
+
+    print("Original Intensity Matrix:")
+    print(intensity_matrix.todense())  # , shape=(3,4)))
+    print("\nTIC Normalized Intensity Matrix:")
+    print(normalized_matrix)
