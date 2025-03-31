@@ -15,6 +15,13 @@ get the matrix of KEGG given the annotations, and the adata_mz
 
 
 
+def provide_annotation_dict(SAMPLE, annotation_types_list):
+    out_d = {}
+    for anntype in annotation_types_list:
+        out_d[anntype] = f"{SAMPLE}-{anntype}.csv"
+
+    return out_d
+
 
 def yield_specific_typical_pathways() -> dict:
     biologically_chosen_pathways = {

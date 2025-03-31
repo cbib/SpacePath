@@ -8,7 +8,7 @@ import zonist.aux.matrix_from_metaspace as mfm
 download any dataset using info in a .csv table
 """
 
-# define here my input
+# define here my files and dirs
 my_csv_table_path = "../../datasets-parameters.tsv"   #"../../small_test.csv"
 
 
@@ -48,7 +48,6 @@ for i, r in datasets_parameters_df.iterrows():
 
         api_versions = {k: whole_api_versions[k] for k in annotations_to_use}
         print("    will fetch quantification matrices of:", list(api_versions.keys()))
-
 
         print(f"Processing: {metaspace_registry}")
 

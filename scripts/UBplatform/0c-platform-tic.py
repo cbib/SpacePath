@@ -17,8 +17,6 @@ from user_routines import prepare_harmonized_objects
 
 from quantifs_methods import *
 from visualization import *
-from mini_tic import *
-
 
 
 SAMPLE = "UBcalibr2"  #  sys.argv[1]
@@ -49,10 +47,10 @@ print(adata_mz)
 foo = adata_mz.var.copy()
 print(foo.loc[(foo['mz'] > 830.569) & (foo['mz'] < 830.57), :])
 
-popo = "830.569432"
+agivenmz = "830.569432"
 import squidpy as sq
 sq.pl.spatial_scatter(
-            adata_mz, color=popo, img=False, shape="square",
+            adata_mz, color=agivenmz, img=False, shape="square",
             title="Before tic")
 plt.show()
 
@@ -65,6 +63,6 @@ newada = adata_mz.copy()
 newada.X = csr_matrix(normalized_mx)
 
 sq.pl.spatial_scatter(
-            newada, color=popo, img=False, shape="square",
+            newada, color=agivenmz, img=False, shape="square",
             title="after ")
 plt.show()

@@ -10,7 +10,6 @@ MET-liver-cancer	2017-11-17_14h52m42s	hsa	liver	cancer	DHB	positive	orbitrap	Orb
 MET-brain-mouse	2017-07-11_11h29m36s	mmu	brain	WT	Unknown	positive	orbitrap	Orbitrap+MALDI+positive	public
 MET-breast-cancer-1	2023-11-22_10h40m34s	hsa	breast	cancer	DHB	positive	orbitrap	Orbitrap+AP-SMALDI 5+positive	public
 MET-skin-cancer-2	2023-05-25_10h07m40s	hsa	skin	cancer	DHB	positive	orbitrap	Orbitrap+AP-SMALDI 5+positive	public
-MET-breast-cancer-2	2023-06-02_10h47m47s	hsa	breast	cancer	DAN	positive	orbitrap	Orbitrap+AP-SMALDI 5+positive	public
 MET-eye	2018-03-20_11h02m36s	mmu	eye	WT	DAN	positive	orbitrap	Orbitrap+ MALDI+positive+DAN	public
 MET-gut	2022-07-06_09h33m52s	mmu	gut	WT	SDHB	positive	orbitrap	Orbitrap+AP-SMALDI5 AF+positive	public
 UBcalibr1	2024-04-30_16h21m48s	mmu	brain	WT			orbitrap	NA	private

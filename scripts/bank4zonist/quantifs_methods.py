@@ -12,6 +12,29 @@ from sklearn.utils import sparsefuncs
 from zonist.data import MetabolicPathways, MetabolomeAnnotations
 import zonist.helpers as zh
 
+
+def closest_match_mz(mz_list1, mz_list2, tolerance=0.002):
+    """ mz_list1 are the mzs as they appear in annotations
+        mz_list2 are the mzs as they appear in intensities matrix"""
+    df = pd.DataFrame(
+        {"v1_f": np.array(mz_list1, dtype=float),
+         "v2_f": [np.nan for i in mz_list1],
+         "v1_str": mz_list1,
+         "v2_str": [np.nan for i in mz_list1]}
+    )
+    v2_floats = np.array(mz_list2, dtype=float)
+    for i, row in df.iterrows():
+        tmp = abs(v2_floats - row["v1_f"])
+        which_min = np.argmin(tmp)
+        if tmp[which_min] <= tolerance:
+            df.iloc[i, 1] = v2_floats[which_min]
+            df.iloc[i, 3] = str(v2_floats[which_min])
+    print("pre", df.shape)
+    df = df.dropna()
+    print("after", df.shape)
+    return df
+
+
 def custom_join_left(df1, df2, keycol='mz'):
     df1 = df1.copy()
     df2 = df2.copy()
@@ -38,8 +61,6 @@ def tic_normalization(intensity_matrix, obs_names, mz_names):
         len(obs_names), len(mz_names)), f"wrong intensity array dimensions"
     total_ion_count = intensity_matrix.sum(axis=1)
     scale_factor = np.median(np.array(total_ion_count))
-    print(total_ion_count)
-    print(scale_factor)
     # Avoid division by zero
     total_ion_count = np.array(total_ion_count) + 1  # avoid any zero error div
     # Normalize the intensity matrix
@@ -207,6 +228,7 @@ def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
 
     return adata
 
+
 def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
         mz_col: str='mz', off_col: str='rawOffSampleProb', fdr_column= 'fdr',
                                intensity_col='totalIntensity'
@@ -260,7 +282,7 @@ def update_annotation_tomatch_adatamz(annotationsObj: MetabolomeAnnotations, ada
       making them match with the mz features of adata_mz object
     """
     me_annots = annotationsObj.model_copy()  # copy is deprecated for pydantic classes
-    okmz = adata_mz.var['mz']
+    okmz = adata_mz.var['mz'].astype(float).tolist()
     me_annots.preloaded = me_annots.preloaded.loc[
         me_annots.preloaded['mz'].isin(okmz),:]
     me_annots.unfiltered = me_annots.unfiltered.loc[

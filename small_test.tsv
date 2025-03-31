@@ -1,2 +1,0 @@
-"dataset_name"	"metaspace_registry"	"annotations_to_use"	"annotations_download"	"perform_pixel_selection"	"offSample_cutoff"	"msm_cutoff"	"fdr_cutoff"	"min_pathway_size"	"k_for_kmeans"
-"UBcalibr2"	"2024-08-13_09h45m45s"	"HMDB LipidMaps"	"manual"	FALSE	"default"	"default"	0.5	2	3

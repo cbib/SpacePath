@@ -10,7 +10,6 @@ MET-liver-cancer	2017-11-17_14h52m42s	HMDB	manual	TRUE	FALSE	default	default	0.5
 MET-brain-mouse	2017-07-11_11h29m36s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	8
 MET-breast-cancer-1	2023-11-22_10h40m34s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	5
 MET-skin-cancer-2	2023-05-25_10h07m40s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	5
-MET-breast-cancer-2	2023-06-02_10h47m47s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	5
 MET-eye	2018-03-20_11h02m36s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	5
 MET-gut	2022-07-06_09h33m52s	HMDB	manual	TRUE	FALSE	default	default	0.5	2	5
 UBcalibr1	2024-04-30_16h21m48s	HMDB LipidMaps	manual	TRUE	TRUE	0.4	default	0.5	2	5
