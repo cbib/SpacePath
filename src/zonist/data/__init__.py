@@ -12,6 +12,7 @@ import sspa as sspa
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
+from pandas.api.types import is_numeric_dtype
 
 import zonist.helpers as helpers
 import zonist.processing.pathways_methods as pathways_methods
@@ -232,6 +233,7 @@ class MetabolomeAnnotations(Dataset):
         ## TODO : add a check to see if the adata_mz has the same mz values as the ones in the annotation
         logger.info('[treat_mz_multiplets]: if "multi m/z to one KEGGid", for'
                     ' such KEGGid, the m/z with the top variance is kept.')
+        assert is_numeric_dtype(adata_mz.var['mz']), "the 'mz' column in adata.var must be of type float"
         self.df, self.mz_redundant = helpers.compute_one_to_one_mz_keggid_df(
             self.df, adata_mz, self.mz_col)
 
