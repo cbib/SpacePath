@@ -10,7 +10,9 @@ import squidpy as sq
 import zonist.data as zd
 import zonist.method as zm
 
-from bank4zonist.quantifs_methods import tic_normalization, custom_join_left, compute_moran_i, closest_match_mz
+from bank4zonist.quantifs_methods import (tic_normalization,
+                                          custom_join_left, compute_moran_i,
+                                          update_annotation_tomatch_adatamz)
 from bank4zonist.constants import provide_annotation_dict
 
 from bank4zonist.visualization import *
@@ -104,7 +106,7 @@ clear off not-spatially relevant, or misleading, mz
 """
 # define here my files and dirs
 mydata_dir = "../../data"
-my_csv_table_path = "../small-test-parameters.tsv"
+my_csv_table_path = "../datasets-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start
@@ -115,6 +117,7 @@ print("\nClear offSample and bad quality m/z across specified datasets")
 
 for i, row in datasets_parameters_df.iterrows():
     SAMPLE = row["dataset_name"]
+    normalize_yes_no = row["TIC_normalization"]
     offSample_cutoff = row["offSample_cutoff"]
     msm_cutoff = row["msm_cutoff"]
     fdr_cutoff = row["fdr_cutoff"]
@@ -143,6 +146,8 @@ for i, row in datasets_parameters_df.iterrows():
                                              subfolder=subfolder,
                                              annotation_files=anno_dict)
         me_annots.load()  # load annotations
+        if SAMPLE.startswith("MALDI_"):
+            me_annots = update_annotation_tomatch_adatamz(me_annots, adata_mz)
         me_annots.pull_mz_quality_df()
         plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE, plot_folder,
                                       msm_cutoff, offSample_cutoff)
@@ -164,7 +169,8 @@ for i, row in datasets_parameters_df.iterrows():
             raise AssertionError("killed")
         adata_mz = adata_mz[:, ok_mz_keep_part1].copy()
         adata_mz.uns["history"]['features_n_after_mz_clean_1'] = adata_mz.var.shape[0]
-        if not "is_X_TIC_normalized" in adata_mz.uns.keys():
+        if (normalize_yes_no.lower() in ['y', 'yes']) and (
+                not "is_X_TIC_normalized" in adata_mz.uns.keys()):
             adata_mz.layers['raw_X'] = adata_mz.X.copy()
             adata_mz.X = csr_matrix(tic_normalization(
                 adata_mz.X.copy(), adata_mz.obs['obs'].tolist(),

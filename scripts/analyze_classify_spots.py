@@ -58,7 +58,7 @@ def keep_only_good_spots(adata_mz, plot_folder):
 
 # define here my input
 mydata_dir = "../../data"
-my_csv_table_path = "../small-test-parameters.tsv"
+my_csv_table_path = "../datasets-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start
@@ -92,6 +92,9 @@ for i, row in datasets_parameters_df.iterrows():
                                              subfolder=subfolder,
                                              annotation_files=anno_dict)
         me_annots.load()  # load annotations
+
+        if SAMPLE.startswith("MALDI_"):
+            me_annots = update_annotation_tomatch_adatamz(me_annots, adata_mz)
 
         print("pulling quality of m/z features from annotations")
         me_annots.pull_mz_quality_df()  ## NEW
