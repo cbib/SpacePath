@@ -132,10 +132,10 @@ for i, row in datasets_parameters_df.iterrows():
     me_annots.load()
 
     adata_mz = ad.read_h5ad(filename=os.path.join(
-        mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
+        mydata_dir, subfolder, f'{SAMPLE}-v2.h5ad'))  # ==== todo (?) what to do ?
 
     print(adata_mz.uns["history"])
-    me_annots = update_annotation_tomatch_adatamz(me_annots, adata_mz)  # todo: mark as new
+    me_annots = update_annotation_tomatch_adatamz(me_annots, adata_mz)
     me_annots.convert_ids_to_kegg(me_refmap.table)
     me_annots.treat_mz_multiplets(adata_mz)  # cleans .df and also creates property .mz_redundant
 

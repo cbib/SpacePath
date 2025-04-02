@@ -1,3 +1,4 @@
 dataset_name	metaspace_registry	annotations_to_use	annotations_download	in/out intensities for spot class	perform_spots_selection	offSample_cutoff	msm_cutoff	fdr_cutoff	TIC_normalization	Moran_I_cutoff	Moran_padj_cutoff	min_pathway_size	k_for_kmeans
-MET-kidney1	2019-04-20_01h02m45s	HMDB LipidMaps	manual	1	YES	0.55	0.001	0.5	YES	0.02	0.05	2	5
-MET-liver-cancer	2017-11-17_14h52m42s	HMDB	manual	0.1	NO	0.7	0	0.5	YES	0.02	0.05	2	5
+MET-kidney1	2019-04-20_01h02m45s	HMDB LipidMaps	manual	1	YES	0.55	0.1	0.5	YES	0.02	0.05	2	5
+MET-liver-cancer	2017-11-17_14h52m42s	HMDB LIPID_MAPS	manual	0.01	NO	0.55	0.1	0.5	YES	0.02	0.05	2	5
+MET-heart	2023-10-24_17h13m08s	HMDB LipidMaps	manual	0.01	NO	0.3	0.1	0.5	YES	0.02	0.05	2	

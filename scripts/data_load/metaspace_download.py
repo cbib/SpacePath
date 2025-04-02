@@ -20,7 +20,8 @@ out_dir = "../../../data/"
 # constants
 whole_api_versions = {'HMDB': ("HMDB", "v4"),
                 'LipidMaps': ("LipidMaps", "2017-12-12"),
-                 'KEGG': ("KEGG", "v1"),
+                'LIPID_MAPS' : ("LIPID_MAPS", "2016"),
+                'KEGG': ("KEGG", "v1"),
                 'CoreMetabolome': ('CoreMetabolome', 'v3')
                 }
 api_fdr = 0.5

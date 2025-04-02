@@ -56,7 +56,7 @@ def tic_normalization(intensity_matrix, obs_names, mz_names):
     :param intensity_matrix: rows are spots, columns are mz features
     :return:  TIC normalized intensity matrix
     """
-    # Calculate total ion count (TIC)
+    print("Applying Total Ion Count (TIC) normalization")
     assert intensity_matrix.shape == (
         len(obs_names), len(mz_names)), f"wrong intensity array dimensions"
     total_ion_count = intensity_matrix.sum(axis=1)
@@ -376,7 +376,6 @@ def compute_moran_i(adata, n_neighs=10, n_perms=5):
     sq.gr.spatial_neighbors(adata, n_neighs=n_neighs)
     print("Computing Moran's I")
     sq.gr.spatial_autocorr(adata, mode="moran", n_perms=n_perms, n_jobs=1, seed=0)
-    print(adata.uns['moranI'].head(2))
 
     return adata
 

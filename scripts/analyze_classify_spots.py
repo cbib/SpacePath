@@ -65,7 +65,7 @@ plot_parent_folder = "../../figures/"
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                   index_col=None, sep='\t')
 
-
+force_for_these = ["MET-lung"]
 print("\nRunning spots classification (with option to select or not) across specified datasets")
 
 for i, row in datasets_parameters_df.iterrows():
@@ -84,7 +84,8 @@ for i, row in datasets_parameters_df.iterrows():
     adata_mz.uns['history'] = {'spot_number_initial': adata_mz.obs.shape[0],
                                'features_n_initial': adata_mz.var.shape[0]}
 
-    if "spot_quality" not in adata_mz.obs.columns.tolist():
+
+    if (SAMPLE in force_for_these) or "spot_quality" not in adata_mz.obs.columns.tolist():
         annotations_to_use = row["annotations_to_use"].split(" ")
         anno_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
         me_annots = zd.MetabolomeAnnotations(name=SAMPLE,
