@@ -35,16 +35,11 @@ def compute_spot_quality(adata_mz, me_annots,
 
 def keep_only_good_spots(adata_mz, plot_folder):
     adata_mz = adata_mz[adata_mz.obs["spot_quality"] == "good", :]
-    print(" => Check good spots: will save plot and over-write adata object")
-    sq.pl.spatial_scatter(
-        adata_mz, color=["spot_quality"], img=False,
-        title="After spots selection")
-    plt.show()
-
-    answer = input("Continue?")  # small dialog
-    if not answer.lower() in ["y", "yes"]:
-        print("Aborted")
-        raise AssertionError("killed")
+    print("Will save plot and over-write adata object")
+    # sq.pl.spatial_scatter(
+    #     adata_mz, color=["spot_quality"], img=False,
+    #     title="After spots selection")
+    # plt.show()
 
     tmpstr = os.path.join(plot_folder,
                           f'{SAMPLE}-spotsAfter.png')
@@ -65,7 +60,7 @@ plot_parent_folder = "../../figures/"
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                   index_col=None, sep='\t')
 
-force_for_these = ["MET-lung"]
+force_for_these = [] # todo: defin if needed #  datasets_parameters_df['dataset_name'].tolist()
 print("\nRunning spots classification (with option to select or not) across specified datasets")
 
 for i, row in datasets_parameters_df.iterrows():
@@ -81,7 +76,8 @@ for i, row in datasets_parameters_df.iterrows():
     adata_mz = ad.read_h5ad(filename=os.path.join(
         mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
-    adata_mz.uns['history'] = {'spot_number_initial': adata_mz.obs.shape[0],
+    if not 'history' in adata_mz.uns.keys():
+        adata_mz.uns['history'] = {'spot_number_initial': adata_mz.obs.shape[0],
                                'features_n_initial': adata_mz.var.shape[0]}
 
 
@@ -100,12 +96,14 @@ for i, row in datasets_parameters_df.iterrows():
         print("pulling quality of m/z features from annotations")
         me_annots.pull_mz_quality_df()  ## NEW
         if not me_annots.mz_quality[me_annots.offsample_column].isnull().all():
-            compute_spot_quality(adata_mz, me_annots,
-                                 allowed_in_out_ratio, plot_folder)
+            if "spot_quality" not in adata_mz.obs.columns.tolist():
+                compute_spot_quality(adata_mz, me_annots,
+                                     allowed_in_out_ratio, plot_folder)
             if select_spots_yes_no.lower() in ["yes", "y"]:
                 adata_mz = keep_only_good_spots(adata_mz, plot_folder)
             else:
                 print("Spot quality added to object, but original spots kept")
+
             adata_mz.uns['history']['spot_number_retained'] = adata_mz.obs.shape[0]
             adata_mz.write_h5ad(os.path.join(mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
