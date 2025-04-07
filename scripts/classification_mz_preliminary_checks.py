@@ -8,7 +8,7 @@ import zonist.data as zd
 from bank4zonist.constants import provide_annotation_dict
 
 from bank4zonist.visualization import *
-from classify_normalize_features import part_a_clean
+from classify_normalize_features import part_a_filters
 
 """
 bad or good quality of m/z features
@@ -56,7 +56,9 @@ for i, row in datasets_parameters_df.iterrows():
 
     if 'features_n_after_mz_clean_2' in list(adata_mz.uns['history'].keys()):
         print("Nothing to do for this sample.")
+    elif  not "is_X_TIC_normalized" in adata_mz.uns.keys():
+        print("no normalization yet applied")
     else:
-        me_annots, ok_mz_keep_part1 = part_a_clean(
-            adata_mz, me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff, SAMPLE, plot_folder)
+        me_annots, ok_mz_keep_part1 = part_a_filters(
+            me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff, SAMPLE, plot_folder)
         print("only figures produced, adata object intact")

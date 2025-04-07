@@ -60,7 +60,7 @@ adata_mz = ad.read_h5ad(filename=os.path.join(
     mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
 print(adata_mz)
-adata_mz = get_rid_of_poor_var_mz(adata_mz)  # TODO : highlight this because is proper to this Ravi&Heiland data
+# adata_mz = get_rid_of_poor_var_mz(adata_mz)  # TODO: del
 print("now:", adata_mz)
 
 verification(adata_mz, me_annots)

@@ -60,7 +60,7 @@ plot_parent_folder = "../../figures/"
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                   index_col=None, sep='\t')
 
-force_for_these = [] # todo: defin if needed #  datasets_parameters_df['dataset_name'].tolist()
+force_for_these = [] # todo: defin if needed #
 print("\nRunning spots classification (with option to select or not) across specified datasets")
 
 for i, row in datasets_parameters_df.iterrows():
@@ -90,8 +90,7 @@ for i, row in datasets_parameters_df.iterrows():
                                              annotation_files=anno_dict)
         me_annots.load()  # load annotations
 
-        if SAMPLE.startswith("MALDI_"):
-            me_annots = update_annotation_tomatch_adatamz(me_annots, adata_mz)
+        me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
 
         print("pulling quality of m/z features from annotations")
         me_annots.pull_mz_quality_df()  ## NEW

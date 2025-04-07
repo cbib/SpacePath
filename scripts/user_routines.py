@@ -7,7 +7,7 @@ import zonist.data as zd
 import zonist.method as zm
 import matplotlib.pyplot as plt
 
-from bank4zonist.quantifs_methods import update_annotation_tomatch_adatamz, verification
+from bank4zonist.quantifs_methods import match_adata_mz_and_annots, verification
 
 def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
                                min_pw_size=1, max_pw_size=100):
@@ -21,7 +21,7 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
 
     me_refmap.load()
     ##
-    me_annots = update_annotation_tomatch_adatamz(me_annots, adata_mz)
+    me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
     verification(adata_mz, me_annots)  # todo del
     print("Excludes m/z with out-of-tissue probability >=", prob_out)
     me_annots.discard_out_of_tissue_mz(prob_out=prob_out)

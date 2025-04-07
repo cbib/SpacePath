@@ -270,7 +270,28 @@ def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
 
 #
 
+def match_adata_mz_and_annots(annotationsObj: MetabolomeAnnotations, adata_mz: ad.AnnData):  # zd.MetabolomeAnnotations
+    """
+    Updates:
+     - adata_mz
+     - the two following attributes of the annotations object:
+        .preloaded
+        .unfiltered
+    making them match perfectly, in terms of  m/z features.
+    """
+    if not isinstance(annotationsObj, MetabolomeAnnotations):
+        raise AssertionError("error: the first argument must be the annotation object!")
+    me_annots = annotationsObj.model_copy()  # copy is deprecated for pydantic classes
+    okmz = list(set(adata_mz.var['mz'].astype(float).tolist()).intersection(
+        set(me_annots.unfiltered["mz"].astype(float).unique()))
+    )
+    me_annots.preloaded = me_annots.preloaded.loc[
+        me_annots.preloaded['mz'].isin(okmz),:]
+    me_annots.unfiltered = me_annots.unfiltered.loc[
+        me_annots.unfiltered['mz'].isin(okmz),:]
+    adata_mz = adata_mz[:, np.array(sorted(okmz), dtype=str)]
 
+    return me_annots, adata_mz
 
 
 def update_annotation_tomatch_adatamz(annotationsObj: MetabolomeAnnotations, adata_mz: ad.AnnData):  # zd.MetabolomeAnnotations
@@ -306,20 +327,19 @@ def verification(adata_mz, me_annots: MetabolomeAnnotations):
         print("unique mz in adata_mz: ", len(adata_mz.var["mz"].unique()))
 
 
-def get_rid_of_poor_var_mz(adata_mz):
-    print("Excluding mz features with extremely low variance")
-    means_vars, variance_computed = sparsefuncs.mean_variance_axis(
-        adata_mz.X, axis=0)
-    #logger.info("variance info: %s", pd.DataFrame(variance_computed).describe())
-    min_accept_tile = np.percentile(variance_computed, 5)
-    #low_variance = variance_computed[variance_computed >= min_accept_centile]
-    adata_mz.var["computed_var"] = variance_computed
-    good_mz = adata_mz.var.loc[adata_mz.var["computed_var"
-                     ] > min_accept_tile, "mz"].to_numpy()
-    adata_mz = adata_mz[:, [str(i) for i in good_mz]]
-
-    return adata_mz
-
+# def get_rid_of_poor_var_mz(adata_mz): # todo: del
+#     print("Excluding mz features with extremely low variance")
+#     means_vars, variance_computed = sparsefuncs.mean_variance_axis(
+#         adata_mz.X, axis=0)
+#     #logger.info("variance info: %s", pd.DataFrame(variance_computed).describe())
+#     min_accept_tile = np.percentile(variance_computed, 5)
+#     #low_variance = variance_computed[variance_computed >= min_accept_centile]
+#     adata_mz.var["computed_var"] = variance_computed
+#     good_mz = adata_mz.var.loc[adata_mz.var["computed_var"
+#                      ] > min_accept_tile, "mz"].to_numpy()
+#     adata_mz = adata_mz[:, [str(i) for i in good_mz]]
+#
+#     return adata_mz
 
 
 def spatial_standard_computations(
