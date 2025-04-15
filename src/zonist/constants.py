@@ -6,8 +6,11 @@ mz_decimal_places = 6
 
 
 supported_annotations: List[str] = ["LipidMaps",
+                                    "LIPID_MAPS", # ancient db version too
                                     "CoreMetabolome",  # new
-                                    "HMDB", "KEGG", "custom_kegg"]
+                                    "HMDB",
+                                    "KEGG",
+                                    "custom_kegg"]
 
 columns_ref_map_expected: List[str] = ["initial_id_unconverted", "KEGG", "database"]
 
@@ -16,20 +19,21 @@ not_metabolic_reactions_pathways = [
     "autophagy", "efferocytosis", "amoebiasis", "cgmp-pkg signaling",
     "phagocytosis",  "necroptosis", "fc gamma", "ri signaling", "mapk",
     "wnt", "notch", "hedgehog",  "erbb", "tgf", "hippo", "vegf", "apelin",
-    "jak-stat", "kappa", "tnf", "ras s", "rap1",  "foxo", "mtor", "pi3k-akt",
-    "rage signal", "oxytocin", "relaxin", "estrog", "prolactin", "renin",
-    "cytokine", "d signaling", "vegf", "gnrh", "secretion", "leukemia",
+    "jak-stat", "kappa", "tnf", "ras s", "rap1",  "foxo", "pi3k-akt",
+    "rage signal", "oxytocin", "relaxin", "prolactin", "renin","cytokine",
+    "d signaling", "vegf", "gnrh", "salivary secretion", "acid secretion",
+    "insulin secretion", "parathyroid", "aldosterone" ,"leukemia",
     "syndrome", "thyroid", "endocrine",  "cushing", "ovarian", "contraction",
     "atherosclerosis", "cardiomyo", "arthritis", "inflammatory", "platelet",
     "lupus erythematosus",  "kaposi", "asthma", "disease", "depression",
     "longevity regulating", "circadian", "thermogenesis", "phototransduction",
-    "trypanosomiasis", "shigellosis", "infection", "immune", "diabetes",
+    "trypanosomiasis", "shigellosis", "infection", "diabetes",
     "leishmania", "toxoplasmosis", "legionel", "malaria", "tuberculosis",
     "coccus", "virus", "virion", "viral", "measles", "dna adducts",
     "meiosis", "checkpoint", "receptor", "resistance", "cell",
     "pathways in cancer", "ferroptosis", "morphine addiction", "gentamicin",  # new
     "xenobiotics", "mineral absorption", "digestion and absorption", # new
-    "glucagon signaling", "taste transduction", "drug metabolism" # new
+    "glucagon signaling", "taste transduction", "drug" # new
 ]
 # Explanation of 'not_metabolic_reactions_pathways': any pathway name
 # that contains the specified substrings above, is classified as being

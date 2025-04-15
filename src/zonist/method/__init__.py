@@ -31,6 +31,12 @@ class BaseModel(PydanticBaseModel):
 class MethodConfig(BaseModel):
     class_type: str = "method"
 
+
+class SyncPathwaysAndAnnotsConfig(MethodConfig): # todo: use this config ?
+    description: str = "parameters to synchronize pathways and annotations"
+    mode: str = "default"  # "mz_aware"
+
+
 class ComputePathwaysScoresConfig(MethodConfig):
     description: str = "parameters to compute the pathways scores"
     method: str = "sspa_kpca"
@@ -75,21 +81,23 @@ class ComputePathwaysScores:
 
 
 class SyncPathwaysAndAnnots:
+    # config: SyncPathwaysAndAnnotsConfig  TODO : use ?
     @staticmethod
     def run(pathwaysObj: MetabolicPathways, annotsObj: MetabolomeAnnotations,
             min_pathway_size=2,
-            max_pathway_size=500
+            max_pathway_size=500,
+            mode="default"  # or mz_aware
             )-> Tuple[MetabolicPathways, MetabolomeAnnotations]:
 
         pathwaysObj.intersect_with_annotations(annotsObj)  # this updates pathwaysObj
-        pathwaysObj.constrain(min_pathway_size, max_pathway_size)
+        pathwaysObj.constrain(min_pathway_size, max_pathway_size, mode)
 
         # todo: check if this .df attribute update is enough (other attrs to update?) for annotations:
         annotsObj.df = annotsObj.df.loc[
-                    annotsObj.df["KEGG"].isin(
-                        pathwaysObj.piled["KEGG"].unique()), :]
+            annotsObj.df[pathwaysObj.molecule_ids_type_in_pathways].isin(
+                        pathwaysObj.piled[pathwaysObj.molecule_ids_type_in_pathways].unique()), :]
 
-        logger.info("data objects syncronized sucessfuly")
+        logger.info("data objects syncronized successfully")
         return pathwaysObj, annotsObj
 
 

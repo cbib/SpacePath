@@ -72,6 +72,9 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
             df = df.dropna()
             df = df.loc[df[self.style_desired] != "", :]
             df = df.loc[~df[self.style_desired].isin(["NA", "NaN"]), :]
+            if map_key == "LIPID_MAPS": # old version of lipidmaps, assimilate
+                map_key = "LipidMaps"
+
             df['database'] = map_key
             df.columns = ["initial_id_unconverted", self.style_desired, "database"]
             dfs_dict[map_key] = df
@@ -108,7 +111,7 @@ class MetabolomeAnnotations(Dataset):
     total_intens_col: str = "totalIntensity"
     fdr_column: str = "fdr"
     msm_column: str = "msm"
-    unfiltered: pd.DataFrame = pd.DataFrame()
+    no_translated: pd.DataFrame = pd.DataFrame()
     df: pd.DataFrame = pd.DataFrame()
     mz_quality: pd.DataFrame = pd.DataFrame()
 
@@ -146,9 +149,13 @@ class MetabolomeAnnotations(Dataset):
                                         decimals=mz_decimal_places)
 
             df = df.dropna(how="all")
-            df['database'] = anno_key
+
             if anno_key == "custom_kegg":
-                df['database'] = "KEGG"  # ok
+                anno_key = "KEGG"
+            elif anno_key == "LIPID_MAPS":  # assimilate
+                anno_key = "LipidMaps"
+
+            df['database'] = anno_key
             dfs_dict[anno_key] = df
 
         preloaded_annots = \
@@ -156,12 +163,12 @@ class MetabolomeAnnotations(Dataset):
 
         self.preloaded = preloaded_annots
 
-        self.unfiltered = helpers.spreadout_annotation_df(
+        self.no_translated = helpers.spreadout_annotation_df(
                 preloaded_annots, self.mz_col, self.formula_col,
                 self.molecule_ids_col, self.molecule_names_col)
 
-        self.unfiltered[self.mz_col] = np.around(
-            self.unfiltered[self.mz_col].to_numpy(), decimals=mz_decimal_places)
+        self.no_translated[self.mz_col] = np.around(
+            self.no_translated[self.mz_col].to_numpy(), decimals=mz_decimal_places)
 
     def pull_mz_quality_df(self):
         """Builds df, if quality columns exist"""
@@ -203,7 +210,7 @@ class MetabolomeAnnotations(Dataset):
             n_bad = int(bad_feat_df.shape[0] * fraction_to_exclude)
             mz_out = bad_feat_df[self.mz_col].tolist()[:n_bad]
 
-            self.unfiltered = self.unfiltered.loc[~self.unfiltered[
+            self.no_translated = self.no_translated.loc[~self.no_translated[
                 self.mz_col].isin(mz_out)]
             logger.info('[discard_out_of_tissue_mz]: Excluded %s m/z '
                         'features that are "out-of-the-tissue"', len(mz_out))
@@ -216,7 +223,7 @@ class MetabolomeAnnotations(Dataset):
         f" mappings columns must be {columns_ref_map_expected}"
         try:
             self.df = helpers.convert_metabo_annots_tokegg(
-                self.unfiltered, ref_table,
+                self.no_translated, ref_table,
                 self.molecule_ids_col, self.mz_col)
             excess_mz_bool: bool = helpers.identify_multi_mz_to_one_kegg(
                 self.df,  self.mz_col)
@@ -230,7 +237,7 @@ class MetabolomeAnnotations(Dataset):
             logger.warning("Error: %s", e)
 
     def treat_mz_multiplets(self, adata_mz: ad.AnnData):
-        ## TODO : add a check to see if the adata_mz has the same mz values as the ones in the annotation
+        ## TODO : add a check to see if the adata_mz has the same mzs as the ones in the annotation
         logger.info('[treat_mz_multiplets]: if "multi m/z to one KEGGid", for'
                     ' such KEGGid, the m/z with the top variance is kept.')
         assert is_numeric_dtype(adata_mz.var['mz']), "the 'mz' column in adata.var must be of type float"
@@ -273,7 +280,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
     undesired_substring: str = " - Homo sapiens (human)" # in names
     pathway_id_col: str = "pathway_id"
     pathway_name_col: str = "pathway_name"
-    molec_ids_in_pathways_col: str = "KEGG"   #  must match joined annots
+    molecule_ids_type_in_pathways: str = "KEGG"   #  must match joined annots
     piled: pd.DataFrame = pd.DataFrame()
     pathways_ids: pd.DataFrame = pd.DataFrame()
 
@@ -327,7 +334,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
         id_name_pathways_df, pws_piled = helpers.gmts_merge_pile_splitid(
             dfs_dict, self.pathway_id_col, self.pathway_name_col,
-            self.molec_ids_in_pathways_col)
+            self.molecule_ids_type_in_pathways)
 
         self.pathways_ids = id_name_pathways_df
         self.piled = pws_piled
@@ -342,7 +349,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
     def to_dict(self, option="id") -> Dict[str, List[str]]:
         if option=="id":
-            mz_or_id = self.molec_ids_in_pathways_col
+            mz_or_id = self.molecule_ids_type_in_pathways
         elif option=="mz":
             mz_or_id = "mz"
         else:
@@ -357,18 +364,24 @@ class MetabolicPathways(BaseModel, extra='allow'):
         """
         self.piled = helpers.pathways_and_annots_join(
             self.piled,
-            annots_obj.df[[annots_obj.mz_col, self.molec_ids_in_pathways_col]],
-            self.molec_ids_in_pathways_col)
+            annots_obj.df[[annots_obj.mz_col, self.molecule_ids_type_in_pathways]],
+            self.molecule_ids_type_in_pathways)
 
-    def constrain(self, min_pathway_size, max_pathway_size):
-        good_pathways_l = pathways_methods.yield_compliant_pathways(
-            self.to_dict(), min_pathway_size, max_pathway_size)
+    def constrain(self, min_pathway_size, max_pathway_size, mode):
+        assert mode in ["default", "mz_aware"], "Error, mode param not recognized"
+        if mode == "default" :
+            good_pathways_l = pathways_methods.yield_compliant_pathways(
+                self.to_dict(option="id"), min_pathway_size, max_pathway_size)
+        elif mode == "mz_aware":
+            good_pathways_l = pathways_methods.yield_compliant_pathways(
+                self.to_dict(option="mz"), min_pathway_size, max_pathway_size)
+
         metabolites_to_eject = pathways_methods.find_metabolites_to_exclude(
             good_pathways_l, self.to_dict())
         self.piled = self.piled.loc[
             self.piled["pathway_id"].isin(good_pathways_l)]
         self.piled = self.piled.loc[~self.piled[
-            self.molec_ids_in_pathways_col].isin(metabolites_to_eject), :]
+            self.molecule_ids_type_in_pathways].isin(metabolites_to_eject), :]
         self.pathways_ids = self.pathways_ids.loc[
                                    self.pathways_ids[
                                        "pathway_id"].isin(good_pathways_l), :]
