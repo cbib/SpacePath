@@ -98,7 +98,7 @@ me_annots = zd.MetabolomeAnnotations(name="heiland",
                                      annotation_files=anno_dict)
 me_annots.load()
 
-cool = me_annots.unfiltered[["mz",
+cool = me_annots.no_translated[["mz",
                              "moleculeIds"]].drop_duplicates()  # in HMDB, mz and moleculeIds are 1:1
 hmdb_mz_dict = dict()
 for i, r in cool.iterrows():

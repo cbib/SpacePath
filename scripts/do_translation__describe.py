@@ -42,11 +42,16 @@ def give_list_one_single_kegg_in_any_pathway(pathwaysObj, me_annots):
 
 
 def give_list_kegg_mapped_ok(pathwaysObj, me_annots, min_pathway_size):
+
+    #zm.SyncPathwaysAndAnnotsConfig.mode = "mz_aware"  # TODO: use ?
+
     p2, m2 = zm.SyncPathwaysAndAnnots.run(
         pathwaysObj.model_copy(),
         me_annots.model_copy(),
         min_pathway_size=min_pathway_size,
-        max_pathway_size=200)
+        max_pathway_size=200,
+        mode="mz_aware"
+    )
 
     return [str(u) for u in m2.df["mz"].unique()], m2.df["KEGG"].unique()
 
@@ -87,12 +92,15 @@ def save_detailed_table(adata_mz, the_mz_list, the_kegg_list, me_annots, plot_fo
 if __name__ == "__main__":
     # also add to the anndata.var if a feature was yes Y or no N in pathways that will pass.
     # that will allow to "paste" the mz or kegg that were not in the pw trick (? if makes sense such "paste" ?)
+    name_sample = []
+    mz_mapped_to_pathways = []
+    kegg_compound_ids_to_mz_ratio_after_pathway_mapped = []
+    how_many_pathways = []
 
     # define here my files and dirs
     mydata_dir = "../../data"
     my_csv_table_path = "../datasets-parameters.tsv" #"../small-test-parameters.tsv"
     plot_parent_folder = "../../figures/"
-
 
     # start
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
@@ -130,7 +138,7 @@ if __name__ == "__main__":
         me_annots.load()
 
         adata_mz = ad.read_h5ad(filename=os.path.join(
-            mydata_dir, subfolder, f'{SAMPLE}.h5ad'))  # ==== todo (?) what to do ?
+            mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
         print(adata_mz.uns["history"])
         print("MANDATORY: take away bad quality m/z")
@@ -139,6 +147,7 @@ if __name__ == "__main__":
                    "mz"].astype(str).tolist()]
 
         me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
+
         me_annots.convert_ids_to_kegg(me_refmap.table)
         me_annots.treat_mz_multiplets(adata_mz)  # cleans .df of mz that are in a group having same KEGG id and are not top n=1 of variance (KEGG ids dependant)
 
@@ -148,19 +157,24 @@ if __name__ == "__main__":
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
+        # none mapping
         mzno,  kgno = mz_and_kegg_compounds_none_pathway(pathwaysObj,
                                                         me_annots)
         save_detailed_table(adata_mz, mzno, kgno, me_annots, plot_folder,
                             suffix="NotMapped")
 
-        mz_one, kg_one = give_list_one_single_kegg_in_any_pathway(pathwaysObj, me_annots)
-        save_detailed_table(adata_mz, mz_one, kg_one, me_annots, plot_folder,
-                            suffix="SinglesMapped")
-
+        # correct mapping
         mz_ok, kg_ok = give_list_kegg_mapped_ok(pathwaysObj, me_annots,
                                                 min_pathway_size=min_pathway_size)
         save_detailed_table(adata_mz, mz_ok, kg_ok, me_annots, plot_folder,
                             suffix="Mapped")
+
+        # oneTOone mapping
+        mz_one, kg_one = give_list_one_single_kegg_in_any_pathway(pathwaysObj, me_annots)
+        mz_one = list(set(mz_one) - set(mz_ok))
+        kg_one = list(set(kg_one) - set(kg_ok))
+        save_detailed_table(adata_mz, mz_one, kg_one, me_annots, plot_folder,
+                            suffix="SinglesMapped")
 
         pws_obj_2, annots_2 = zm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
@@ -188,5 +202,19 @@ if __name__ == "__main__":
         # print(f"when mapped to KEGG, with min pathwaysize {min_pathway_size}, "
         #       f"remained {me_annots.df.shape[0]} different KEGG id")
 
+        name_sample.append(SAMPLE)
+        mz_mapped_to_pathways.append(len(mz_ok))
+        kegg_compound_ids_to_mz_ratio_after_pathway_mapped.append(
+           len(set(kg_ok)) / len(set(mz_ok))
+        )
+        how_many_pathways.append(len(pws_obj_2.piled['pathway_id'].unique()))
+
+
+    out_df = pd.DataFrame({
+        "sample_name": name_sample,
+        "mz_mapped_to_pathways":mz_mapped_to_pathways,
+    "ratio_keggid_mz": kegg_compound_ids_to_mz_ratio_after_pathway_mapped,
+    "pathways_number_final" : how_many_pathways    })
+    out_df.to_csv("../final_compounds_counts.csv")
 
 

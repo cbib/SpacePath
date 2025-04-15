@@ -3,8 +3,6 @@ import anndata as ad
 
 import zonist.data as zd
 
-
-
 from bank4zonist.constants import provide_annotation_dict
 
 from bank4zonist.visualization import *
@@ -15,7 +13,7 @@ bad or good quality of m/z features
 """
 # define here my files and dirs
 mydata_dir = "../../data"
-my_csv_table_path = "../datasets-parameters.tsv"
+my_csv_table_path = "../eye-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start

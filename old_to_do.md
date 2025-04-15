@@ -1,3 +1,7 @@
+**all the following is no longer valid because the "whole-ellis" data 
+was qTOF and so no suitable for pathways analyses**
+
+
 
 1. Note that for the "whole-ellis" data and its scripts, that the **aux** "zonist" script: `matrix_from_metaspace.py`
 which is at https://github.com/johaGL/zonist/trese/master/src/zonist/aux/

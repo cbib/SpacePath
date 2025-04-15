@@ -41,13 +41,19 @@ def custom_join_left(df1, df2, keycol='mz'):
     df2[keycol] = df2[keycol].astype(str)
     df2 = df2.drop_duplicates(subset=keycol)
     df2 = df2.set_index(keycol)
-    df2 = df2.loc[df1[keycol].astype(str).tolist(), :]  # same row order as 1
-    assert np.all(df2.index.astype(str).to_numpy(
-        ) == df1[keycol].astype(str).to_numpy()), "fatal (no match), Abort !"
-    for col in df2.columns:
-        df1[col] = df2[col]
-    return df1
-
+    try:
+        df2 = df2.loc[df1[keycol].astype(str).tolist(), :]  # same row order as 1
+        # np.all(df2.index.astype(str).to_numpy(
+        # ) == df1[keycol].astype(str).to_numpy())
+        for col in df2.columns:
+            df1[col] = df2[col]
+        return df1
+    except KeyError:
+        print("fatal (no match), custom_join_left impossible!")
+        return None
+    except Exception as e:
+        print(e, "fatal (no match), custom_join_left impossible!")
+        return None
 
 
 def tic_normalization(intensity_matrix, obs_names, mz_names):
@@ -276,19 +282,19 @@ def match_adata_mz_and_annots(annotationsObj: MetabolomeAnnotations, adata_mz: a
      - adata_mz
      - the two following attributes of the annotations object:
         .preloaded
-        .unfiltered
+        .no_translated
     making them match perfectly, in terms of  m/z features.
     """
     if not isinstance(annotationsObj, MetabolomeAnnotations):
         raise AssertionError("error: the first argument must be the annotation object!")
     me_annots = annotationsObj.model_copy()  # copy is deprecated for pydantic classes
     okmz = list(set(adata_mz.var['mz'].astype(float).tolist()).intersection(
-        set(me_annots.unfiltered["mz"].astype(float).unique()))
+        set(me_annots.no_translated["mz"].astype(float).unique()))
     )
     me_annots.preloaded = me_annots.preloaded.loc[
         me_annots.preloaded['mz'].isin(okmz),:]
-    me_annots.unfiltered = me_annots.unfiltered.loc[
-        me_annots.unfiltered['mz'].isin(okmz),:]
+    me_annots.no_translated = me_annots.no_translated.loc[
+        me_annots.no_translated['mz'].isin(okmz),:]
     adata_mz = adata_mz[:, np.array(sorted(okmz), dtype=str)]
 
     return me_annots, adata_mz
@@ -299,15 +305,15 @@ def update_annotation_tomatch_adatamz(annotationsObj: MetabolomeAnnotations, ada
     """
     Updates two attributes of the annotations object:
         .preloaded
-        .unfiltered
+        .no_translated
       making them match with the mz features of adata_mz object
     """
     me_annots = annotationsObj.model_copy()  # copy is deprecated for pydantic classes
     okmz = adata_mz.var['mz'].astype(float).tolist()
     me_annots.preloaded = me_annots.preloaded.loc[
         me_annots.preloaded['mz'].isin(okmz),:]
-    me_annots.unfiltered = me_annots.unfiltered.loc[
-        me_annots.unfiltered['mz'].isin(okmz),:]
+    me_annots.no_translated = me_annots.no_translated.loc[
+        me_annots.no_translated['mz'].isin(okmz),:]
 
     return me_annots
 
@@ -316,13 +322,13 @@ def verification(adata_mz, me_annots: MetabolomeAnnotations):
     print("verifying mz match")
     try:
         bool_equal = np.all(np.array(
-            sorted(me_annots.unfiltered["mz"].unique())) == np.array(
+            sorted(me_annots.no_translated["mz"].unique())) == np.array(
             sorted(adata_mz.var["mz"].tolist())))
         print(f"perfect match between mz in me_a.df "
               f"and adata.X: => {bool_equal} <=")
     except ValueError:
         print("mz do not match between adata_mz and annotation table")
-        print("unique annotated mz: ", len(me_annots.unfiltered["mz"].unique(
+        print("unique annotated mz: ", len(me_annots.no_translated["mz"].unique(
         )))
         print("unique mz in adata_mz: ", len(adata_mz.var["mz"].unique()))
 
