@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path = "../datasets-parameters.tsv" #"../small-test-parameters.tsv"
+    my_csv_table_path = "../private-datasets-parameters.tsv" #"../small-test-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
     # start

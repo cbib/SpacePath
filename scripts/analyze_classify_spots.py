@@ -53,14 +53,14 @@ def keep_only_good_spots(adata_mz, plot_folder):
 
 # define here my input
 mydata_dir = "../../data"
-my_csv_table_path = "../datasets-parameters.tsv"
+my_csv_table_path = "../private-datasets-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                   index_col=None, sep='\t')
 
-force_for_these = [] # todo: defin if needed #
+force_for_these = [] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
 print("\nRunning spots classification (with option to select or not) across specified datasets")
 
 for i, row in datasets_parameters_df.iterrows():
@@ -95,9 +95,9 @@ for i, row in datasets_parameters_df.iterrows():
         print("pulling quality of m/z features from annotations")
         me_annots.pull_mz_quality_df()  ## NEW
         if not me_annots.mz_quality[me_annots.offsample_column].isnull().all():
-            if "spot_quality" not in adata_mz.obs.columns.tolist():
-                compute_spot_quality(adata_mz, me_annots,
-                                     allowed_in_out_ratio, plot_folder)
+            #if "spot_quality" not in adata_mz.obs.columns.tolist():
+            compute_spot_quality(adata_mz, me_annots,
+                                 allowed_in_out_ratio, plot_folder)
             if select_spots_yes_no.lower() in ["yes", "y"]:
                 adata_mz = keep_only_good_spots(adata_mz, plot_folder)
             else:

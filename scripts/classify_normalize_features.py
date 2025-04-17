@@ -150,10 +150,17 @@ def part_b_filters_with_autocorr(adata_mz, ok_part1, me_annots, moran_I_cutoff, 
 
     print("(Moran's metrics are only computed for the m/z that passed the a) filters)")
     copy_mz = adata_mz[:, ok_part1].copy()   # only compute moran for the ok_part1 features
+    try:
+        if copy_mz.uns['moranI'].shape[0] != len(ok_part1):
+            del copy_mz.uns['moranI']
+    except Exception as e:
+        pass
+
     if not "moranI" in list(copy_mz.uns.keys()):
-        if copy_mz.obs.shape[0] > 50000: # TODO   see coment belo
-            print("pending TODO: find a solution to compute faster ? subset spots? \nor take another pvalFDRBH \nthat is not dependant on perm !!!!!!")
-        copy_mz = compute_moran_i(copy_mz, n_neighs=20, n_perms=50)
+        n_perms = 50
+        if copy_mz.obs.shape[0] > 100000:
+            n_perms = 3
+        copy_mz = compute_moran_i(copy_mz, n_neighs=20, n_perms=n_perms)
     else:
         print(f"will use the existing .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
         assert copy_mz.uns['moranI'].shape[0] == len(ok_part1), "Fatal: existing moranI dimensions do not match with length of m/z list passing a) filters. Killed! (solution: delete .uns['moranI'] dataframe and try again)"
@@ -184,10 +191,10 @@ if __name__ == "__main__":
     """
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path = "../datasets-parameters.tsv"  # " ../small-test-parameters.tsv"
+    my_csv_table_path = "../private-datasets-parameters.tsv"  # " ../small-test-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
-    force_for_these = [ "MET-eye"]   #["MET-liver-cancer"]  # todo: defin if needed #
+    force_for_these = ["UB-breast-cancer-1"]    # keep empty if no sample to force   # e.g.  , "TD-635-1-A", "TD-635-1-B"   "TD-hemi-635-1-A", "TD-hemi-635-1-B"
 
     # start
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
@@ -274,6 +281,7 @@ if __name__ == "__main__":
                 print("going to the next, nothing saved")
                 continue
             else:
+                print("Usable m/z elements (n of features):", okok)
                 adata_mz.write_h5ad(filename=os.path.join(
                    mydata_dir, subfolder, f"{SAMPLE}.h5ad"))
                 print("saved object")

@@ -13,7 +13,7 @@ bad or good quality of m/z features
 """
 # define here my files and dirs
 mydata_dir = "../../data"
-my_csv_table_path = "../eye-parameters.tsv"
+my_csv_table_path = "../private-datasets-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start

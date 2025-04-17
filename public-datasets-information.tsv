@@ -12,13 +12,13 @@ LP-breast-cancer-1	2023-11-22_10h40m34s	hsa	breast	cancer	DHB	positive	orbitrap	
 LP-skin-cancer-2	2023-05-25_10h07m40s	hsa	skin	cancer	DHB	positive	orbitrap	Orbitrap+AP-SMALDI 5+positive	public	
 LP-eye	2018-03-20_11h02m36s	mmu	eye	WT	DAN	positive	orbitrap	Orbitrap+ MALDI+positive+DAN	public	
 LP-gut	2022-07-06_09h33m52s	mmu	gut	WT	SDHB	positive	orbitrap	Orbitrap+AP-SMALDI5 AF+positive	public	
-LP-brain-mouse-1	2025-04-10_23h29m14s	mmu	brain	WT						
-LP-brain-mouse-2	2025-04-10_14h45m11s	mmu	brain	WT						
-LP-brain-rat-3	2025-04-10_15h11m23s	mmu	brain	WT						
-LP-cerebellum-rat	2025-04-10_14h53m38s	rno								
-										
-										
-										
+LP-brain-mouse-1	2025-04-10_23h29m14s	mmu	brain	WT		positive				
+LP-brain-mouse-2	2025-04-10_14h45m11s	mmu	brain	WT		positive				
+LP-brain-rat-3	2025-04-10_15h11m23s	mmu	brain	WT		positive				
+LP-cerebellum-rat	2025-04-10_14h53m38s	rno	cerebellum	to check		positive				
+LP-brain-mouse-3	2023-09-29_18h44m00s	mmu	brain	to check		positive				
+LP-brain-mouse-4	2020-01-16_13h13m47s	mmu	brain	to check		positive				
+LP-breast-cancer-2	2023-05-26_09h45m07s	hsa	breast	cancer		negative		Orbitrap+negative+9AA	public	
 										
 										
 MALDI_248_T	not provided	hsa	brain	cancer	9-AA	negative	FT-ICR	NA	public	
