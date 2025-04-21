@@ -9,7 +9,7 @@ download any dataset using info in a .csv table
 """
 
 # define here my files and dirs
-my_csv_table_path = "../../private-datasets-parameters.tsv"   #"../../small_test.csv"
+my_csv_table_path = "../../public-datasets-parameters.tsv"   #"../../small_test.csv"
 
 
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
@@ -28,11 +28,14 @@ api_fdr = 0.5
 
 # start
 for i, r in datasets_parameters_df.iterrows():
+
     data_name = r["dataset_name"]
     metaspace_registry = r["metaspace_registry"]
     annotations_to_use = r["annotations_to_use"].split(" ")
     annot_how_dwld = r["annotations_download"]
     subfolder = data_name
+
+    print("\n", data_name)
 
     path_out = os.path.join(out_dir, subfolder)
     expected_out_file = os.path.join(path_out, f'{data_name}.h5ad')
@@ -63,8 +66,8 @@ for i, r in datasets_parameters_df.iterrows():
                     sep=",", header=True, index=False
                 )
             print("saved annotations automatically")
-        else:
-            del annotations_dfs_dict
+
+        del annotations_dfs_dict
 
         mfm.save_quantifications_anndata(
             out_df, os.path.join(path_out, data_name))  # adds automatically .h5ad extension
