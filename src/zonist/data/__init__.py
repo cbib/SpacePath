@@ -283,6 +283,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
     molecule_ids_type_in_pathways: str = "KEGG"   #  must match joined annots
     piled: pd.DataFrame = pd.DataFrame()
     pathways_ids: pd.DataFrame = pd.DataFrame()
+    purge: bool = True
 
     def preload_official(self):
         if not os.path.exists(os.path.join(
@@ -305,8 +306,9 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
         official_gmt = helpers.prettify_gmt(official_gmt,
                                             self.undesired_substring)
-        official_gmt = helpers.purge_pathways(
-            official_gmt, not_metabolic_reactions_pathways)
+        if self.purge:
+            official_gmt = helpers.purge_pathways(
+                official_gmt, not_metabolic_reactions_pathways)
         self.official = official_gmt
 
     def preload_custom(self):

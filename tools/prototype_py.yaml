@@ -37,4 +37,6 @@ dependencies:
     - sspa    
     - pyimzml
     - metaspace-converter
+    - pywikipathways  # new 
+    - matplotlib-venn # new
 

@@ -14,6 +14,7 @@ from metaspace_converter import metaspace_to_anndata
 from scipy.sparse import csr_matrix
 import zonist.helpers as helpers
 from zonist.constants import mz_decimal_places
+import gc
 
 
 def build_coord_names(df) -> List[str]:
@@ -129,6 +130,8 @@ def save_quantifications_anndata(outdf, outfile) -> None:
                                 'spot_diameter_fullres': 1,
                                 'tissue_hires_scalef': 0.5,
                                 'tissue_lowres_scalef': 0.5}}}
+    del outdf
+    gc.collect()
     outfile = outfile + ".h5ad"
     out_obj.write(outfile, compression=None, compression_opts=None)
     print(f"End: file saved to '{outfile}'")
