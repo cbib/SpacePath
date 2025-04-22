@@ -23,7 +23,9 @@ def compute_spot_quality(adata_mz, me_annots,
     adata_mz.obs['spot_quality'] = "good"
     adata_mz.obs.loc[adata_mz.obs['ratio_in_out'] < allowed_in_out_ratio,
     'spot_quality'] = "bad"
-
+    if len(adata_mz.uns['spot_quality_colors']
+           ) != len(adata_mz.obs['spot_quality'].unique()):
+        del adata_mz.uns['spot_quality_colors']
     tmpstr = os.path.join(plot_folder, f'{SAMPLE}-spotsBefore.png')
     sq.pl.spatial_scatter(
         adata_mz, color=["spot_quality"], img=False,
@@ -53,14 +55,14 @@ def keep_only_good_spots(adata_mz, plot_folder):
 
 # define here my input
 mydata_dir = "../../data"
-my_csv_table_path = "../private-datasets-parameters.tsv"
+my_csv_table_path = "../public-datasets-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                   index_col=None, sep='\t')
 
-force_for_these = [] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
+force_for_these = ["LP-brain-rat-2"] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
 print("\nRunning spots classification (with option to select or not) across specified datasets")
 
 for i, row in datasets_parameters_df.iterrows():
@@ -89,7 +91,7 @@ for i, row in datasets_parameters_df.iterrows():
                                              subfolder=subfolder,
                                              annotation_files=anno_dict)
         me_annots.load()  # load annotations
-
+        print(adata_mz.uns)
         me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
 
         print("pulling quality of m/z features from annotations")
