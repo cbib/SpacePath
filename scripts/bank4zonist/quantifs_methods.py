@@ -236,6 +236,7 @@ def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
 
 
 def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
+        max_n_tails: int = 100, fdr_cutoff: float = 0.1,
         mz_col: str='mz', off_col: str='rawOffSampleProb', fdr_column= 'fdr',
                                intensity_col='totalIntensity'
 ):
@@ -252,9 +253,9 @@ def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
     df = features_classification_df[[mz_col, off_col, intensity_col, fdr_column]]
     if not df[off_col].max() <= 1:
         raise AssertionError(f"values of {off_col} must be in [0, 1]")
-    df = df.loc[df[fdr_column] <= 0.1, :].sort_values(by=off_col)
+    df = df.loc[df[fdr_column] <= fdr_cutoff, :].sort_values(by=off_col)
     df_in = df.loc[df[off_col] <= 0.2, :].copy()
-    n_sample = 100
+    n_sample = max_n_tails
     if df_in.shape[0] < n_sample:
         n_sample = df_in.shape[0]
     df_in = df_in.sort_values(by=[off_col, intensity_col, fdr_column],

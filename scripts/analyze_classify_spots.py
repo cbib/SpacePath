@@ -15,39 +15,34 @@ from bank4zonist.constants import provide_annotation_dict
 
 
 def compute_spot_quality(adata_mz, me_annots,
-                         allowed_in_out_ratio, plot_folder):
+                         allowed_in_out_ratio, fdr_cutoff):
     print("marking spot quality with params: ", allowed_in_out_ratio)
     adata_mz = adata_mz_mark_spot_quality(
-        adata_mz, me_annots.mz_quality
+        adata_mz, me_annots.mz_quality, fdr_cutoff=fdr_cutoff
     )
     adata_mz.obs['spot_quality'] = "good"
     adata_mz.obs.loc[adata_mz.obs['ratio_in_out'] < allowed_in_out_ratio,
     'spot_quality'] = "bad"
-    if len(adata_mz.uns['spot_quality_colors']
-           ) != len(adata_mz.obs['spot_quality'].unique()):
-        del adata_mz.uns['spot_quality_colors']
-    tmpstr = os.path.join(plot_folder, f'{SAMPLE}-spotsBefore.png')
-    sq.pl.spatial_scatter(
-        adata_mz, color=["spot_quality"], img=False,
-        title="Before spots selection", save=os.path.abspath(tmpstr))
-    plt.close()
-    print(f"plot of initial spots in: {tmpstr}")
+    try:
+        if len(adata_mz.uns['spot_quality_colors']
+               ) != len(adata_mz.obs['spot_quality'].unique()):
+            del adata_mz.uns['spot_quality_colors']
+    except KeyError:
+        pass
     return adata_mz
 
 
-def keep_only_good_spots(adata_mz, plot_folder):
-    adata_mz = adata_mz[adata_mz.obs["spot_quality"] == "good", :]
-    print("Will save plot and over-write adata object")
-    # sq.pl.spatial_scatter(
-    #     adata_mz, color=["spot_quality"], img=False,
-    #     title="After spots selection")
-    # plt.show()
+def mark_weak_spots(adata_mz, cutoff: float = 1000):  # todo: deprecated
+    adata_mz.obs['totalIntensitySpot'] =  adata_mz.X.sum(axis=1)
+    adata_mz.obs.loc[adata_mz.obs['totalIntensitySpot'] <= cutoff, 'spot_quality'] = 'bad'
+    return adata_mz
 
-    tmpstr = os.path.join(plot_folder,
-                          f'{SAMPLE}-spotsAfter.png')
+
+def plot_spots(adata_mz, plot_out_path, title='my title'):
+    print("Saving plot of spots")
     sq.pl.spatial_scatter(
         adata_mz, color=["spot_quality"], img=False,
-        title="After spots selection", save=os.path.abspath(tmpstr))
+        title=title, save=os.path.abspath(plot_out_path))
     plt.close()
 
     return adata_mz
@@ -55,14 +50,16 @@ def keep_only_good_spots(adata_mz, plot_folder):
 
 # define here my input
 mydata_dir = "../../data"
-my_csv_table_path = "../public-datasets-parameters.tsv"
+my_csv_table_path = "../private-datasets-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                   index_col=None, sep='\t')
 
-force_for_these = ["LP-brain-rat-2"] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
+force_for_these = [] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
+
+
 print("\nRunning spots classification (with option to select or not) across specified datasets")
 
 for i, row in datasets_parameters_df.iterrows():
@@ -98,10 +95,22 @@ for i, row in datasets_parameters_df.iterrows():
         me_annots.pull_mz_quality_df()  ## NEW
         if not me_annots.mz_quality[me_annots.offsample_column].isnull().all():
             #if "spot_quality" not in adata_mz.obs.columns.tolist():
-            compute_spot_quality(adata_mz, me_annots,
-                                 allowed_in_out_ratio, plot_folder)
+            fdr_cutoff_features_to_compute_spot_qual = 0.1
+            if SAMPLE in ["LP-brain-mouse-5"]:
+                fdr_cutoff_features_to_compute_spot_qual = 0.2
+            x =  fdr_cutoff_features_to_compute_spot_qual
+            adata_mz = compute_spot_quality(adata_mz, me_annots,
+                                 allowed_in_out_ratio, fdr_cutoff=x)
+            # adata_mz = mark_weak_spots(adata_mz, cutoff=1e4)  #  useless, no effect
+            plot_out_path = os.path.join(plot_folder, f'{SAMPLE}-spotsBefore.png')
+
+            plot_spots(adata_mz, plot_out_path, title="Before spots selection")
+            print(f"plot of initial spots saved to: {plot_out_path}")
             if select_spots_yes_no.lower() in ["yes", "y"]:
-                adata_mz = keep_only_good_spots(adata_mz, plot_folder)
+                adata_mz = adata_mz[adata_mz.obs["spot_quality"] == "good", :]
+                plot_out_path = os.path.join(plot_folder,
+                                             f'{SAMPLE}-spotsAfter.png')
+                plot_spots(adata_mz, plot_out_path, title="After spots selection")
             else:
                 print("Spot quality added to object, but original spots kept")
 
@@ -114,11 +123,3 @@ for i, row in datasets_parameters_df.iterrows():
     else:
         print(
             "already computed quality of spots for adata_mz, nothing to do")
-
-
-
-# any_anno_dict = {'HMDB': f"{SAMPLE}-HMDB.csv",
-#              "KEGG": f"{SAMPLE}-KEGG.csv",
-#              "LipidMaps": f"{SAMPLE}-LipidMaps.csv",
-#              "CoreMetabolome": f"{SAMPLE}_CoreMetabolome.csv",
-#              }
