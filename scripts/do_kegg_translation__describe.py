@@ -213,8 +213,8 @@ if __name__ == "__main__":
             kegg_compound_ids_to_mz_ratio_after_pathway_mapped.append(
                len(set(kg_ok)) / len(set(mz_ok))
             )
-        except:
-            kegg_compound_ids_to_mz_ratio_after_pathway_mapped.append(0.1)
+        except ZeroDivisionError:
+            kegg_compound_ids_to_mz_ratio_after_pathway_mapped.append(0)
         how_many_pathways.append(len(pws_obj_2.piled['pathway_id'].unique()))
 
 
