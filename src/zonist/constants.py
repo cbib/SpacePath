@@ -16,12 +16,12 @@ columns_ref_map_expected: List[str] = ["initial_id_unconverted", "KEGG", "databa
 
 
 not_metabolic_reactions_pathways = [
-    "autophagy", "efferocytosis", "amoebiasis", "cgmp-pkg signaling",
-    "phagocytosis",  "necroptosis", "fc gamma", "ri signaling", "mapk",
+    "autophagy - other",  "amoebiasis", "cgmp-pkg signaling",
+    "phagocytosis",  "fc gamma", "ri signaling", "mapk",
     "wnt", "notch", "hedgehog",  "erbb", "tgf", "hippo", "vegf", "apelin",
-    "jak-stat", "kappa", "tnf", "ras s", "rap1",  "foxo", "pi3k-akt",
+    "jak-stat", "kappa", "tnf", "rap1",  "foxo",
     "rage signal", "oxytocin", "relaxin", "prolactin", "renin","cytokine",
-    "d signaling", "vegf", "gnrh", "salivary secretion", "acid secretion",
+     "gnrh", "salivary secretion", "acid secretion",
     "insulin secretion", "parathyroid", "aldosterone" ,"leukemia",
     "syndrome", "thyroid", "endocrine",  "cushing", "ovarian", "contraction",
     "atherosclerosis", "cardiomyo", "arthritis", "inflammatory", "platelet",
@@ -30,15 +30,15 @@ not_metabolic_reactions_pathways = [
     "trypanosomiasis", "shigellosis", "infection", "diabetes",
     "leishmania", "toxoplasmosis", "legionel", "malaria", "tuberculosis",
     "coccus", "virus", "virion", "viral", "measles", "dna adducts",
-    "meiosis", "checkpoint", "receptor", "resistance", "cell",
-    "pathways in cancer", "ferroptosis", "morphine addiction", "gentamicin",  # new
+    "meiosis", "checkpoint", "resistance", "cell",
+    "pathways in cancer", "morphine addiction", "gentamicin",  # new
     "xenobiotics", "mineral absorption", "digestion and absorption", # new
     "glucagon signaling", "taste transduction", "drug" # new
 ]
 # Explanation of 'not_metabolic_reactions_pathways': any pathway name
 # that contains the specified substrings above, is classified as being
 # NOT strictly associated to the sets of metabolic reactions.
-# Such substrings refer to disease, signaling, regulation or endocrine system.
+# Such substrings refer to disease, or generalistic sets or terms.
 
 
 supported_mappings: List[str] = ["LipidMaps",

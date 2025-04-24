@@ -46,14 +46,14 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
     """
     pd.options.mode.chained_assignment = None  # mute SettingWithCopyWarning
 
-    comma_plus_space = ", " ## caution, do not remove the space
+    delimiter_colon_plus_space = ", " ## caution, do not remove the space
 
     tmp1 = df[[mz_col, formula_col, molecule_ids_col]]
     tmp2 = df[[molecule_names_col, 'database']]
     tmp1[molecule_ids_col] = tmp1[molecule_ids_col
-                   ].str.split(comma_plus_space)
+                   ].str.split(delimiter_colon_plus_space)
     tmp2[molecule_names_col] = tmp2[molecule_names_col
-                   ].str.split(comma_plus_space)
+                   ].str.split(delimiter_colon_plus_space)
 
     tmp1 = tmp1.explode(molecule_ids_col)
     tmp2 = tmp2.explode(molecule_names_col)
