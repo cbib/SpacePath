@@ -102,9 +102,17 @@ if __name__ == "__main__":
     my_csv_table_path = "../datasets-parameters.tsv" #"../small-test-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
-    # start
-    datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
+    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  # "../../small_test.csv"
+    my_csv_table_path_2 = "../private-datasets-parameters.tsv"  # "../../small_test.csv"
+
+    df1 = pd.read_csv(my_csv_table_path_1, header=0,
                       index_col=None, sep='\t')
+    df2 = pd.read_csv(my_csv_table_path_2, header=0,
+                      index_col=None, sep='\t')
+    datasets_parameters_df = pd.concat([df1, df2])
+
+    # start
+
 
     me_refmap = zd.MetaboliteIdsMappings(
             data_dir=mydata_dir,
@@ -141,7 +149,7 @@ if __name__ == "__main__":
             mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
         print(adata_mz.uns["history"])
-        print("MANDATORY: take away bad quality m/z")
+        print("MANDATORY: take away bad quality m/z")  # todo: how to make an alert ?
         adata_mz = adata_mz[:,
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                    "mz"].astype(str).tolist()]
@@ -151,9 +159,6 @@ if __name__ == "__main__":
         me_annots.convert_ids_to_kegg(me_refmap.table)
         me_annots.treat_mz_multiplets(adata_mz)  # cleans .df of mz that are in a group having same KEGG id and are not top n=1 of variance (KEGG ids dependant)
 
-        #print("Mzs!!!!!", len(me_annots.df['mz'].unique()))
-
-        #print("Kegg?????", len(me_annots.df['KEGG'].unique()))
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
@@ -161,7 +166,7 @@ if __name__ == "__main__":
         mzno,  kgno = mz_and_kegg_compounds_none_pathway(pathwaysObj,
                                                         me_annots)
         save_detailed_table(adata_mz, mzno, kgno, me_annots, plot_folder,
-                            suffix="NotMapped")
+                            suffix="KEGG-NotMapped")
 
         # correct mapping
         mz_ok, kg_ok = give_list_kegg_mapped_ok(pathwaysObj, me_annots,
@@ -204,9 +209,12 @@ if __name__ == "__main__":
 
         name_sample.append(SAMPLE)
         mz_mapped_to_pathways.append(len(mz_ok))
-        kegg_compound_ids_to_mz_ratio_after_pathway_mapped.append(
-           len(set(kg_ok)) / len(set(mz_ok))
-        )
+        try:
+            kegg_compound_ids_to_mz_ratio_after_pathway_mapped.append(
+               len(set(kg_ok)) / len(set(mz_ok))
+            )
+        except:
+            kegg_compound_ids_to_mz_ratio_after_pathway_mapped.append(0.1)
         how_many_pathways.append(len(pws_obj_2.piled['pathway_id'].unique()))
 
 
@@ -215,6 +223,6 @@ if __name__ == "__main__":
         "mz_mapped_to_pathways":mz_mapped_to_pathways,
     "ratio_keggid_mz": kegg_compound_ids_to_mz_ratio_after_pathway_mapped,
     "pathways_number_final" : how_many_pathways    })
-    out_df.to_csv("../final_compounds_counts.csv")
+    out_df.to_csv("../final-KEGG-compounds-counts.csv")
 
 

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-df = pd.read_csv("../final_compounds_counts.csv", index_col=None)
+df = pd.read_csv("../final-KEGG-compounds-counts.csv", index_col=None)
 df = df.replace(0, np.nan)
 # out_df = pd.DataFrame({
 #     "sample_name": sample_name,
@@ -23,19 +23,20 @@ df["ratio_mz_pathway_count"] = df['mz_mapped_to_pathways'].to_numpy(
 #     df['pathways_number_final'] * 1/10)
 # df = df.sort_values("quality_metric", ascending=False)
 
-order_samples = ["MET-breast-cancer-1", "MET-skin-cancer-1",
-                 "MET-lung", "MET-stomach", "MET-gut", "MET-skin-cancer-2",
-                 "MET-brain-mouse", "MET-brain-rat", "MET-eye",
-                  "MET-heart", "UBcalibr2",
-                  "MET-kidney2","MET-kidney1", "MET-liver-cancer",
-                 "UBcalibr1", "UBcalibr4",  "MALDI_259_T",
-                 "MALDI_269_T", "MALDI_275_T", "MALDI_262_T", "MALDI_260_T",  "MALDI_248_T"]
+# order_samples = ["MET-breast-cancer-1", "MET-skin-cancer-1",
+#                  "MET-lung", "MET-stomach", "MET-gut", "MET-skin-cancer-2",
+#                  "MET-brain-mouse", "MET-brain-rat", "MET-eye",
+#                   "MET-heart", "UBcalibr2",
+#                   "MET-kidney2","MET-kidney1", "MET-liver-cancer",
+#                  "UBcalibr1", "UBcalibr4",  "MALDI_259_T",
+#                  "MALDI_269_T", "MALDI_275_T", "MALDI_262_T", "MALDI_260_T",  "MALDI_248_T"]
 df.index = df['sample_name'].tolist()
-df = df.loc[order_samples,: ]
+#df = df.loc[order_samples,: ]
 df['data_type'] = "Lipidomics"
 df.loc[df['sample_name'].str.startswith("MALDI"), "data_type"] = "SmallMolecules"
-df.loc[df['sample_name'] == "UBcalibr1", "data_type"] = "SmallMolecules"
-df.loc[df['sample_name'] == "UBcalibr4", "data_type"] = "SmallMolecules"
+datasmalls = ["TD-635-1-A", "TD-hemi-635-1-B", "LP-heart-mouse-2"]
+df.loc[df['sample_name'].isin(datasmalls), "data_type"] = "SmallMolecules"
+
 
 
 sns.set_theme(style="whitegrid")

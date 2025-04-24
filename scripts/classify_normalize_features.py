@@ -191,10 +191,10 @@ if __name__ == "__main__":
     """
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path = "../private-datasets-parameters.tsv"  # " ../small-test-parameters.tsv"
+    my_csv_table_path = "../public-datasets-parameters.tsv"  # " ../small-test-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
-    force_for_these = ["UB-breast-cancer-1"]    # keep empty if no sample to force   # e.g.  , "TD-635-1-A", "TD-635-1-B"   "TD-hemi-635-1-A", "TD-hemi-635-1-B"
+    force_for_these = []    # keep empty if no sample to force   # e.g.  , "TD-635-1-A", "TD-635-1-B"   "TD-hemi-635-1-A", "TD-hemi-635-1-B"
 
     # start
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,

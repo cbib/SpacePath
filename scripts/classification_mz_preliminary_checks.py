@@ -13,7 +13,7 @@ bad or good quality of m/z features
 """
 # define here my files and dirs
 mydata_dir = "../../data"
-my_csv_table_path = "../private-datasets-parameters.tsv"
+my_csv_table_path = "../public-datasets-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start
@@ -43,6 +43,8 @@ for i, row in datasets_parameters_df.iterrows():
         name=SAMPLE, data_dir=mydata_dir,
         subfolder=subfolder, annotation_files=anno_dict)
 
+    me_annots.load()
+
     adata_mz = ad.read_h5ad(filename=os.path.join(
         mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
     try:
@@ -56,6 +58,10 @@ for i, row in datasets_parameters_df.iterrows():
         print("Nothing to do for this sample.")
     elif  not "is_X_TIC_normalized" in adata_mz.uns.keys():
         print("no normalization yet applied")
+        me_annots, ok_mz_keep_part1 = part_a_filters(
+            me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff, SAMPLE,
+            plot_folder)
+        print("only figures produced, adata object intact")
     else:
         me_annots, ok_mz_keep_part1 = part_a_filters(
             me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff, SAMPLE, plot_folder)

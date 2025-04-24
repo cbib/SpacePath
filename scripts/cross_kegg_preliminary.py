@@ -14,9 +14,6 @@ import zonist.helpers as zh
 from bank4zonist.quantifs_methods import match_adata_mz_and_annots
 from bank4zonist.constants import provide_annotation_dict
 
-
-
-
 """
 """
 if __name__ == "__main__":
@@ -31,12 +28,17 @@ if __name__ == "__main__":
 
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path = "../private-datasets-parameters.tsv" #"../small-test-parameters.tsv"
     plot_parent_folder = "../../figures/"
+    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  # "../../small_test.csv"
+    my_csv_table_path_2 = "../private-datasets-parameters.tsv"  # "../../small_test.csv"
+
+    df1 = pd.read_csv(my_csv_table_path_1, header=0,
+                      index_col=None, sep='\t')
+    df2 = pd.read_csv(my_csv_table_path_2, header=0,
+                      index_col=None, sep='\t')
+    datasets_parameters_df = pd.concat([df1, df2])
 
     # start
-    datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
-                      index_col=None, sep='\t')
 
     me_refmap = zd.MetaboliteIdsMappings(
             data_dir=mydata_dir,
@@ -48,14 +50,12 @@ if __name__ == "__main__":
 
     print("\nDo XXXX across specified datasets")
 
-
-
     for i, row in datasets_parameters_df.iterrows():
         SAMPLE = row["dataset_name"]
         min_pathway_size = row["min_pathway_size"]
         print("\nSample: ", SAMPLE)
         subfolder = SAMPLE
-        plot_folder = os.path.join(plot_parent_folder, SAMPLE)
+        #plot_folder = os.path.join(plot_parent_folder, SAMPLE)
         annotations_to_use = row["annotations_to_use"].split(" ")
         anno_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
 
@@ -68,39 +68,41 @@ if __name__ == "__main__":
             mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
         print(adata_mz.uns["history"])
-        print("MANDATORY: take away bad quality m/z")
+        print("MANDATORY: take away bad quality m/z") # todo: how to make an alert ?
         adata_mz = adata_mz[:,
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                    "mz"].astype(str).tolist()]
 
         me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
+        me_annots.convert_ids_to_kegg(me_refmap.table)
+        me_annots.treat_mz_multiplets(
+            adata_mz)  # cleans .df of mz that are in a group having same KEGG id and are not top n=1 of variance (KEGG ids dependant)
 
         name_sample.append(SAMPLE)
 
         #print("!!", len(me_annots.no_translated['mz'].unique()))
         del adata_mz
-        for hoho in ['HMDB', 'LipidMaps']:
-            #print(hoho)
+        for annot_type in ['HMDB', 'LipidMaps']:
             sub_annots_df = me_annots.no_translated.loc[
-                            me_annots.no_translated['database'] == hoho, :]
+                            me_annots.no_translated['database'] == annot_type, :]
 
             sub_annots_piled = zh.spreadout_annotation_df(
                 sub_annots_df, mz_col="mz", formula_col="formula",
                 molecule_ids_col="moleculeIds", molecule_names_col="moleculeNames")
 
             sub_refs = me_refmap.table.loc[
-                       me_refmap.table['database'] == hoho, :]
+                       me_refmap.table['database'] == annot_type, :]
 
             poo = len(set(
                 sub_refs['initial_id_unconverted'].unique()).intersection(
                 set(sub_annots_piled['moleculeIds'].unique())
             ))
 
-            print("*", hoho, ":  can be mapped to a KEGG compound ids:", poo, "from a total of", len(sub_annots_piled['moleculeIds'].unique()))
-            if hoho == "HMDB":
+            print("*", annot_type, ":  can be mapped to a KEGG compound ids:", poo, "from a total of", len(sub_annots_piled['moleculeIds'].unique()))
+            if annot_type == "HMDB":
                 hmdb_ids.append(len(sub_annots_piled['moleculeIds'].unique()))
                 hmdb_mapped.append(poo)
-            elif hoho == "LipidMaps":
+            elif annot_type == "LipidMaps":
                 lipidmaps_ids.append(len(sub_annots_piled['moleculeIds'].unique()))
                 lipidmaps_mapped.append(poo)
 
@@ -111,7 +113,7 @@ if __name__ == "__main__":
     "LipidMaps identifiers all" : lipidmaps_ids,
     "LipidMaps ids having KEGG ids" : lipidmaps_mapped,
     })
-    out_df.to_csv("../initial_ids_compounds.csv")
+    out_df.to_csv("../initial-ids-compounds-KEGG.csv")
 
 
         # sub_annots_df = me_annots.no_translated.loc[me_annots.no_translated['database'] == "LipidMaps", :]

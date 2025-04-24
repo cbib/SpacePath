@@ -25,7 +25,8 @@ def transform2plot(df, mode="all"):
     df_pl = pd.concat([df1, df2], axis=0)
     return df_pl
 
-df = pd.read_csv("../initial_ids_compounds.csv")
+
+df = pd.read_csv("../initial-ids-compounds-KEGG.csv")
 df = df.replace(0, np.nan)
 
 df_pl = transform2plot(df, mode="all")
@@ -56,4 +57,4 @@ plt.margins(x=1)
 sns.despine(fig=None, ax=None,
             top=True, right=True, left=True, bottom=True, offset=None, trim=False)
 plt.tight_layout()
-plt.savefig("../initial_kegg_ids_conversion.pdf")
+plt.savefig("../initial-ids-compounds-KEGG.pdf")
