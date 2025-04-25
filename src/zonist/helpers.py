@@ -76,7 +76,7 @@ def pick_mz_quality_infos(df, mz_col: str, offsample_col: str,
 
 def convert_metabo_annots_tokegg(
         annotdf: pd.DataFrame,  mappings_ref_ids: pd.DataFrame,
-        molecule_ids_col: str, mz_col: str) -> pd.DataFrame:
+        molecule_ids_col: str, mz_col: str, usable_id: str="KEGG") -> pd.DataFrame:
     dfs_list = []
     common_notkegg_database = set(annotdf['database'].unique()).intersection(
         set(mappings_ref_ids['database'].unique()))
@@ -91,7 +91,7 @@ def convert_metabo_annots_tokegg(
         dfs_list.append(joined)
     # end for
     if "KEGG" in annotdf['database'].unique():
-        kegg_tmp_df = annotdf.loc[annotdf['database'] == "KEGG", :]
+        kegg_tmp_df = annotdf.loc[annotdf['database'] == usable_id, :]
         kegg_tmp_df = kegg_tmp_df.assign(KEGG=kegg_tmp_df[molecule_ids_col])
         dfs_list.append(kegg_tmp_df)
 
@@ -103,13 +103,13 @@ def convert_metabo_annots_tokegg(
     return final
 
 
-def identify_multi_mz_to_one_kegg(annotdf: pd.DataFrame,
-                                  mz_col: str) -> bool:
-    """True if multiple mz for one KEGG id exist in the annotation table"""
+def identify_multi_mz_to_one_compound(annotdf: pd.DataFrame,
+                                      mz_col: str, id_col: str) -> bool:
+    """True if multiple mz for one Compound id exist in the annotations df"""
     out_bool = False
-    df2 = annotdf[[mz_col, "KEGG"]]
+    df2 = annotdf[[mz_col, id_col]]
     df2 = df2.drop_duplicates()
-    df2 = df2.groupby("KEGG", as_index=False).size()
+    df2 = df2.groupby(id_col, as_index=False).size()
     df2 = df2.loc[df2['size'] >= 2, :].head()
     if df2.shape[0] > 0:
         out_bool = True
@@ -117,45 +117,62 @@ def identify_multi_mz_to_one_kegg(annotdf: pd.DataFrame,
     return out_bool
 
 
-def resolve_mz_multi_kegg(adata: ad.AnnData, df: pd.DataFrame) -> List[tuple]:
+def resolve_multimz_oneid(adata: ad.AnnData, df: pd.DataFrame,
+                          mz_col: str, id_col: str, criterion: str) -> List[tuple]:
     """
-    HMDB curators do efforts to map one-to-one, to KEGG ids.
-    However, still many HMDB ids match to one single KEGG id, yielding
-    multiple m/z <> repeated KEGG id in our piled table of annotations.
-    To resolve such multi-m/z > 1 KEGG group, this function keeps the
-    m/z (of such group) that has the highest variance of the quantifications.
+    In our piled table of annotations, an annotation error can yield
+    multiple m/z -> one compound
+       E.g: 188.4545 -> Fucose; 559.869 -> Fucose; 3345.8556 -> Fucose.
+    To resolve such errors, this function keeps the
+    m/z (of such compound) that has the highest variance (or Moran's I)
+    of the quantifications.
     output: List[tuple] a list of tuples: (mz (float), kegg (str))
     """
-    mean_arr, v_arr = sparsefuncs.mean_variance_axis(adata.X, axis=0)
-    adata.var = adata.var.assign(computed_variance = v_arr)
-    df2 = df.groupby("KEGG", as_index=False).size()
-    unique_kegg_ids = df2.loc[df2['size'] == 1, "KEGG"].tolist()
-    ok_mz_kegg_tuples = [tuple(t) for t in df.loc[
-        df['KEGG'].isin(unique_kegg_ids), ["mz", "KEGG"]].to_numpy()]
-    repeated_kegg_ids = df2.loc[df2['size'] >= 2, "KEGG"].unique()
+    if criterion == "variance":
+        mean_arr, v_arr = sparsefuncs.mean_variance_axis(adata.X, axis=0)
+        adata.var = adata.var.assign(computed_variance = v_arr)
+    elif criterion == "Moran":
+        if "moranI" not in list(adata.uns.keys()):
+            raise AssertionError("Could not find 'Moran' in adata.uns keys")
+    df2 = df.groupby(id_col, as_index=False).size()
+    unique_compound_ids = df2.loc[df2['size'] == 1, id_col].tolist()
+    ok_mz_id_tuples = [tuple(t) for t in df.loc[
+        df[id_col].isin(unique_compound_ids), [mz_col, id_col]].to_numpy()]
+    repeated_compound_ids = df2.loc[df2['size'] >= 2, id_col].unique()
     mz_redundant: List[str] = []
-    for a_kegg in repeated_kegg_ids:
-        multi_annot_df = df.loc[df["KEGG"] == a_kegg, :]
-        df_with_v_metric = adata.var.loc[
-               adata.var['mz'].isin(multi_annot_df["mz"].tolist()),:]
-        df_with_v_metric = df_with_v_metric.sort_values(
-            by='computed_variance', ascending=False)
-        mz_best = df_with_v_metric["mz"].tolist()[0] # first item mz keep
-        mz_redundant += df_with_v_metric["mz"].astype(str).tolist()[1:]
-        ok_mz_kegg_tuples.append([mz_best, a_kegg])
+
+    for one_id in repeated_compound_ids:
+        multi_annot_df = df.loc[df[id_col] == one_id, :]
+        if criterion == "variance":
+            df_with_v_metric = adata.var.loc[
+                   adata.var[mz_col].isin(multi_annot_df[mz_col].tolist()),:]
+            df_with_v_metric = df_with_v_metric.sort_values(
+                by='computed_variance', ascending=False)
+        elif criterion == "Moran":
+            df_with_v_metric = adata.uns['moranI'].copy()
+            df_with_v_metric[mz_col] = df_with_v_metric.index.astype(float).tolist()
+            df_with_v_metric = df_with_v_metric.loc[
+                df_with_v_metric[mz_col].isin(multi_annot_df[mz_col].tolist()), :]
+            df_with_v_metric = df_with_v_metric.sort_values(by='I', ascending=False)
+
+        mz_best = df_with_v_metric[mz_col].tolist()[0] # first item mz keep
+        mz_redundant += df_with_v_metric[mz_col].astype(str).tolist()[1:]
+        ok_mz_id_tuples.append([mz_best, one_id])
         # end for
-    return ok_mz_kegg_tuples, mz_redundant
+    return ok_mz_id_tuples, mz_redundant
 
 
-def compute_one_to_one_mz_keggid_df(annotdf: pd.DataFrame, adata_mz: ad.AnnData,
-                                       mz_col: str) -> pd.DataFrame:
-    ok_mz_kegg_tuples, mz_redundant = resolve_mz_multi_kegg(adata_mz, annotdf)
+def compute_one_to_one_mz_id_df(annotdf: pd.DataFrame, adata_mz: ad.AnnData,
+                                       mz_col: str, id_col: str,
+                                criterion: str) -> pd.DataFrame:
+    ok_mz_kegg_tuples, mz_redundant = resolve_multimz_oneid(
+        adata_mz, annotdf, mz_col, id_col, criterion)
     annotdf["keep"] = 0
     for tup in ok_mz_kegg_tuples:
         mz_i = tup[0]
         keggid = tup[1]
-        annotdf.loc[(annotdf["mz"] == mz_i) & (
-                    annotdf["KEGG"] == keggid), "keep"] = 1
+        annotdf.loc[(annotdf[mz_col] == mz_i) & (
+                    annotdf[id_col] == keggid), "keep"] = 1
 
     annotdf = annotdf.loc[annotdf["keep"] == 1]
     annotdf = annotdf.drop(columns=["keep"])
