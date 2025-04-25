@@ -286,6 +286,7 @@ def match_adata_mz_and_annots(annotationsObj: MetabolomeAnnotations, adata_mz: a
         .no_translated
     making them match perfectly, in terms of  m/z features.
     """
+    # todo: add a check of adata_mz to verify that only good quality features are present in adata_mz (checks if all values in adata_mz.var['final_quality'] are "good")
     if not isinstance(annotationsObj, MetabolomeAnnotations):
         raise AssertionError("error: the first argument must be the annotation object!")
     me_annots = annotationsObj.model_copy()  # copy is deprecated for pydantic classes
@@ -296,6 +297,11 @@ def match_adata_mz_and_annots(annotationsObj: MetabolomeAnnotations, adata_mz: a
         me_annots.preloaded['mz'].isin(okmz),:]
     me_annots.no_translated = me_annots.no_translated.loc[
         me_annots.no_translated['mz'].isin(okmz),:]
+    try:
+        me_annots.df = me_annots.df.loc[
+                                  me_annots.df['mz'].isin(okmz), :]
+    except:
+        pass
     adata_mz = adata_mz[:, np.array(sorted(okmz), dtype=str)]
 
     return me_annots, adata_mz

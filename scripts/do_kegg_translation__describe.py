@@ -16,32 +16,32 @@ from bank4zonist.constants import provide_annotation_dict
 from bank4zonist.visualization import *
 
 
-def mz_and_kegg_compounds_none_pathway(pathwaysObj, me_annots):
-    initial_kegg_all = me_annots.df['KEGG'].unique()
+def mz_and_compounds_none_pathway(pathwaysObj, me_annots, id_col="KEGG"):
+    initial_kegg_all = me_annots.df[id_col].unique()
     initial_mz_all = me_annots.df['mz'].unique()
     pathways_o_2, annts2 = zm.SyncPathwaysAndAnnots.run(
         pathwaysObj.model_copy(),
         me_annots.model_copy(),
         min_pathway_size=1,
-        max_pathway_size=200)
+        max_pathway_size=200, mode="mz_aware")
 
-    not_mapping_kegg = set(initial_kegg_all) - set(annts2.df['KEGG'].unique())
+    not_mapping_kegg = set(initial_kegg_all) - set(annts2.df[id_col].unique())
     not_mapping_mz = set(initial_mz_all) - set(annts2.df['mz'].unique())
 
     return [str(u) for u in not_mapping_mz], list(not_mapping_kegg),
 
 
-def give_list_one_single_kegg_in_any_pathway(pathwaysObj, me_annots):
+def give_list_one_single_compound_in_any_pathway(pathwaysObj, me_annots, id_col="KEGG"):
     p2, m2 = zm.SyncPathwaysAndAnnots.run(
         pathwaysObj.model_copy(),
         me_annots.model_copy(),
         min_pathway_size=1,
-        max_pathway_size=1)
+        max_pathway_size=1, mode="mz_aware")
 
-    return [str(u) for u in m2.df["mz"].unique()], m2.df["KEGG"].unique()
+    return [str(u) for u in m2.df["mz"].unique()], m2.df[id_col].unique()
 
 
-def give_list_kegg_mapped_ok(pathwaysObj, me_annots, min_pathway_size):
+def give_list_compound_mapped_ok(pathwaysObj, me_annots, min_pathway_size, id_col="KEGG"):
 
     #zm.SyncPathwaysAndAnnotsConfig.mode = "mz_aware"  # TODO: use ?
 
@@ -53,11 +53,11 @@ def give_list_kegg_mapped_ok(pathwaysObj, me_annots, min_pathway_size):
         mode="mz_aware"
     )
 
-    return [str(u) for u in m2.df["mz"].unique()], m2.df["KEGG"].unique()
+    return [str(u) for u in m2.df["mz"].unique()], m2.df[id_col].unique()
 
 
 def save_detailed_table(adata_mz, the_mz_list, the_kegg_list, me_annots, plot_folder,
-                        suffix: str):
+                        SAMPLE, suffix: str, id_col="KEGG"):
     print(f"Saving things {suffix}")
     out_df = adata_mz.var.copy()
     out_df = out_df.loc[out_df['mz'].astype(str).isin(the_mz_list), :]
@@ -78,7 +78,7 @@ def save_detailed_table(adata_mz, the_mz_list, the_kegg_list, me_annots, plot_fo
         out_df[col] = tmp[col].tolist()
     out_df['the_ids'] = ''
     for i, r in out_df.iterrows():
-        ki = me_annots.df.loc[me_annots.df['mz'] == r['mz'], "KEGG"].tolist()
+        ki = me_annots.df.loc[me_annots.df['mz'] == r['mz'], id_col].tolist()
         curr_kegg_ids = list(set(the_kegg_list).intersection(set(
             ki )))
         out_df.loc[out_df['mz']==r['mz'], 'the_ids'] = " ".join(curr_kegg_ids)
@@ -157,35 +157,37 @@ if __name__ == "__main__":
         me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
 
         me_annots.convert_ids_to_kegg(me_refmap.table)
-        me_annots.treat_mz_multiplets(adata_mz)  # cleans .df of mz that are in a group having same KEGG id and are not top n=1 of variance (KEGG ids dependant)
+        me_annots.treat_mz_multiplets(adata_mz, criterion="Moran")  # cleans .df of mz that are in a group having same KEGG id and are not top n=1 of variance (KEGG ids dependant)
 
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
         # none mapping
-        mzno,  kgno = mz_and_kegg_compounds_none_pathway(pathwaysObj,
-                                                        me_annots)
+        mzno,  kgno = mz_and_compounds_none_pathway(pathwaysObj,
+                                                    me_annots)
         save_detailed_table(adata_mz, mzno, kgno, me_annots, plot_folder,
-                            suffix="KEGG-NotMapped")
+                            SAMPLE, suffix="KEGG-NotMapped")
 
         # correct mapping
-        mz_ok, kg_ok = give_list_kegg_mapped_ok(pathwaysObj, me_annots,
-                                                min_pathway_size=min_pathway_size)
+        mz_ok, kg_ok = give_list_compound_mapped_ok(pathwaysObj, me_annots,
+                                                    min_pathway_size=min_pathway_size)
         save_detailed_table(adata_mz, mz_ok, kg_ok, me_annots, plot_folder,
-                            suffix="Mapped")
+                            SAMPLE, suffix="KEGG-Mapped")
 
         # oneTOone mapping
-        mz_one, kg_one = give_list_one_single_kegg_in_any_pathway(pathwaysObj, me_annots)
+        mz_one, kg_one = give_list_one_single_compound_in_any_pathway(pathwaysObj, me_annots)
         mz_one = list(set(mz_one) - set(mz_ok))
         kg_one = list(set(kg_one) - set(kg_ok))
         save_detailed_table(adata_mz, mz_one, kg_one, me_annots, plot_folder,
-                            suffix="SinglesMapped")
+                            SAMPLE, suffix="KEGG-SinglesMapped")
 
         pws_obj_2, annots_2 = zm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
             me_annots.model_copy(),
             min_pathway_size=min_pathway_size,
-            max_pathway_size=200)
+            max_pathway_size=200,
+            mode="mz_aware"
+        )
 
         print("one mz : one pw (not passed)")
         print("oneTOone ", len(mz_one))

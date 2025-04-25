@@ -39,9 +39,7 @@ size_range_markers2 = (df_pl2['amount'].min() / 10, df_pl2['amount'].max() / 10)
 
 
 sns.set_style("whitegrid")
-plt.figure(figsize=(4.8
-
-                    ,11))
+plt.figure(figsize=(4.8 , 11))
 ax = sns.scatterplot(df_pl, x="database", y="sample_name", size="amount",
                 lw=0.4, sizes = size_range_markers1, #sizes=(200, 1000),
                 color="gray", alpha=0.1,

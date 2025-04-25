@@ -38,7 +38,6 @@ datasmalls = ["TD-635-1-A", "TD-hemi-635-1-B", "LP-heart-mouse-2"]
 df.loc[df['sample_name'].isin(datasmalls), "data_type"] = "SmallMolecules"
 
 
-
 sns.set_theme(style="whitegrid")
 
 # Make the PairGrid

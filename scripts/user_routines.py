@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from bank4zonist.quantifs_methods import match_adata_mz_and_annots, verification
 
 def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
-                               min_pw_size=1, max_pw_size=100):
+                               min_pw_size=1, max_pw_size=100):  # todo: deprecate this!
     # reference mappings are the same for all my projects
     me_refmap = zd.MetaboliteIdsMappings(
         data_dir=mydata_dir,
@@ -40,7 +40,8 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
     pathwaysObj, me_annots = zm.SyncPathwaysAndAnnots.run(pathwaysObj,
                                                           me_annots,
                                                           min_pathway_size=min_pw_size,
-                                                          max_pathway_size=max_pw_size)
+                                                          max_pathway_size=max_pw_size,
+                                                          mode=TOIMPLEMENT)
     ll = [str(z) for z in sorted(me_annots.df["mz"].astype(float).unique())]
 
     adata_mz = adata_mz[:, ll].copy()  # todo this is NOT sync, but like so

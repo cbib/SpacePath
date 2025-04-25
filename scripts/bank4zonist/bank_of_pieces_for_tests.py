@@ -135,10 +135,7 @@ local_cosine_sim = cosine_similarity(np.array(tmp_mx1),
 #                 # we do not touch spot 2
 ##
 
-pws01, anns01 = zm.SyncPathwaysAndAnnots.run(pathwaysObj.model_copy(),
-                                             me_annots.model_copy(),
-                                             min_pathway_size=1,
-                                             max_pathway_size=1)
+
 
 # print(len(pws01.piled['pathway_id'].tolist()))
 # print(len(pws01.piled['pathway_id'].unique()))

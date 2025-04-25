@@ -76,8 +76,7 @@ if __name__ == "__main__":
         me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
         me_annots.convert_ids_to_kegg(me_refmap.table)
         me_annots.treat_mz_multiplets(
-            adata_mz)  # cleans .df of mz that are in a group having same KEGG id and are not top n=1 of variance (KEGG ids dependant)
-
+            adata_mz, criterion="Moran")  # cleans .df of mz that are in a group having same KEGG id and are not top n=1 of variance (KEGG ids dependant)
         name_sample.append(SAMPLE)
 
         #print("!!", len(me_annots.no_translated['mz'].unique()))
@@ -105,6 +104,7 @@ if __name__ == "__main__":
             elif annot_type == "LipidMaps":
                 lipidmaps_ids.append(len(sub_annots_piled['moleculeIds'].unique()))
                 lipidmaps_mapped.append(poo)
+
 
     out_df = pd.DataFrame({
         "sample_name": name_sample,

@@ -49,13 +49,7 @@ def plot_mz_given_quality_metrics(df, SAMPLE, plot_folder,
     df['FDR'] = pd.Categorical(df['FDR'].tolist(),
                                categories= fdr_categories)
     sns.set_theme(style="whitegrid", font_scale=1.2)
-    mypalette = ["#580F41", "#74414D",  "#907359", "#cfcb94"] # "#F3EBC0"
-    # sns.scatterplot(df, x="msm", y="rawOffSampleProb",
-    #                 hue="FDR",  alpha=.9,
-    #                 s=30,
-    #                 palette=sns.color_palette(mypalette, len(mypalette)),
-    #                 ).legend(loc="upper left",title="FDR",
-    #                          bbox_to_anchor=(1,1.02))
+    mypalette = ["#580F41", "#74414D",  "#907359", "#cfcb94"]
     ax = sns.scatterplot(df.loc[df['FDR'] == '0.5', :],
                          x="msm", y="rawOffSampleProb",
                          hue="FDR", alpha=.9, zorder=1,
@@ -101,7 +95,7 @@ def part_a_filters(me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff,
         me_annots.mz_quality['quality_msm_off_fdr'] == "good", "mz"].astype(
         str).tolist()
     text_notice = f"valid $m/z$\n n = {len(ok_mz_keep_part1)}"
-    plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,
+    plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,  # todo: take the plot part outside, and call correctly in all usages
                                   plot_folder,
                                   msm_cutoff, offSample_cutoff, text_notice)
     print(f"A total of {len(set(ok_mz_keep_part1))} m/z pass MSM, offSample and FDR cutoffs.")
@@ -191,7 +185,7 @@ if __name__ == "__main__":
     """
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path = "../public-datasets-parameters.tsv"  # " ../small-test-parameters.tsv"
+    my_csv_table_path = "../small-test-parameters.tsv"  # " ../small-test-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
     force_for_these = []    # keep empty if no sample to force   # e.g.  , "TD-635-1-A", "TD-635-1-B"   "TD-hemi-635-1-A", "TD-hemi-635-1-B"
