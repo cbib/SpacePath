@@ -21,9 +21,6 @@ my_csv_table_path = "../small-test-parameters.tsv"  # " ../small-test-parameters
 plot_parent_folder = "../../figures/"
 
 
-
-
-
 # start
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                                      index_col=None, sep='\t')
@@ -44,9 +41,9 @@ pathwaysObj = zd.MetabolicPathways(
 pathwaysObj.molecule_id_type = "KEGG"
 pathwaysObj.load()
 
-pathwaysObj.pathways_ids.to_csv("allwikilist.csv")
+#pathwaysObj.pathways_ids.to_csv("allwikilist.csv")
 
-print(kio)
+
 
 print("\nMarks bad quality m/z across specified datasets (.var property)")
 
@@ -79,7 +76,7 @@ for i, row in datasets_parameters_df.iterrows():
     print(me_annots.df.head())
 
     me_annots.convert_ids_to_kegg(me_refmap.table)
-    me_annots.treat_mz_multiplets(adata_mz, criterion="Moran")
+    me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())
 
     print("ok")
     initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.

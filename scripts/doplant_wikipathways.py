@@ -21,7 +21,6 @@ my_csv_table_path = "../small-test-parameters.tsv"  # " ../small-test-parameters
 plot_parent_folder = "../../figures/"
 
 
-
 # start
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                                      index_col=None, sep='\t')
@@ -51,9 +50,6 @@ for i, row in datasets_parameters_df.iterrows():
     me_annots.usable_id = "moleculeIds"   # default is KEGG
     me_annots.load()
 
-
-
-
     adata_mz = ad.read_h5ad(filename=os.path.join(
         mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
@@ -64,13 +60,14 @@ for i, row in datasets_parameters_df.iterrows():
                adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                "mz"].astype(str).tolist()]
 
+    adata_mz
+
     me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
     print(me_annots.df.head())
 
     me_annots.verify()
-    me_annots.treat_mz_multiplets(adata_mz, criterion="Moran")
-
-    print("ok")
+    me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())
+    print("loading pathways dict")
     initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
     # none mapping

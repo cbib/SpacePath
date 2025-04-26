@@ -157,23 +157,19 @@ if __name__ == "__main__":
         me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
 
         me_annots.convert_ids_to_kegg(me_refmap.table)
-        me_annots.treat_mz_multiplets(adata_mz, criterion="Moran")  # cleans .df of mz that are in a group having same KEGG id and are not top n=1 of variance (KEGG ids dependant)
-
+        me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())  #
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
-
         # none mapping
-        mzno,  kgno = mz_and_compounds_none_pathway(pathwaysObj,
-                                                    me_annots)
+        mzno, kgno = mz_and_compounds_none_pathway(pathwaysObj,
+                                                   me_annots)
         save_detailed_table(adata_mz, mzno, kgno, me_annots, plot_folder,
                             SAMPLE, suffix="KEGG-NotMapped")
-
         # correct mapping
         mz_ok, kg_ok = give_list_compound_mapped_ok(pathwaysObj, me_annots,
                                                     min_pathway_size=min_pathway_size)
         save_detailed_table(adata_mz, mz_ok, kg_ok, me_annots, plot_folder,
                             SAMPLE, suffix="KEGG-Mapped")
-
         # oneTOone mapping
         mz_one, kg_one = give_list_one_single_compound_in_any_pathway(pathwaysObj, me_annots)
         mz_one = list(set(mz_one) - set(mz_ok))

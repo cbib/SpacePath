@@ -281,9 +281,10 @@ def match_adata_mz_and_annots(annotationsObj: MetabolomeAnnotations, adata_mz: a
     """
     Updates:
      - adata_mz
-     - the two following attributes of the annotations object:
+     - the  following attributes of the annotations object:
         .preloaded
         .no_translated
+        .df (if exists)
     making them match perfectly, in terms of  m/z features.
     """
     # todo: add a check of adata_mz to verify that only good quality features are present in adata_mz (checks if all values in adata_mz.var['final_quality'] are "good")
@@ -294,35 +295,17 @@ def match_adata_mz_and_annots(annotationsObj: MetabolomeAnnotations, adata_mz: a
         set(me_annots.no_translated["mz"].astype(float).unique()))
     )
     me_annots.preloaded = me_annots.preloaded.loc[
-        me_annots.preloaded['mz'].isin(okmz),:]
+        me_annots.preloaded['mz'].isin(okmz),:].copy()
     me_annots.no_translated = me_annots.no_translated.loc[
-        me_annots.no_translated['mz'].isin(okmz),:]
+        me_annots.no_translated['mz'].isin(okmz),:].copy()
     try:
         me_annots.df = me_annots.df.loc[
-                                  me_annots.df['mz'].isin(okmz), :]
+                                  me_annots.df['mz'].isin(okmz), :].copy()
     except:
         pass
-    adata_mz = adata_mz[:, np.array(sorted(okmz), dtype=str)]
+    adata_mz = adata_mz[:, np.array(sorted(okmz), dtype=str)].copy()
 
     return me_annots, adata_mz
-
-
-def update_annotation_tomatch_adatamz(annotationsObj: MetabolomeAnnotations, adata_mz: ad.AnnData):  # zd.MetabolomeAnnotations
-    # update the annotations to match with the adata_mz mz features
-    """
-    Updates two attributes of the annotations object:
-        .preloaded
-        .no_translated
-      making them match with the mz features of adata_mz object
-    """
-    me_annots = annotationsObj.model_copy()  # copy is deprecated for pydantic classes
-    okmz = adata_mz.var['mz'].astype(float).tolist()
-    me_annots.preloaded = me_annots.preloaded.loc[
-        me_annots.preloaded['mz'].isin(okmz),:]
-    me_annots.no_translated = me_annots.no_translated.loc[
-        me_annots.no_translated['mz'].isin(okmz),:]
-
-    return me_annots
 
 
 def verification(adata_mz, me_annots: MetabolomeAnnotations):

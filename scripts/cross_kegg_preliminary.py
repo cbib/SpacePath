@@ -75,8 +75,8 @@ if __name__ == "__main__":
 
         me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
         me_annots.convert_ids_to_kegg(me_refmap.table)
-        me_annots.treat_mz_multiplets(
-            adata_mz, criterion="Moran")  # cleans .df of mz that are in a group having same KEGG id and are not top n=1 of variance (KEGG ids dependant)
+        me_annots.keep_unique_mz_id_tuples(
+            adata_mz.var.copy())
         name_sample.append(SAMPLE)
 
         #print("!!", len(me_annots.no_translated['mz'].unique()))

@@ -140,7 +140,8 @@ def part_b_filters_with_autocorr(adata_mz, ok_part1, me_annots, moran_I_cutoff, 
     all_quality_df = custom_join_left(
         all_quality_df, me_annots.mz_quality[
             ['mz', 'msm', 'rawOffSampleProb', 'fdr',
-             'quality_msm_off_fdr']], keycol='mz')
+             'quality_msm_off_fdr' # todo: add formula? this will go into .var
+             ]], keycol='mz')
 
     print("(Moran's metrics are only computed for the m/z that passed the a) filters)")
     copy_mz = adata_mz[:, ok_part1].copy()   # only compute moran for the ok_part1 features
@@ -232,7 +233,6 @@ if __name__ == "__main__":
             me_annots.load()  # load annotations
             me_annots, adata_mz = match_adata_mz_and_annots(me_annots,
                                                             adata_mz)
-
             if (normalize_yes_no.lower() in ['y', 'yes']) and (
                     not "is_X_TIC_normalized" in adata_mz.uns.keys()):
                 adata_mz.layers['raw_X'] = adata_mz.X.copy()

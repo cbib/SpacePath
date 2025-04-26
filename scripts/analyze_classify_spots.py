@@ -60,7 +60,6 @@ if __name__ == "__main__":
 
     force_for_these = ["LP-example0"] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
 
-
     print("\nRunning spots classification (with option to select or not) across specified datasets")
 
     for i, row in datasets_parameters_df.iterrows():

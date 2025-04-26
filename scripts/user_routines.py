@@ -26,7 +26,7 @@ def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
     print("Excludes m/z with out-of-tissue probability >=", prob_out)
     me_annots.discard_out_of_tissue_mz(prob_out=prob_out)
     me_annots.convert_ids_to_kegg(me_refmap.table)
-    me_annots.treat_mz_multiplets(adata_mz)
+    me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())
 
     ## pathways are also the same for all my projects
     pathwaysObj = zd.MetabolicPathways(
