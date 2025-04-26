@@ -64,10 +64,10 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
 
 def pick_mz_quality_infos(df, mz_col: str, offsample_col: str,
                          total_intens_col: str, fdr_column: str,
-                         msm_column,  database) -> pd.DataFrame:
+                         msm_column: str,  formula_col: str) -> pd.DataFrame:
     """ """
     df = df[[mz_col, offsample_col, total_intens_col, fdr_column,
-             msm_column,  database]]
+             msm_column,  formula_col]]
     df = df.sort_values(by=[mz_col, offsample_col, fdr_column, msm_column],
                         ascending=[True, True, True, False])
     df = df.drop_duplicates(subset=[mz_col], keep='first')
@@ -117,8 +117,60 @@ def identify_multi_mz_to_one_compound(annotdf: pd.DataFrame,
     return out_bool
 
 
-def resolve_multimz_oneid(adata: ad.AnnData, df: pd.DataFrame,
-                          mz_col: str, id_col: str, criterion: str) -> List[tuple]:
+def compute_compounds_n_per_mz(var_df, ann_df, mz_col, id_col):
+    nn = list()
+    for i, row in var_df.iterrows():
+        mzfloat = float(row[mz_col])
+        ids_l = ann_df.loc[ann_df[mz_col].astype(float) == mzfloat, id_col].unique()
+        nn.append(len(ids_l))
+
+    var_df['compound_ids_n__per_mz'] = nn
+
+    return var_df
+
+
+def get_approved_mz_id_pairs(ann_df: pd.DataFrame, var_df: pd.DataFrame,
+                             mz_col: str, id_col: str, msm_col: str, fdr_col:str, offsam: str) -> List[tuple]:
+    """
+    Provides a final list of approved (m/z, compoundID) tuples.
+    Note:
+        In our piled table of annotations, an annotation error can yield
+        (multiple m/z, one compound) pairs or tuples. E.g:
+            (188.4545,  Fucose), (559.869, Fucose), (345.8556, Fucose).
+        in such case, retains only the best pairs by quality criteria.
+    output: List[tuple] a list of tuples: (mz (float), id (str))
+    """
+    ann_df = ann_df.loc[ann_df[mz_col].astype(float).isin(var_df[mz_col].astype(float)), :]
+    df2 = ann_df.groupby(id_col, as_index=False).size()
+    unique_compound_ids = df2.loc[df2['size'] == 1, id_col].tolist()
+    ok_mz_id_tuples = [tuple(t) for t in ann_df.loc[
+        ann_df[id_col].isin(unique_compound_ids), [mz_col, id_col]].to_numpy()]
+
+    var_df = compute_compounds_n_per_mz(var_df, ann_df, mz_col, id_col)
+    compounds_multiassigned = df2.loc[df2['size'] >= 2, id_col].unique()
+    var_df = var_df.loc[var_df['compound_ids_n__per_mz'] >= 1, :]
+    for one_id in compounds_multiassigned:
+        multi_annot_df = ann_df.loc[ann_df[id_col] == one_id, :]
+        curr_qual = var_df.loc[var_df[mz_col].astype(float).isin(
+            multi_annot_df[mz_col].astype(float)), :].copy()
+        if 'I' in curr_qual.columns :
+            curr_qual = curr_qual.sort_values(
+                by=['compound_ids_n__per_mz', msm_col, fdr_col, offsam, 'I'], # always respect this order !
+                ascending=[True, False, True, True, False])
+        else:
+            curr_qual = curr_qual.sort_values(
+                by=['compound_ids_n__per_mz', msm_col, fdr_col, offsam], # in this order !
+                ascending=[True, False, True, True])
+        #if curr_qual
+        #else:
+        its_best_mz = float(curr_qual.iloc[0][mz_col])
+        ok_mz_id_tuples.append((its_best_mz, one_id))
+
+    return ok_mz_id_tuples
+
+
+def DEPRECATED_multimz_oneid(adata: ad.AnnData, df: pd.DataFrame,  # todo: delete this function
+                             mz_col: str, id_col: str, criterion: str) -> List[tuple]:
     """
     In our piled table of annotations, an annotation error can yield
     multiple m/z -> one compound
@@ -139,7 +191,6 @@ def resolve_multimz_oneid(adata: ad.AnnData, df: pd.DataFrame,
     ok_mz_id_tuples = [tuple(t) for t in df.loc[
         df[id_col].isin(unique_compound_ids), [mz_col, id_col]].to_numpy()]
     repeated_compound_ids = df2.loc[df2['size'] >= 2, id_col].unique()
-    mz_redundant: List[str] = []
 
     for one_id in repeated_compound_ids:
         multi_annot_df = df.loc[df[id_col] == one_id, :]
@@ -156,17 +207,18 @@ def resolve_multimz_oneid(adata: ad.AnnData, df: pd.DataFrame,
             df_with_v_metric = df_with_v_metric.sort_values(by='I', ascending=False)
 
         mz_best = df_with_v_metric[mz_col].tolist()[0] # first item mz keep
-        mz_redundant += df_with_v_metric[mz_col].astype(str).tolist()[1:]
         ok_mz_id_tuples.append([mz_best, one_id])
         # end for
-    return ok_mz_id_tuples, mz_redundant
+    return ok_mz_id_tuples
 
 
-def compute_one_to_one_mz_id_df(annotdf: pd.DataFrame, adata_mz: ad.AnnData,
-                                       mz_col: str, id_col: str,
-                                criterion: str) -> pd.DataFrame:
-    ok_mz_kegg_tuples, mz_redundant = resolve_multimz_oneid(
-        adata_mz, annotdf, mz_col, id_col, criterion)
+def warrant__one_to_one_mz_id(annotdf: pd.DataFrame,
+                             var_df, #
+                              mz_col: str, id_col: str, msm_col: str, fdr_col:str, offsam: str
+                              ) -> pd.DataFrame:
+    ok_mz_kegg_tuples = get_approved_mz_id_pairs(
+        annotdf, var_df, mz_col, id_col, msm_col, fdr_col, offsam)
+
     annotdf["keep"] = 0
     for tup in ok_mz_kegg_tuples:
         mz_i = tup[0]
@@ -174,10 +226,11 @@ def compute_one_to_one_mz_id_df(annotdf: pd.DataFrame, adata_mz: ad.AnnData,
         annotdf.loc[(annotdf[mz_col] == mz_i) & (
                     annotdf[id_col] == keggid), "keep"] = 1
 
-    annotdf = annotdf.loc[annotdf["keep"] == 1]
+    rejected = annotdf.loc[annotdf["keep"] == 0, :].copy()
+    annotdf = annotdf.loc[annotdf["keep"] == 1, :].copy()
     annotdf = annotdf.drop(columns=["keep"])
 
-    return annotdf, mz_redundant
+    return annotdf
 
 
 def prettify_gmt(gmt_df, undesired_name_substring: Union[str, None]):

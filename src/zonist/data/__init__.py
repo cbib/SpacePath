@@ -172,7 +172,7 @@ class MetabolomeAnnotations(Dataset):
             self.mz_quality = helpers.pick_mz_quality_infos(
                 self.preloaded, self.mz_col, self.offsample_column,
                 self.total_intens_col, self.fdr_column, self.msm_column,
-                "database"
+                self.formula_col
             )
             if self.mz_quality[self.offsample_column].isnull().all():
                 logger.warning("Useless: %s is NaN", self.offsample_column)
@@ -213,19 +213,33 @@ class MetabolomeAnnotations(Dataset):
             logger.info('[discard_out_of_tissue_mz]: Excluded %s m/z '
                         'features that are "out-of-the-tissue"', len(mz_out))
 
-    def treat_mz_multiplets(self, adata_mz: ad.AnnData,
-                            criterion: str = "variance"):
-        assert criterion in ['Moran', 'variance'], "criterion not recognized"
-        assert is_numeric_dtype(adata_mz.var[
+    def keep_unique_mz_id_tuples(self, var_df: pd.DataFrame):
+        basic_expected_cols = [self.mz_col, self.fdr_column,
+                               self.offsample_column,
+                               self.msm_column]
+        if not len(set(basic_expected_cols).intersection(
+                set(var_df.columns))) == len(basic_expected_cols):
+            logger.error("Error, %s are expected in var_df",
+                         basic_expected_cols)
+            raise AssertionError
+        if "I" in var_df.columns:
+            logger.info("Moran's 'I' in var_df will be also used")
+        assert is_numeric_dtype(var_df[
                                     self.mz_col]), "the 'mz' column in adata.var must be of type float"
-        assert len(set(adata_mz.var[self.mz_col].tolist()).intersection(
+        assert len(set(var_df[self.mz_col].tolist()).intersection(
             set(self.df[self.mz_col].unique()))) == len(self.df[
-                                                     self.mz_col].unique()), "Error, no mz match"  # todo: update when moved to class
-        logger.info('[treat_mz_multiplets]: if "multi m/z to one compound id"'
-                    ' , for such id, the m/z with the top variance is kept.')
-
-        self.df, self.mz_redundant = helpers.compute_one_to_one_mz_id_df(
-            self.df, adata_mz, self.mz_col, self.usable_id, criterion)
+                                                            self.mz_col].unique()), "Error, no perfect match with var_df mz"
+        logger.info(
+            '[keep_unique_mz_id_tuples]: if multi m/z to one-compound-id '
+            'tuples, resolve by selecting the best (m/z, id) tuple')
+        # if self.mz_quality.shape == (0,0):
+        #     self.pull_mz_quality_df()
+        #     self.mz_quality = self.mz_quality.loc[self.mz_quality[
+        #         self.mz_col].astype(float).isin(
+        #         self.df[self.mz_col].astype(float)), :]
+        self.df = helpers.warrant__one_to_one_mz_id(self.df, var_df,
+            self.mz_col, self.usable_id, self.msm_column,
+            self.fdr_column, self.offsample_column)
 
     def convert_ids_to_kegg(self, ref_table: pd.DataFrame):   # todo: how to mark that only if willing to use KEGG compounds idss
         logger.info('Translating ids in the metabolome annotation'
@@ -251,11 +265,11 @@ class MetabolomeAnnotations(Dataset):
             excess_mz_bool: bool = helpers.identify_multi_mz_to_one_compound(
                 self.df, self.mz_col, self.usable_id)
             if excess_mz_bool:
-                # logger.warning("Please run treat_mz_multiplets(anndata_mz)")
+                # logger.warning("Please run keep_unique_mz_id_tuples(anndata_mz)")
                 # print(message_multimz)
                 message_multimz = (
                     "Identified 'multi m/z to one KEGGid' cases!: Please run "
-                    "'<metabo_annotations>.treat_mz_multiplets(anndata_mz)'.")
+                    "'<metabo_annotations>.keep_unique_mz_id_tuples(anndata_mz)'.")
                 logger.warning(message_multimz)
                 print(message_multimz)
         except Exception as e:
