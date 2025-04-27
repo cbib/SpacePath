@@ -61,7 +61,6 @@ for i, row in datasets_parameters_df.iterrows():
     me_annots.usable_id = "KEGG"   # default is KEGG
     me_annots.load()
 
-
     adata_mz = ad.read_h5ad(filename=os.path.join(
         mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
@@ -76,6 +75,7 @@ for i, row in datasets_parameters_df.iterrows():
     print(me_annots.df.head())
 
     me_annots.convert_ids_to_kegg(me_refmap.table)
+
     me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())
 
     print("ok")

@@ -10,6 +10,7 @@ import seaborn as sns
 import squidpy as sq
 import zonist.data as zd
 import zonist.method as zm
+import zonist.helpers as zh
 
 from bank4zonist.quantifs_methods import match_adata_mz_and_annots
 from bank4zonist.constants import provide_annotation_dict
@@ -69,6 +70,23 @@ for i, row in datasets_parameters_df.iterrows():
     me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())
     print("loading pathways dict")
     initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
+
+    p1, m1 = zm.SyncPathwaysAndAnnots.run(
+        pathwaysObj.model_copy(),
+        me_annots.model_copy(),
+        min_pathway_size=1,
+        max_pathway_size=1)
+
+
+    print(me_annots.df.shape)
+
+    print(m1.df.shape)
+    haha = zh.compute_compounds_n_per_mz(adata_mz.var.copy(),  m1.df, 'mz', 'moleculeIds')  #var_df, ann_df, mz_col, id_col)
+    haha = haha[['mz', 'fdr', 'I', 'compound_ids_n__per_mz']]
+    haha = haha.loc[haha['compound_ids_n__per_mz'] != 0, :]
+    hoho = 0
+
+
 
     # none mapping
     mzno, kgno = mz_and_compounds_none_pathway(pathwaysObj,

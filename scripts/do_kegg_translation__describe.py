@@ -23,7 +23,7 @@ def mz_and_compounds_none_pathway(pathwaysObj, me_annots, id_col="KEGG"):
         pathwaysObj.model_copy(),
         me_annots.model_copy(),
         min_pathway_size=1,
-        max_pathway_size=200, mode="mz_aware")
+        max_pathway_size=200)
 
     not_mapping_kegg = set(initial_kegg_all) - set(annts2.df[id_col].unique())
     not_mapping_mz = set(initial_mz_all) - set(annts2.df['mz'].unique())
@@ -32,13 +32,13 @@ def mz_and_compounds_none_pathway(pathwaysObj, me_annots, id_col="KEGG"):
 
 
 def give_list_one_single_compound_in_any_pathway(pathwaysObj, me_annots, id_col="KEGG"):
-    p2, m2 = zm.SyncPathwaysAndAnnots.run(
+    p1, m1 = zm.SyncPathwaysAndAnnots.run(
         pathwaysObj.model_copy(),
         me_annots.model_copy(),
         min_pathway_size=1,
-        max_pathway_size=1, mode="mz_aware")
+        max_pathway_size=1)
 
-    return [str(u) for u in m2.df["mz"].unique()], m2.df[id_col].unique()
+    return [str(u) for u in m1.df["mz"].unique()], m1.df[id_col].unique()
 
 
 def give_list_compound_mapped_ok(pathwaysObj, me_annots, min_pathway_size, id_col="KEGG"):
