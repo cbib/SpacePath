@@ -84,23 +84,24 @@ class SyncPathwaysAndAnnots:
     # config: SyncPathwaysAndAnnotsConfig  TODO : use ?
     @staticmethod
     def run(pathwaysObj: MetabolicPathways, annotsObj: MetabolomeAnnotations,  # TODO make it to accept also TranscriptomeAnnotations and create such TranscriptomeAnnotations (should be easy)
-            min_pathway_size=2,
-            max_pathway_size=500,
-            mode="default"  # or mz_aware  # todo?: make automatic "mz_aware" if an object of type MetabolomeAnnotations is the second argument  ??
+            min_pathway_size: int=2,
+            max_pathway_size: int=500,
+            mode: str="default"  # or mz_aware  # todo?: make automatic? "mz_aware" ??if an object of type MetabolomeAnnotations is the second argument  ??
             )-> Tuple[MetabolicPathways, MetabolomeAnnotations]:
-        if not (annotsObj.usable_id ==
-                pathwaysObj.molecule_id_type):
+        if not (annotsObj.usable_id == pathwaysObj.molecule_id_type):
             logger.error(
                 "No same types of compound ids: %s and %s, respectively",
-                pathwaysObj.molecule_id_type,
-                annotsObj.usable_id)
+                pathwaysObj.molecule_id_type, annotsObj.usable_id)
             raise AssertionError("see the error in .log file. Aborted.")
+        if (max_pathway_size == 1) and (mode != "default"):
+            logger.info("max pathway size is 1, auto-set default mode")
+            mode = "default"
         pathwaysObj.intersect_with_annotations(annotsObj)  # this updates pathwaysObj
         pathwaysObj.constrain(min_pathway_size, max_pathway_size, mode)
 
         # todo: check if this .df attribute update is enough (other attrs to update?) for annotations:
         annotsObj.df = annotsObj.df.loc[
-            annotsObj.df[pathwaysObj.molecule_id_type].isin(
+            annotsObj.df[annotsObj.usable_id].isin(
                         pathwaysObj.piled[pathwaysObj.molecule_id_type].unique()), :]
 
         logger.info("Pathways and Annotations objects syncronized with success")

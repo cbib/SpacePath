@@ -112,7 +112,7 @@ class MetabolomeAnnotations(Dataset):
     fdr_column: str = "fdr"
     msm_column: str = "msm"
     no_translated: pd.DataFrame = pd.DataFrame()
-    usable_id: str = "KEGG"  # or "moleculeIds" if not using conversion to kegg
+    usable_id: str = "KEGG"  # or moleculeIds if not using conversion to kegg
     df: pd.DataFrame = pd.DataFrame()
     mz_quality: pd.DataFrame = pd.DataFrame()
 
@@ -152,7 +152,6 @@ class MetabolomeAnnotations(Dataset):
                 anno_key = "KEGG"
             elif anno_key == "LIPID_MAPS":  # assimilate
                 anno_key = "LipidMaps"
-
             df['database'] = anno_key
             dfs_dict[anno_key] = df
 
@@ -214,36 +213,31 @@ class MetabolomeAnnotations(Dataset):
                         'features that are "out-of-the-tissue"', len(mz_out))
 
     def keep_unique_mz_id_tuples(self, var_df: pd.DataFrame):
+        logger.info(
+            'Resolving multiple m/z to one-compound-id (degenerate pairs): '
+            '    Keeps the best (m/z, id) unique pairs, by quality criteria.')
         basic_expected_cols = [self.mz_col, self.fdr_column,
-                               self.offsample_column,
-                               self.msm_column]
+                               self.offsample_column, self.msm_column]
         if not len(set(basic_expected_cols).intersection(
                 set(var_df.columns))) == len(basic_expected_cols):
             logger.error("Error, %s are expected in var_df",
                          basic_expected_cols)
             raise AssertionError
         if "I" in var_df.columns:
-            logger.info("Moran's 'I' in var_df will be also used")
+            logger.info("    Moran's 'I' in var_df will be also used.")
         assert is_numeric_dtype(var_df[
                                     self.mz_col]), "the 'mz' column in adata.var must be of type float"
         assert len(set(var_df[self.mz_col].tolist()).intersection(
-            set(self.df[self.mz_col].unique()))) == len(self.df[
-                                                            self.mz_col].unique()), "Error, no perfect match with var_df mz"
-        logger.info(
-            '[keep_unique_mz_id_tuples]: if multi m/z to one-compound-id '
-            'tuples, resolve by selecting the best (m/z, id) tuple')
-        # if self.mz_quality.shape == (0,0):
-        #     self.pull_mz_quality_df()
-        #     self.mz_quality = self.mz_quality.loc[self.mz_quality[
-        #         self.mz_col].astype(float).isin(
-        #         self.df[self.mz_col].astype(float)), :]
+            set(self.df[self.mz_col].unique()))
+        ) == len(self.df[self.mz_col].unique()), "Error, no perfect match with var_df mz"
+
         self.df = helpers.warrant__one_to_one_mz_id(self.df, var_df,
             self.mz_col, self.usable_id, self.msm_column,
             self.fdr_column, self.offsample_column)
 
-    def convert_ids_to_kegg(self, ref_table: pd.DataFrame):   # todo: how to mark that only if willing to use KEGG compounds idss
+    def convert_ids_to_kegg(self, ref_table: pd.DataFrame):
         logger.info('Translating ids in the metabolome annotation'
-                    ' table, to KEGG (check .df attribute)')
+                    ' table, to KEGG (into .df attribute)')
         if not self.usable_id == "KEGG":
             logger.error('The .usable_id must be "KEGG". Aborted.')
             raise ValueError
@@ -307,11 +301,11 @@ class MetabolicPathways(BaseModel, extra='allow'):
     subfolder: str
     official_file: str
     custom_file: Optional[str] = ''
-    download: Optional[str] = "sspa-kegg"  # for both official and custom pathways
+    download: Optional[str | None] = "sspa-kegg"  # if download is desired
     undesired_substring: str = " - Homo sapiens (human)" # in names
     pathway_id_col: str = "pathway_id"
     pathway_name_col: str = "pathway_name"
-    molecule_id_type: str = "KEGG"   #  must match annots.usable_id
+    molecule_id_type: str = "KEGG"  # or moleculeIds, as in annots.usable_id
     piled: pd.DataFrame = pd.DataFrame()
     pathways_ids: pd.DataFrame = pd.DataFrame()
     purge: bool = True

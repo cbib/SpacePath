@@ -10,6 +10,7 @@ import anndata as ad
 from tqdm import tqdm
 from sklearn.utils import sparsefuncs
 
+
 def reset_log_config(logger):
     """parameters for the log file"""
     out_log_file_name = "log.log"
@@ -25,7 +26,9 @@ def combine_frames_identical_columns(dfs_dict : Dict[str, pd.DataFrame]
     list_of_frames = []
     for k in dfs_dict.keys():
         list_of_frames.append(dfs_dict[k])
+
     df_out = pd.concat(list_of_frames)
+    df_out = df_out.drop_duplicates()
 
     return df_out
 
@@ -46,7 +49,7 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
     """
     pd.options.mode.chained_assignment = None  # mute SettingWithCopyWarning
 
-    delimiter_colon_plus_space = ", " ## caution, do not remove the space
+    delimiter_colon_plus_space = ", " # please do not remove the space
 
     tmp1 = df[[mz_col, formula_col, molecule_ids_col]]
     tmp2 = df[[molecule_names_col, 'database']]
@@ -71,12 +74,14 @@ def pick_mz_quality_infos(df, mz_col: str, offsample_col: str,
     df = df.sort_values(by=[mz_col, offsample_col, fdr_column, msm_column],
                         ascending=[True, True, True, False])
     df = df.drop_duplicates(subset=[mz_col], keep='first')
+
     return df
 
 
 def convert_metabo_annots_tokegg(
         annotdf: pd.DataFrame,  mappings_ref_ids: pd.DataFrame,
         molecule_ids_col: str, mz_col: str, usable_id: str="KEGG") -> pd.DataFrame:
+    assert usable_id == 'KEGG', 'Error, usable_id must be "KEGG". Aborted.'
     dfs_list = []
     common_notkegg_database = set(annotdf['database'].unique()).intersection(
         set(mappings_ref_ids['database'].unique()))
@@ -90,7 +95,7 @@ def convert_metabo_annots_tokegg(
                                       'initial_id_unconverted']).dropna()
         dfs_list.append(joined)
     # end for
-    if "KEGG" in annotdf['database'].unique():
+    if usable_id in annotdf['database'].unique():
         kegg_tmp_df = annotdf.loc[annotdf['database'] == usable_id, :]
         kegg_tmp_df = kegg_tmp_df.assign(KEGG=kegg_tmp_df[molecule_ids_col])
         dfs_list.append(kegg_tmp_df)
@@ -161,8 +166,6 @@ def get_approved_mz_id_pairs(ann_df: pd.DataFrame, var_df: pd.DataFrame,
             curr_qual = curr_qual.sort_values(
                 by=['compound_ids_n__per_mz', msm_col, fdr_col, offsam], # in this order !
                 ascending=[True, False, True, True])
-        #if curr_qual
-        #else:
         its_best_mz = float(curr_qual.iloc[0][mz_col])
         ok_mz_id_tuples.append((its_best_mz, one_id))
 
