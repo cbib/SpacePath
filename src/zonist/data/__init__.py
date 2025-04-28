@@ -112,6 +112,7 @@ class MetabolomeAnnotations(Dataset):
     fdr_column: str = "fdr"
     msm_column: str = "msm"
     no_translated: pd.DataFrame = pd.DataFrame()
+    usable_id: str = "KEGG"  # or moleculeIds if not using conversion to kegg
     df: pd.DataFrame = pd.DataFrame()
     mz_quality: pd.DataFrame = pd.DataFrame()
 
@@ -136,7 +137,6 @@ class MetabolomeAnnotations(Dataset):
                 logger.info("Error (read_csv): \n %s", e)
 
             self.check_expectations_2(df)
-
             try:
                 df = df[[self.mz_col, self.formula_col, self.molecule_ids_col,
                          self.molecule_names_col, self.offsample_column,
@@ -147,24 +147,19 @@ class MetabolomeAnnotations(Dataset):
 
             df[self.mz_col] = np.around(df[self.mz_col].to_numpy(),
                                         decimals=mz_decimal_places)
-
             df = df.dropna(how="all")
-
             if anno_key == "custom_kegg":
                 anno_key = "KEGG"
             elif anno_key == "LIPID_MAPS":  # assimilate
                 anno_key = "LipidMaps"
-
             df['database'] = anno_key
             dfs_dict[anno_key] = df
 
-        preloaded_annots = \
+        self.preloaded = \
                 helpers.combine_frames_identical_columns(dfs_dict)
 
-        self.preloaded = preloaded_annots
-
         self.no_translated = helpers.spreadout_annotation_df(
-                preloaded_annots, self.mz_col, self.formula_col,
+                self.preloaded, self.mz_col, self.formula_col,
                 self.molecule_ids_col, self.molecule_names_col)
 
         self.no_translated[self.mz_col] = np.around(
@@ -176,7 +171,7 @@ class MetabolomeAnnotations(Dataset):
             self.mz_quality = helpers.pick_mz_quality_infos(
                 self.preloaded, self.mz_col, self.offsample_column,
                 self.total_intens_col, self.fdr_column, self.msm_column,
-                "database"
+                self.formula_col
             )
             if self.mz_quality[self.offsample_column].isnull().all():
                 logger.warning("Useless: %s is NaN", self.offsample_column)
@@ -191,6 +186,8 @@ class MetabolomeAnnotations(Dataset):
 
     def discard_out_of_tissue_mz(self, prob_out=0.87,
                                  fraction_to_exclude=1):
+        # todo: check if not needed anymore this discard_out_of_tissue_mz: I am using a more complex strategy: see repo user-pipeline/scripts/classify_normalize_features
+
         """Recommended (optional), to discard the mz that are out-of-tissue.
         Among the off-sample features (those having >= prob_out)
         ordered by decreasing total intensity, exclude the defined fraction"""
@@ -215,34 +212,62 @@ class MetabolomeAnnotations(Dataset):
             logger.info('[discard_out_of_tissue_mz]: Excluded %s m/z '
                         'features that are "out-of-the-tissue"', len(mz_out))
 
-    def convert_ids_to_kegg(self, ref_table: pd.DataFrame):   # todo: is it possible to make it generalizable and not only KEGG dependent ?
+    def keep_unique_mz_id_tuples(self, var_df: pd.DataFrame):
+        logger.info(
+            'Resolving multiple m/z to one-compound-id (degenerate pairs): '
+            '    Keeps the best (m/z, id) unique pairs, by quality criteria.')
+        basic_expected_cols = [self.mz_col, self.fdr_column,
+                               self.offsample_column, self.msm_column]
+        if not len(set(basic_expected_cols).intersection(
+                set(var_df.columns))) == len(basic_expected_cols):
+            logger.error("Error, %s are expected in var_df",
+                         basic_expected_cols)
+            raise AssertionError
+        if "I" in var_df.columns:
+            logger.info("    Moran's 'I' in var_df will be also used.")
+        assert is_numeric_dtype(var_df[
+                                    self.mz_col]), "the 'mz' column in adata.var must be of type float"
+        assert len(set(var_df[self.mz_col].tolist()).intersection(
+            set(self.df[self.mz_col].unique()))
+        ) == len(self.df[self.mz_col].unique()), "Error, no perfect match with var_df mz"
+
+        self.df = helpers.warrant__one_to_one_mz_id(self.df, var_df,
+            self.mz_col, self.usable_id, self.msm_column,
+            self.fdr_column, self.offsample_column)
+
+    def convert_ids_to_kegg(self, ref_table: pd.DataFrame):
         logger.info('Translating ids in the metabolome annotation'
-                    ' table, to KEGG')
+                    ' table, to KEGG (into .df attribute)')
+        if not self.usable_id == "KEGG":
+            logger.error('The .usable_id must be "KEGG". Aborted.')
+            raise ValueError
         assert np.all(np.array(list(ref_table.columns)) == np.array(
                 columns_ref_map_expected)), f"Metabolite reference"
         f" mappings columns must be {columns_ref_map_expected}"
         try:
             self.df = helpers.convert_metabo_annots_tokegg(
                 self.no_translated, ref_table,
-                self.molecule_ids_col, self.mz_col)
-            excess_mz_bool: bool = helpers.identify_multi_mz_to_one_kegg(
-                self.df,  self.mz_col)
+                self.molecule_ids_col, self.mz_col, self.usable_id)
+            self.verify()
+        except Exception as e:
+            logger.warning("Error: %s", e)
+
+    def verify(self):
+        if self.usable_id != "KEGG":
+            self.df = self.no_translated
+        try:
+            excess_mz_bool: bool = helpers.identify_multi_mz_to_one_compound(
+                self.df, self.mz_col, self.usable_id)
             if excess_mz_bool:
+                # logger.warning("Please run keep_unique_mz_id_tuples(anndata_mz)")
+                # print(message_multimz)
                 message_multimz = (
                     "Identified 'multi m/z to one KEGGid' cases!: Please run "
-                    "'<metabo_annotations>.treat_mz_multiplets(anndata_mz)'.")
+                    "'<metabo_annotations>.keep_unique_mz_id_tuples(anndata_mz)'.")
                 logger.warning(message_multimz)
                 print(message_multimz)
         except Exception as e:
             logger.warning("Error: %s", e)
-
-    def treat_mz_multiplets(self, adata_mz: ad.AnnData):
-        ## TODO : add a check to see if the adata_mz has the same mzs as the ones in the annotation
-        logger.info('[treat_mz_multiplets]: if "multi m/z to one KEGGid", for'
-                    ' such KEGGid, the m/z with the top variance is kept.')
-        assert is_numeric_dtype(adata_mz.var['mz']), "the 'mz' column in adata.var must be of type float"
-        self.df, self.mz_redundant = helpers.compute_one_to_one_mz_keggid_df(
-            self.df, adata_mz, self.mz_col)
 
     def check_expectations_1(self):
         if len(set(list(self.annotation_files.keys())).intersection(
@@ -276,11 +301,11 @@ class MetabolicPathways(BaseModel, extra='allow'):
     subfolder: str
     official_file: str
     custom_file: Optional[str] = ''
-    file_style: str = "sspa-kegg"  # for both official and custom pathways
+    download: Optional[str | None] = "sspa-kegg"  # if download is desired
     undesired_substring: str = " - Homo sapiens (human)" # in names
     pathway_id_col: str = "pathway_id"
     pathway_name_col: str = "pathway_name"
-    molecule_ids_type_in_pathways: str = "KEGG"   #  must match joined annots
+    molecule_id_type: str = "KEGG"  # or moleculeIds, as in annots.usable_id
     piled: pd.DataFrame = pd.DataFrame()
     pathways_ids: pd.DataFrame = pd.DataFrame()
     purge: bool = True
@@ -288,14 +313,14 @@ class MetabolicPathways(BaseModel, extra='allow'):
     def preload_official(self):
         if not os.path.exists(os.path.join(
                 self.data_dir, self.subfolder, self.official_file)):
-            if self.file_style == "sspa-kegg":
+            if self.download == "sspa-kegg":
                 logger.info("writing sspa official gmt to data dir, wait ...")
                 sspa.process_pathways.process_kegg(
                     organism="hsa", infile=None, download_latest=True,
                     filepath=os.path.join(self.data_dir, self.subfolder))
                 logger.info("saved!")
             else:
-                logger.info("only 'sspa-kegg' file_style is currently supported")
+                logger.info("only 'sspa-kegg' download is currently supported")
         try:
             official_gmt = pd.read_csv(
                 os.path.join(self.data_dir, self.subfolder,
@@ -336,7 +361,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
         id_name_pathways_df, pws_piled = helpers.gmts_merge_pile_splitid(
             dfs_dict, self.pathway_id_col, self.pathway_name_col,
-            self.molecule_ids_type_in_pathways)
+            self.molecule_id_type)
 
         self.pathways_ids = id_name_pathways_df
         self.piled = pws_piled
@@ -351,7 +376,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
     def to_dict(self, option="id") -> Dict[str, List[str]]:
         if option=="id":
-            mz_or_id = self.molecule_ids_type_in_pathways
+            mz_or_id = self.molecule_id_type
         elif option=="mz":
             mz_or_id = "mz"
         else:
@@ -366,8 +391,8 @@ class MetabolicPathways(BaseModel, extra='allow'):
         """
         self.piled = helpers.pathways_and_annots_join(
             self.piled,
-            annots_obj.df[[annots_obj.mz_col, self.molecule_ids_type_in_pathways]],
-            self.molecule_ids_type_in_pathways)
+            annots_obj.df[[annots_obj.mz_col, self.molecule_id_type]],
+            self.molecule_id_type)
 
     def constrain(self, min_pathway_size, max_pathway_size, mode):
         assert mode in ["default", "mz_aware"], "Error, mode param not recognized"
@@ -383,7 +408,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
         self.piled = self.piled.loc[
             self.piled["pathway_id"].isin(good_pathways_l)]
         self.piled = self.piled.loc[~self.piled[
-            self.molecule_ids_type_in_pathways].isin(metabolites_to_eject), :]
+            self.molecule_id_type].isin(metabolites_to_eject), :]
         self.pathways_ids = self.pathways_ids.loc[
                                    self.pathways_ids[
                                        "pathway_id"].isin(good_pathways_l), :]
