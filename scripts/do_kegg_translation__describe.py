@@ -99,7 +99,6 @@ if __name__ == "__main__":
 
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path = "../datasets-parameters.tsv" #"../small-test-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
     my_csv_table_path_1 = "../public-datasets-parameters.tsv"  # "../../small_test.csv"
@@ -112,7 +111,6 @@ if __name__ == "__main__":
     datasets_parameters_df = pd.concat([df1, df2])
 
     # start
-
 
     me_refmap = zd.MetaboliteIdsMappings(
             data_dir=mydata_dir,
@@ -214,7 +212,7 @@ if __name__ == "__main__":
         except ZeroDivisionError:
             kegg_compound_ids_to_mz_ratio_after_pathway_mapped.append(0)
         how_many_pathways.append(len(pws_obj_2.piled['pathway_id'].unique()))
-
+    # end for
 
     out_df = pd.DataFrame({
         "sample_name": name_sample,

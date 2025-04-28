@@ -36,7 +36,11 @@ print(df_pl['amount'].min())
 
 df_pl2 = transform2plot(df, mode="ids")
 size_range_markers2 = (df_pl2['amount'].min() / 10, df_pl2['amount'].max() / 10)
+##
 
+dfx = pd.read_csv("../initial-pathways-KEGG.csv")
+dfx = dfx.replace(0, np.nan)
+df_pl3 = transform2plot(dfx, mode="pathways")
 
 sns.set_style("whitegrid")
 plt.figure(figsize=(4.8 , 11))
@@ -48,7 +52,7 @@ ax.grid(color='grey', linestyle='--', alpha=0.4, zorder=1)
 sns.scatterplot(df_pl2, ax= ax,
                 x="database", y="sample_name", size="amount",
                 lw=0.4, sizes=size_range_markers2, # sizes=(15, 60),
-                color="darkcyan", alpha=0.7,
+                color="sandybrown", alpha=0.7,
                 edgecolors="black").legend(loc="upper left", title="size",
                              bbox_to_anchor=(1,1.03))  #.02))
 plt.margins(x=1)
@@ -56,3 +60,39 @@ sns.despine(fig=None, ax=None,
             top=True, right=True, left=True, bottom=True, offset=None, trim=False)
 plt.tight_layout()
 plt.savefig("../initial-ids-compounds-KEGG.pdf")
+
+
+##
+
+size_range_markers3 = (df_pl3['amount'].min() / 10, df_pl3['amount'].max() / 10)
+
+sns.set_style("whitegrid")
+plt.figure(figsize=(4.8 , 11))
+ax = sns.scatterplot(df_pl, x="database", y="sample_name", size="amount",
+                lw=0.4, sizes = size_range_markers1, #sizes=(200, 1000),
+                color="gray", alpha=0.1,
+                edgecolors="black")
+ax.grid(color='grey', linestyle='--', alpha=0.4, zorder=1)
+sns.scatterplot(df_pl3, ax= ax,
+                x="database", y="sample_name", size="amount",
+                lw=0.4, sizes=size_range_markers3, # sizes=(15, 60),
+                color="darkcyan", alpha=0.7,
+                edgecolors="black").legend(loc="upper left", title="size",
+                             bbox_to_anchor=(1,1.03))  #.02))
+plt.margins(x=1)
+sns.despine(fig=None, ax=None,
+            top=True, right=True, left=True, bottom=True, offset=None, trim=False)
+plt.tight_layout()
+plt.show()
+
+
+
+"""
+  "sample_name": name_sample,
+        "HMDB identifiers all": hmdb_ids,
+        "HMDB ids having KEGG ids": hmdb_mapped,
+        "HMDB in pathways": hmdb_inpws,
+        "LipidMaps identifiers all": lipidmaps_ids,
+        "LipidMaps ids having KEGG ids": lipidmaps_mapped,
+        "LipidMaps in pathways": lpmp_inpws
+"""
