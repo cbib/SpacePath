@@ -30,10 +30,15 @@ not_metabolic_reactions_pathways = [
     "trypanosomiasis", "shigellosis", "infection", "diabetes",
     "leishmania", "toxoplasmosis", "legionel", "malaria", "tuberculosis",
     "coccus", "virus", "virion", "viral", "measles", "dna adducts",
-    "meiosis", "checkpoint", "resistance", "cell",
-    "pathways in cancer", "morphine addiction", "gentamicin",  # new
-    "xenobiotics", "mineral absorption", "digestion and absorption", # new
-    "glucagon signaling", "taste transduction", "drug" # new
+    "meiosis", "checkpoint", "resistance", "cell", "pathways in cancer",
+     "morphine addiction", "gentamicin", "xenobiotics",
+     "mineral absorption", "digestion and absorption",
+    "glucagon signaling", "taste transduction", "drug",
+    "lectin", "recombination", "vitamins and cofactors", "disorders of",
+    "number variation", "hypothetical", "hypothesis", "senescence",
+    "rhodopsin", "nf-kb", "spina bifida", "nucleotide gpcr", "telomere",
+    "follicle devel", "functionalization of compounds", "visual cycle"
+
 ]
 # Explanation of 'not_metabolic_reactions_pathways': any pathway name
 # that contains the specified substrings above, is classified as being

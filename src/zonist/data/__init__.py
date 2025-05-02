@@ -214,7 +214,7 @@ class MetabolomeAnnotations(Dataset):
 
     def keep_unique_mz_id_tuples(self, var_df: pd.DataFrame):
         logger.info(
-            'Resolving multiple m/z to one-compound-id (degenerate pairs): '
+            'Resolving multiple m/z to one-compound-id (degenerate pairs):\n'
             '    Keeps the best (m/z, id) unique pairs, by quality criteria.')
         basic_expected_cols = [self.mz_col, self.fdr_column,
                                self.offsample_column, self.msm_column]
@@ -301,11 +301,11 @@ class MetabolicPathways(BaseModel, extra='allow'):
     subfolder: str
     official_file: str
     custom_file: Optional[str] = ''
-    download: Optional[str | None] = "sspa-kegg"  # if download is desired
+    download: Optional[str | None] = None  # or "sspa-kegg" if download is desired
     undesired_substring: str = " - Homo sapiens (human)" # in names
     pathway_id_col: str = "pathway_id"
     pathway_name_col: str = "pathway_name"
-    molecule_id_type: str = "KEGG"  # or moleculeIds, as in annots.usable_id
+    molecule_id_type: str = "KEGG"  # or moleculeIds (identical to annots.usable_id)
     piled: pd.DataFrame = pd.DataFrame()
     pathways_ids: pd.DataFrame = pd.DataFrame()
     purge: bool = True
@@ -370,8 +370,8 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
     def get_name(self, a_pathway_id):
         pathway_name = self.pathways_ids.loc[
-            self.pathways_ids['pathway_id'] == a_pathway_id,
-            "pathway_name"].item()
+            self.pathways_ids[self.pathway_id_col] == a_pathway_id,
+            self.pathway_name_col].item()
         return pathway_name
 
     def to_dict(self, option="id") -> Dict[str, List[str]]:
@@ -389,9 +389,12 @@ class MetabolicPathways(BaseModel, extra='allow'):
          - adds the mz column to the .piled df in the MetabolicPathways obj
          - retains only the elements that are in the intersection of both objs
         """
+        if not self.molecule_id_type == annots_obj.usable_id:
+            logger.error("%s and %s are not identical. Aborted.", self.molecule_id_type, annots_obj.usable_id)
+            raise AssertionError
         self.piled = helpers.pathways_and_annots_join(
-            self.piled,
-            annots_obj.df[[annots_obj.mz_col, self.molecule_id_type]],
+            self.piled[[self.pathway_id_col, self.molecule_id_type]],
+            annots_obj.df[[annots_obj.mz_col, annots_obj.usable_id]],
             self.molecule_id_type)
 
     def constrain(self, min_pathway_size, max_pathway_size, mode):
@@ -406,9 +409,9 @@ class MetabolicPathways(BaseModel, extra='allow'):
         metabolites_to_eject = pathways_methods.find_metabolites_to_exclude(
             good_pathways_l, self.to_dict())
         self.piled = self.piled.loc[
-            self.piled["pathway_id"].isin(good_pathways_l)]
+            self.piled[self.pathway_id_col].isin(good_pathways_l)]
         self.piled = self.piled.loc[~self.piled[
             self.molecule_id_type].isin(metabolites_to_eject), :]
         self.pathways_ids = self.pathways_ids.loc[
                                    self.pathways_ids[
-                                       "pathway_id"].isin(good_pathways_l), :]
+                                       self.pathway_id_col].isin(good_pathways_l), :]
