@@ -62,16 +62,6 @@ if __name__ == "__main__":
         adata_mz = ad.read_h5ad(filename=os.path.join(
             mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
-        odfsodf = 99
-        # todo qjdfqlslqk
-        try:
-            adata_mz.X = adata_mz.layers['raw_X']
-            del adata_mz.uns['is_X_TIC_normalized']
-        except:
-            print("will continue")
-            pass
-        # end of todo
-        print("continues here")
 
         try:
             columns_to_reset = set(adata_mz.var.columns.tolist()) - set(["mz"])
