@@ -32,9 +32,12 @@ class MethodConfig(BaseModel):
     class_type: str = "method"
 
 
+# class FilterMZProtocolConfig(MethodConfig):
+#     description: str = "phased protocol to filter m/z by their quality and spatial distribution"
+
+
 class SyncPathwaysAndAnnotsConfig(MethodConfig): # todo: use this config ?
     description: str = "parameters to synchronize pathways and annotations"
-
 
 
 class ComputePathwaysScoresConfig(MethodConfig):
@@ -65,23 +68,13 @@ class FakeMethod:  # no-inheritance avoids instantiation: more practical
         return pathways_methods.test_function(arr, config.dummy_scale,
                                               config.dummy_cutoff)
 
-class ComputePathwaysScores:
-    config: ComputePathwaysScoresConfig
-    @staticmethod
-    def run(pathways_dict: Dict[str, List[str]], adata: ad.AnnData,
-            config=ComputePathwaysScoresConfig()
-    ) -> pd.DataFrame:
-        logger.info(" Will compute spot-wise Pathways Scores "
-                    "with the following config: %s", config)
-        scores_df = pathways_methods.compute_pathways_scores(
-            pathways_dict, adata, config.method, config.min_entity,
-            config.n_groups_of_spots, config.threshold_n_spots_is_high)
-
-        return scores_df
+# class FilterMZProtocol:
+#     @staticmethod
+#     def run():
 
 
 class SyncPathwaysAndAnnots:
-    # config: SyncPathwaysAndAnnotsConfig  TODO : use ?
+    #config: SyncPathwaysAndAnnotsConfig  TODO : use ?
     @staticmethod
     def run(pathwaysObj: MetabolicPathways, annotsObj: MetabolomeAnnotations,  # TODO make it to accept also TranscriptomeAnnotations and create such TranscriptomeAnnotations (should be easy)
             min_pathway_size: int=2,
@@ -106,6 +99,22 @@ class SyncPathwaysAndAnnots:
 
         logger.info("Pathways and Annotations objects syncronized with success")
         return pathwaysObj, annotsObj
+
+
+class ComputePathwaysScores:
+    config: ComputePathwaysScoresConfig
+
+    @staticmethod
+    def run(pathways_dict: Dict[str, List[str]], adata: ad.AnnData,
+            config=ComputePathwaysScoresConfig()
+            ) -> pd.DataFrame:
+        logger.info(" Will compute spot-wise Pathways Scores "
+                    "with the following config: %s", config)
+        scores_df = pathways_methods.compute_pathways_scores(
+            pathways_dict, adata, config.method, config.min_entity,
+            config.n_groups_of_spots, config.threshold_n_spots_is_high)
+
+        return scores_df
 
 
 if __name__ == "__main__":

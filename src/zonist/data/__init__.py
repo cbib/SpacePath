@@ -301,7 +301,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
     subfolder: str
     official_file: str
     custom_file: Optional[str] = ''
-    download: Optional[str | None] = None  # or "sspa-kegg" if download is desired
+    download: Union[str, None] = None   # "sspa-kegg" if download is desired
     undesired_substring: str = " - Homo sapiens (human)" # in names
     pathway_id_col: str = "pathway_id"
     pathway_name_col: str = "pathway_name"

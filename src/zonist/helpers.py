@@ -340,6 +340,15 @@ def generate_coordinates_arr(pixels_names_l: List[str]) -> np.array:
     return np.array(coord_l)
 
 
+def is_log_transformed(sparse_matrix):
+
+    if sparse_matrix.min().min() < 0:
+        return True
+
+    return False
+
+## ...
+
 
 
 

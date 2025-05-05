@@ -10,7 +10,7 @@ import sspa as sspa
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra
-from .quantifications_methods import is_log_transformed
+from zonist.helpers import is_log_transformed
 
 
 def test_function(arr, scale_val, threshold):
