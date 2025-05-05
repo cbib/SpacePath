@@ -7,7 +7,7 @@ import zonist.data as zd
 import zonist.method as zm
 import matplotlib.pyplot as plt
 
-from bank4zonist.quantifs_methods import match_adata_mz_and_annots, verification
+from local_helpers.quantifs_methods import match_adata_mz_and_annots, verification
 
 def prepare_harmonized_objects(mydata_dir, me_annots, adata_mz, prob_out=0.87,
                                min_pw_size=1, max_pw_size=100):  # todo: deprecate this!

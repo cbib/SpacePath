@@ -1,12 +1,14 @@
+import os
 import pandas as pd
 import anndata as ad
 
 import zonist.data as zd
 
-from bank4zonist.constants import provide_annotation_dict
-
-from bank4zonist.visualization import *
-from classify_normalize_features import part_a_filters
+from local_helpers.local_helpers import (provide_annotation_dict,
+                                   part_a_filters)
+from local_helpers.visualization import plot_mz_given_quality_metrics
+#from bank4zonist.visualization import *
+#from classify_normalize_features import part_a_filters
 
 """
 bad or good quality of m/z features
@@ -45,8 +47,10 @@ for i, row in datasets_parameters_df.iterrows():
 
     me_annots.load()
 
+
     adata_mz = ad.read_h5ad(filename=os.path.join(
         mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
+
     try:
         columns_to_reset = set(adata_mz.var.columns.tolist()) - set(["mz"])
         adata_mz.var = adata_mz.var.drop(columns=list(columns_to_reset))
@@ -56,13 +60,14 @@ for i, row in datasets_parameters_df.iterrows():
 
     if 'features_n_after_mz_clean_2' in list(adata_mz.uns['history'].keys()):
         print("Nothing to do for this sample.")
-    elif  not "is_X_TIC_normalized" in adata_mz.uns.keys():
+    elif not "is_X_TIC_normalized" in adata_mz.uns.keys():
         print("no normalization yet applied")
-        me_annots, ok_mz_keep_part1 = part_a_filters(
-            me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff, SAMPLE,
-            plot_folder)
-        print("only figures produced, adata object intact")
-    else:
-        me_annots, ok_mz_keep_part1 = part_a_filters(
-            me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff, SAMPLE, plot_folder)
-        print("only figures produced, adata object intact")
+    me_annots, ok_mz_keep_part1 = part_a_filters(
+            me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff
+            )
+    text_notice = f"valid $m/z$\n n = {len(ok_mz_keep_part1)}"
+    plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,
+                                 plot_folder,
+                                msm_cutoff, offSample_cutoff, text_notice)
+
+    print("only figures produced, adata object intact")

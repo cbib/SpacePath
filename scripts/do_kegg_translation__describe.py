@@ -10,10 +10,10 @@ import squidpy as sq
 import zonist.data as zd
 import zonist.method as zm
 
-from bank4zonist.quantifs_methods import match_adata_mz_and_annots
-from bank4zonist.constants import provide_annotation_dict
+from local_helpers.quantifs_methods import match_adata_mz_and_annots
+from local_helpers.local_helpers import provide_annotation_dict
 
-from bank4zonist.visualization import *
+from local_helpers.visualization import *
 
 
 def mz_and_compounds_none_pathway(pathwaysObj, me_annots, id_col="KEGG"):

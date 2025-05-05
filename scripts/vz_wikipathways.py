@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_csv("../initial-ids-compounds-IDSmix-psize1.csv")
+df = pd.read_csv("../initial-IDSmix-pathways-psize1.csv")
 df = df.replace(0, np.nan)
 print(df.columns)
 
@@ -64,4 +64,5 @@ plt.margins(x=1)
 sns.despine(fig=None, ax=None,
             top=True, right=True, left=True, bottom=True, offset=None, trim=False)
 plt.tight_layout()
-plt.show()
+plt.savefig("../initial-ids-pws-WIKIPATHWAYS.pdf")
+plt.close()

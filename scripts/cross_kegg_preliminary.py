@@ -10,9 +10,9 @@ import squidpy as sq
 import zonist.data as zd
 import zonist.method as zm
 import zonist.helpers as zh
+import zonist.processing.measures_methods as zmm
 
-from bank4zonist.quantifs_methods import match_adata_mz_and_annots
-from bank4zonist.constants import provide_annotation_dict
+from local_helpers.local_helpers import provide_annotation_dict
 
 def thisfun1(ids_mixture_list):
     hmdb_l = [u for u in ids_mixture_list if u.startswith("HMDB")]
@@ -33,6 +33,10 @@ if __name__ == "__main__":
 
     hmdb_inpws = []
     lpmp_inpws = []
+
+    kegg_ids = []
+    kegg_mapped= []
+    kegg_inpws = []
 
     # also add to the anndata.var if a feature was yes Y or no N in pathways that will pass.
     # that will allow to "paste" the mz or kegg that were not in the pw trick (? if makes sense such "paste" ?)
@@ -92,7 +96,7 @@ if __name__ == "__main__":
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                    "mz"].astype(str).tolist()]
 
-        me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
+        me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots, adata_mz)
         me_annots.convert_ids_to_kegg(me_refmap.table)
         me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())
         name_sample.append(SAMPLE)
@@ -104,10 +108,8 @@ if __name__ == "__main__":
             min_pathway_size=minpwsize,
             max_pathway_size=200)
         ##
-
-        #print("!!", len(me_annots.no_translated['mz'].unique()))
         del adata_mz
-        for annot_type in ['HMDB', 'LipidMaps']:
+        for annot_type in ['HMDB', 'LipidMaps', 'KEGG']:
             sub_annots_df = me_annots.no_translated.loc[
                             me_annots.no_translated['database'] == annot_type, :]
 
@@ -121,10 +123,10 @@ if __name__ == "__main__":
             poo = len(set(
                 sub_refs['initial_id_unconverted'].unique()).intersection(
                 set(sub_annots_piled['moleculeIds'].unique())))
-
+            ##
             inpws = ann1.df.loc[ann1.df['database'] == annot_type, :]
             n_inpws = len(set(inpws['moleculeIds']))
-
+            ##
             print("*", annot_type, ":  can be mapped to a KEGG compound ids:", poo, "from a total of", len(sub_annots_piled['moleculeIds'].unique()))
             if annot_type == "HMDB":
                 hmdb_ids.append(len(sub_annots_piled['moleculeIds'].unique()))
@@ -134,6 +136,11 @@ if __name__ == "__main__":
                 lipidmaps_ids.append(len(sub_annots_piled['moleculeIds'].unique()))
                 lipidmaps_mapped.append(poo)
                 lpmp_inpws.append(n_inpws)
+            elif annot_type == "KEGG":
+                kegg_ids.append(
+                    len(sub_annots_piled['moleculeIds'].unique()))
+                kegg_mapped.append(len(sub_annots_piled['moleculeIds'].unique())) # yes not as the others
+                kegg_inpws.append(n_inpws)
 
 
      # end for
@@ -153,7 +160,10 @@ if __name__ == "__main__":
         "HMDB in pathways": hmdb_inpws,
         "LipidMaps identifiers all": lipidmaps_ids,
         "LipidMaps ids having KEGG ids": lipidmaps_mapped,
-        "LipidMaps in pathways": lpmp_inpws
+        "LipidMaps in pathways": lpmp_inpws,
+        "KEGG identifiers all" : kegg_ids,
+        "KEGG ids KEGG ids": kegg_mapped,
+        "KEGG in pathways": kegg_inpws
     })
     out_df.to_csv("../initial-pathways-KEGG.csv")
 

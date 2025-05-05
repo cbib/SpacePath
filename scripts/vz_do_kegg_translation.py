@@ -8,12 +8,7 @@ import seaborn as sns
 
 df = pd.read_csv("../final-KEGG-compounds-counts.csv", index_col=None)
 df = df.replace(0, np.nan)
-# out_df = pd.DataFrame({
-#     "sample_name": sample_name,
-#     "mz_mapped_to_pathways": mz_mapped_to_pathways,
-#     "ratio_keggid_mz": kegg_compound_ids_to_mz_ratio_after_pathway_mapped,
-#     "": how_many_pathways})
-# reorder
+
 df = df[['sample_name', 'ratio_keggid_mz', 'mz_mapped_to_pathways', 'pathways_number_final']]
 
 df["ratio_mz_pathway_count"] = df['mz_mapped_to_pathways'].to_numpy(

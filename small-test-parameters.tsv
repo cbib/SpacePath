@@ -1,2 +1,2 @@
 dataset_name	metaspace_registry	annotations_to_use	annotations_download	in/out intensities for spot class	perform_spots_selection	offSample_cutoff	msm_cutoff	fdr_cutoff	TIC_normalization	Moran_I_cutoff	Moran_padj_cutoff	min_pathway_size	k_for_kmeans
-LP-example0	2021-02-10_20h21m12s	HMDB LipidMaps	manual	1.1	YES	0.3	0.2	0.5	YES	0.001	0.1	3	5
+LP-example0	2021-02-10_20h21m12s	HMDB LipidMaps	manual	1.1	YES	0.3	0.2	0.5	YES	0.001	0.05	3	5

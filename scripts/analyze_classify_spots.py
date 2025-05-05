@@ -8,45 +8,17 @@ import squidpy as sq
 import networkx as nx
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+
+
 import zonist.data as zd
-
-from bank4zonist.quantifs_methods import *
-from bank4zonist.constants import provide_annotation_dict
+import zonist.processing.measures_methods as zmm
 
 
-def compute_spot_quality(adata_mz, me_annots,
-                         allowed_in_out_ratio, fdr_cutoff):
-    print("marking spot quality with params: ", allowed_in_out_ratio)
-    adata_mz = adata_mz_mark_spot_quality(
-        adata_mz, me_annots.mz_quality, fdr_cutoff=fdr_cutoff
-    )
-    adata_mz.obs['spot_quality'] = "good"
-    adata_mz.obs.loc[adata_mz.obs['ratio_in_out'] < allowed_in_out_ratio,
-    'spot_quality'] = "bad"
-    try:
-        if len(adata_mz.uns['spot_quality_colors']
-               ) != len(adata_mz.obs['spot_quality'].unique()):
-            del adata_mz.uns['spot_quality_colors']
-    except KeyError:
-        pass
-    return adata_mz
+from local_helpers.local_helpers import provide_annotation_dict
+
+from local_helpers.visualization import plot_spots
 
 
-def mark_weak_signal_spots(adata_mz, cutoff: float = 10):
-    adata_mz.obs['totalIntensitySpot'] =  adata_mz.X.sum(axis=1)
-    adata_mz.obs.loc[adata_mz.obs['totalIntensitySpot'] <= cutoff, 'spot_quality'] = 'bad'
-
-    return adata_mz
-
-
-def plot_spots(adata_mz, plot_out_path, title='my title'):
-    print("Saving plot of spots")
-    sq.pl.spatial_scatter(
-        adata_mz, color=["spot_quality"], img=False,
-        title=title, save=os.path.abspath(plot_out_path))
-    plt.close()
-
-    return adata_mz
 
 if __name__ == "__main__":
     # define here my input
@@ -89,19 +61,18 @@ if __name__ == "__main__":
                                                  annotation_files=anno_dict)
             me_annots.load()  # load annotations
             print(adata_mz.uns)
-            me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
+            me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots, adata_mz)
 
             print("pulling quality of m/z features from annotations")
             me_annots.pull_mz_quality_df()  ## NEW
             if not me_annots.mz_quality[me_annots.offsample_column].isnull().all():
-                #if "spot_quality" not in adata_mz.obs.columns.tolist():
                 fdr_cutoff_features_to_compute_spot_qual = 0.1
                 if SAMPLE in ["LP-brain-mouse-5"]:
                     fdr_cutoff_features_to_compute_spot_qual = 0.2
                 x =  fdr_cutoff_features_to_compute_spot_qual
-                adata_mz = compute_spot_quality(adata_mz, me_annots,
-                                     allowed_in_out_ratio, fdr_cutoff=x)
-                adata_mz = mark_weak_signal_spots(adata_mz, cutoff=100)
+                adata_mz = zmm.compute_spot_quality(adata_mz, me_annots,
+                                                   allowed_in_out_ratio, fdr_cutoff=x)
+                adata_mz = zmm.mark_weak_signal_spots(adata_mz, cutoff=100)
                 plot_out_path = os.path.join(plot_folder, f'{SAMPLE}-spotsBefore.png')
 
                 plot_spots(adata_mz, plot_out_path, title="Before spots selection")

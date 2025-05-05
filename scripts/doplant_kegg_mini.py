@@ -11,10 +11,10 @@ import squidpy as sq
 import zonist.data as zd
 import zonist.method as zm
 
-from bank4zonist.quantifs_methods import match_adata_mz_and_annots
-from bank4zonist.constants import provide_annotation_dict
+from local_helpers.quantifs_methods import match_adata_mz_and_annots
+from local_helpers.local_helpers import provide_annotation_dict
 from do_kegg_translation__describe import mz_and_compounds_none_pathway, save_detailed_table, give_list_one_single_compound_in_any_pathway, give_list_compound_mapped_ok
-from bank4zonist.visualization import *
+from local_helpers.visualization import *
 
 mydata_dir = "../../data"
 my_csv_table_path = "../small-test-parameters.tsv"  # " ../small-test-parameters.tsv"
@@ -97,7 +97,7 @@ for i, row in datasets_parameters_df.iterrows():
     mz_one, kg_one = give_list_one_single_compound_in_any_pathway(pathwaysObj,
                                                                   me_annots, id_col=me_annots.usable_id)
     mz_one = list(set(mz_one) - set(mz_ok))
-    kg_one = list(set(kg_one) - set(kg_ok))
+    kg_one = list(set(kg_one) - set(kg_ok) )
     save_detailed_table(adata_mz, mz_one, kg_one, me_annots, plot_folder,
                         SAMPLE, suffix="KEGG-SinglesMapped", id_col=me_annots.usable_id)
 

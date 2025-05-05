@@ -11,8 +11,8 @@ import zonist.data as zd
 import zonist.method as zm
 import zonist.helpers as zh
 
-from bank4zonist.quantifs_methods import match_adata_mz_and_annots
-from bank4zonist.constants import provide_annotation_dict
+from local_helpers.quantifs_methods import match_adata_mz_and_annots
+from local_helpers.local_helpers import provide_annotation_dict
 
 
 def only_good_adatamz(adata_mz):
