@@ -16,7 +16,7 @@ import zonist.processing.measures_methods as zmm
 
 from local_helpers.local_helpers import provide_annotation_dict
 
-from local_helpers.visualization import plot_spots
+from local_helpers.local_viz import plot_spots
 
 
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
                                                  f'{SAMPLE}-spotsAfter.png')
                     plot_spots(adata_mz, plot_out_path, title="After spots selection")
                 else:
-                    print("Spot quality added to object, but original spots kept")
+                    print("Spot quality added to object, but original spots preserved")
 
                 adata_mz.uns['history']['spot_number_retained'] = adata_mz.obs.shape[0]
                 adata_mz.write_h5ad(os.path.join(mydata_dir, subfolder, f'{SAMPLE}.h5ad'))

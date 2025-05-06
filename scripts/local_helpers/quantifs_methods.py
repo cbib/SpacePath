@@ -178,18 +178,6 @@ def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 def build_coords_df(adata):
     df = pd.DataFrame(data=adata.obsm['spatial'],
                  columns=['x', 'y'],

@@ -17,7 +17,6 @@ from local_helpers.local_helpers import provide_annotation_dict
 #                                            give_list_compound_mapped_ok,
 #                                            give_list_one_single_compound_in_any_pathway,
 #                                            save_detailed_table)
-#from bank4zonist.visualization import *
 
 def allocate_aliases_into_groups(aliases_df) -> (list, list):
     accepted_ids = set()

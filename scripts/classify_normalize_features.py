@@ -8,16 +8,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import squidpy as sq
 import zonist.data as zd
-
+import zonist.method as zm
 import zonist.processing.measures_methods as zmm
+from local_helpers.local_helpers import provide_annotation_dict
 
-from local_helpers.local_helpers import (provide_annotation_dict,
-  part_a_filters,
-    part_b_filters_with_autocorr)
-
-from local_helpers.visualization import plot_mz_given_quality_metrics, plot__moran_info
-
-#from local_helpers.visualization import *
 
 
 
@@ -62,7 +56,6 @@ if __name__ == "__main__":
         adata_mz = ad.read_h5ad(filename=os.path.join(
             mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
-
         try:
             columns_to_reset = set(adata_mz.var.columns.tolist()) - set(["mz"])
             adata_mz.var = adata_mz.var.drop(columns=list(columns_to_reset))
@@ -82,54 +75,21 @@ if __name__ == "__main__":
                     adata_mz.X.copy(), adata_mz.obs['obs'].tolist(),
                     adata_mz.var['mz'].tolist()))
 
-            me_annots, ok_mz_keep_part1 = part_a_filters(
-                me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff )
-            text_notice = f"valid $m/z$\n n = {len(ok_mz_keep_part1)}"
-            plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,
-                                          plot_folder,
-                                          msm_cutoff, offSample_cutoff,
-                                          text_notice)
+            adata_mz = zm.ClassifyMZProtocol.run(adata_mz,
+                me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff,
+                moran_I_cutoff, moran_padj_cutoff,
+                SAMPLE, plot_folder
+            )
+            print(adata_mz)
+            print(adata_mz.uns['history'])
 
-            adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(ok_mz_keep_part1)
-
-            all_quality_df, copy_mz, keep_part2, moran_mz_df = part_b_filters_with_autocorr(
-                adata_mz, ok_mz_keep_part1, me_annots,
-                moran_I_cutoff, moran_padj_cutoff)
-
-            text_notice = f"valid $m/z$: n = {len(keep_part2)}"
-
-            plot__moran_info(copy_mz.uns['moranI'].copy(), plot_folder,
-                             SAMPLE,
-                             text_notice, moran_I_cutoff, moran_padj_cutoff)
-
-
-            del copy_mz
-            adata_mz.uns['moranI'] = moran_mz_df
-            adata_mz.uns["history"]['features_n_after_mz_clean_2'] = len(keep_part2)
-            all_quality_df['final_quality'] = "bad"
-            all_quality_df.loc[(all_quality_df['quality_msm_off_fdr'] == "good") & (
-                all_quality_df['quality_autocorr'] == "good"), 'final_quality'
-            ] = "good"
-            okok = all_quality_df.loc[all_quality_df['final_quality']=="good",:].shape[0]
-            if np.all(np.array(adata_mz.var.index.tolist()) == np.array(
-                    all_quality_df['mz'].tolist())):
-                all_quality_df.index = all_quality_df['mz'].astype(
-                    str).tolist()
-                all_quality_df['mz'] = all_quality_df['mz'].astype(
-                    float).tolist()
-                adata_mz.var = all_quality_df
-                print(adata_mz)
-                print(adata_mz.uns['history'])
-            else:
-                raise AssertionError("Fatal: could not assembly final object. Aborted.")
             answer = input(
-                f"A total of {okok} m/z have good final_quality (pass both a) and b) filters)."
+                f"will save *{SAMPLE}* adata_mz with the computed m/z classification"
                 f"\nDo you agree to continue?")
             if not answer.lower() in ["y", "yes"]:
                 print("going to the next, nothing saved")
                 continue
             else:
-                print("Usable m/z elements (n of features):", okok)
                 adata_mz.write_h5ad(filename=os.path.join(
                    mydata_dir, subfolder, f"{SAMPLE}.h5ad"))
                 print("saved object")

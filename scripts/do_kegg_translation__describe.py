@@ -13,7 +13,7 @@ import zonist.method as zm
 from local_helpers.quantifs_methods import match_adata_mz_and_annots
 from local_helpers.local_helpers import provide_annotation_dict
 
-from local_helpers.visualization import *
+from local_helpers.local_viz import *
 
 
 def mz_and_compounds_none_pathway(pathwaysObj, me_annots, id_col="KEGG"):

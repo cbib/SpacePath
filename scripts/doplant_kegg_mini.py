@@ -14,7 +14,6 @@ import zonist.method as zm
 from local_helpers.quantifs_methods import match_adata_mz_and_annots
 from local_helpers.local_helpers import provide_annotation_dict
 from do_kegg_translation__describe import mz_and_compounds_none_pathway, save_detailed_table, give_list_one_single_compound_in_any_pathway, give_list_compound_mapped_ok
-from local_helpers.visualization import *
 
 mydata_dir = "../../data"
 my_csv_table_path = "../small-test-parameters.tsv"  # " ../small-test-parameters.tsv"
