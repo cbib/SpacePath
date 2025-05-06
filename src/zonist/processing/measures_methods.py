@@ -170,5 +170,115 @@ def compute_moran_i(adata, n_neighs: int=10, n_perms: int=5):
 
     return adata
 
+# phases of classification for m/z
+
+def part_a_filter(me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff):
+    me_annots.pull_mz_quality_df()
+    me_annots.mz_quality['quality_msm_off_fdr'] = "bad"
+    me_annots.mz_quality.loc[
+        (me_annots.mz_quality[me_annots.msm_column] >= msm_cutoff
+         ) & (me_annots.mz_quality[me_annots.offsample_column] <= offSample_cutoff  #
+         ) & (me_annots.mz_quality[me_annots.fdr_column] <= fdr_cutoff),
+        'quality_msm_off_fdr'] = "good"
+
+    mz_to_keep_part1 = me_annots.mz_quality.loc[
+        me_annots.mz_quality['quality_msm_off_fdr'] == "good", "mz"].astype(
+        str).tolist()
+
+    return me_annots, mz_to_keep_part1
+
+
+def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
+    df1 = df1.copy()
+    df2 = df2.copy()
+    df2[keycol] = df2[keycol].astype(str)
+    df2 = df2.drop_duplicates(subset=keycol)
+    df2 = df2.set_index(keycol)
+    try:
+        df2 = df2.loc[df1[keycol].astype(str).tolist(), :]  # same row order as 1
+        # np.all(df2.index.astype(str).to_numpy(
+        # ) == df1[keycol].astype(str).to_numpy())
+        for col in df2.columns:
+            df1[col] = df2[col]
+        return df1
+    except KeyError:
+        print("fatal (no match), custom_join_left impossible!")
+        return None
+    except Exception as e:
+        print(e, "fatal (no match), custom_join_left impossible!")
+        return None
+
+
+def part_b_filter_with_autocorr(adata_mz, ok_part1, me_annots,
+                                moran_I_cutoff, moran_padj_cutoff):
+    # prepare quality merged df
+    all_quality_df = adata_mz.var.copy()
+    all_quality_df["mz"] = all_quality_df["mz"].astype(str).tolist()
+    me_annots.mz_quality['mz'] = me_annots.mz_quality['mz'].astype(
+        str).tolist()
+    all_quality_df = custom_join_left(
+        all_quality_df, me_annots.mz_quality[
+            ['mz', me_annots.msm_column, me_annots.offsample_column,
+             me_annots.fdr_column, me_annots.formula_col, "quality_msm_off_fdr"]], keycol='mz')
+
+    print("(Moran's metrics are only computed for the m/z that passed the a) filters)")
+    copy_mz = adata_mz[:, ok_part1].copy()   # only compute moran for the ok_part1 features
+    try:
+        if copy_mz.uns['moranI'].shape[0] != len(ok_part1):
+            del copy_mz.uns['moranI']
+    except Exception as e:
+        pass
+
+    if not "moranI" in list(copy_mz.uns.keys()):
+        n_perms = 50
+        if copy_mz.obs.shape[0] > 100000:
+            n_perms = 3
+        copy_mz = zmm.compute_moran_i(copy_mz, n_neighs=20, n_perms=n_perms)
+    else:
+        print(f"will use the existing .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
+        assert copy_mz.uns['moranI'].shape[0] == len(ok_part1), "Fatal: existing moranI dimensions do not match with length of m/z list passing a) filters. Killed! (solution: delete .uns['moranI'] dataframe and try again)"
+    moran_mz_df = copy_mz.uns['moranI'].copy()
+    moran_mz_df['mz'] = moran_mz_df.index.astype(str).tolist()
+    all_quality_df = pd.merge(all_quality_df,
+                              moran_mz_df[['mz', 'I', 'pval_sim_fdr_bh']],
+                              how="left", left_on="mz", right_on="mz")
+    mz_to_keep_part2 = all_quality_df.loc[
+        (all_quality_df['I'] >= moran_I_cutoff) & (
+                all_quality_df['pval_sim_fdr_bh'] <= moran_padj_cutoff),
+        "mz"].astype(str).tolist()
+
+    all_quality_df['quality_autocorr'] = 'bad'
+    all_quality_df.loc[all_quality_df['mz'].astype(str).isin(mz_to_keep_part2),
+     'quality_autocorr'] = "good"
+
+    return all_quality_df, mz_to_keep_part2, moran_mz_df
+
+
+def adata_mz_insert_full_quality(adata_mz, moran_mz_df,
+                                 all_quality_df):
+    adata_mz.uns['moranI'] = moran_mz_df
+
+    all_quality_df['final_quality'] = "bad"
+    all_quality_df.loc[(all_quality_df['quality_msm_off_fdr'] == "good") & (
+            all_quality_df['quality_autocorr'] == "good"), 'final_quality'
+    ] = "good"
+
+    if np.all(np.array(adata_mz.var.index.tolist()) == np.array(
+            all_quality_df['mz'].tolist())):
+        all_quality_df.index = all_quality_df['mz'].astype(
+            str).tolist()
+        all_quality_df['mz'] = all_quality_df['mz'].astype(
+            float).tolist()
+        adata_mz.var = all_quality_df
+
+    else:
+        raise AssertionError(
+            "Fatal: could not assembly final object. Aborted.")
+
+    return adata_mz
+
+
+
+
 
 

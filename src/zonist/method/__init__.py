@@ -15,7 +15,10 @@ from pydantic import Extra
 
 import zonist.helpers as helpers
 from zonist.data import MetabolicPathways, MetabolomeAnnotations
+import zonist.processing.measures_methods as zmm
 import zonist.processing.pathways_methods as pathways_methods
+import zonist.visualization.visualization as zviz
+
 
 logger = logging.getLogger(__name__)
 logger = helpers.reset_log_config(logger)
@@ -32,8 +35,8 @@ class MethodConfig(BaseModel):
     class_type: str = "method"
 
 
-# class FilterMZProtocolConfig(MethodConfig):
-#     description: str = "phased protocol to filter m/z by their quality and spatial distribution"
+class ClassifyMZProtocolConfig(MethodConfig):
+    description: str = "phased protocol to filter m/z by the quality of molecular formulae annotations, and the spatial distributions"
 
 
 class SyncPathwaysAndAnnotsConfig(MethodConfig): # todo: use this config ?
@@ -68,9 +71,49 @@ class FakeMethod:  # no-inheritance avoids instantiation: more practical
         return pathways_methods.test_function(arr, config.dummy_scale,
                                               config.dummy_cutoff)
 
-# class FilterMZProtocol:
-#     @staticmethod
-#     def run():
+class ClassifyMZProtocol:
+    config: ClassifyMZProtocolConfig
+    @staticmethod
+    def run(adata_mz, me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff,
+            moran_I_cutoff, moran_padj_cutoff,
+            SAMPLE, plot_folder, config=ClassifyMZProtocolConfig()):
+        logger.info("Running %s", config.description)
+        logger.info(f">> Part a): Select m/z features with parameters: "
+          f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff, offSample_cutoff,fdr_cutoff )
+        me_annots, mz_to_keep_part1 = zmm.part_a_filter(
+            me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff)
+
+        logger.info(f"A total of %s m/z pass MSM, offSample and FDR cutoffs.", len(set(mz_to_keep_part1)))
+        text_notice = f"valid $m/z$\n n = {len(mz_to_keep_part1)}"
+        zviz.plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,
+                                      plot_folder, msm_cutoff,
+                                      offSample_cutoff, text_notice)
+        logger.info("saved plot (MSM, offSample, FDR) to %s", plot_folder)
+        adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(
+            mz_to_keep_part1)
+
+        logger.info(f">> Part b): Classifying m/z features, by :\n"
+              f"Moran's I value >= %s,  (BH) adjusted p-value <= %s", moran_I_cutoff, moran_padj_cutoff)
+        all_quality_df, mz_to_keep_part2, moran_mz_df = zmm.part_b_filter_with_autocorr(
+            adata_mz, mz_to_keep_part1, me_annots,
+            moran_I_cutoff, moran_padj_cutoff)
+
+        text_notice = f"valid $m/z$: n = {len(mz_to_keep_part2)}"
+        zviz.plot__moran_info(moran_mz_df, plot_folder,
+                         SAMPLE,
+                         text_notice, moran_I_cutoff, moran_padj_cutoff)
+        logger.info("saved plot (autocorrelation) to %s", plot_folder)
+
+        adata_mz.uns["history"]['features_n_after_mz_clean_2'] = len(
+            mz_to_keep_part2)
+
+        adata_mz = zmm.adata_mz_insert_full_quality(adata_mz,
+                                                    moran_mz_df,
+                                                    all_quality_df)
+        n_good_mz = adata_mz.var.loc[
+                adata_mz.var['final_quality'] == "good", :].shape[0]
+        logger.info("a total of %s are good quality m/z features (check column 'final_quality' of adata_mz.var)", n_good_mz)
+        return adata_mz
 
 
 class SyncPathwaysAndAnnots:
