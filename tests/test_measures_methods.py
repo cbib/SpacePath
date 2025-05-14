@@ -22,10 +22,7 @@ class Test(TestCase):
         result = pmm.tic_normalization(intensities_matrix,
                                                   spots_names,
                                                   features_names)
-        hoho = np.array(np.around(result[0, :], 4)
-                     ).flatten()
-        print(hoho, "::::")
-        print(type(hoho))
+
         self.assertTrue(np.all(
             np.array(np.around(result[0, :], 4)).flatten(
                      ) == np.array([112.8906, 450.2023, 787.1431])))

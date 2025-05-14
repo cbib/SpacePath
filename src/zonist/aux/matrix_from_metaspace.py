@@ -138,13 +138,12 @@ def save_quantifications_anndata(outdf, outfile) -> None:
 
 
 if __name__ == "__main__":
-    # TODO: change for a smaller dataset
-    metaspace_registry = "2022-08-16_10h14m23s"
+    metaspace_registry = "2023-10-24_17h13m08s"
     api_versions = {'HMDB': ("HMDB", "v4"),
                    'LipidMaps': ("LipidMaps", "2017-12-12")}
     api_fdr = 0.5
-    out_dir = "~/spatial_thesis/spatial_metabolomics/data/whole-ellis/"
-    filename = "whole-ellis" # no extension
+    out_dir = "~/"
+    filename = "publictest" # no extension
 
     out_file = os.path.join(os.path.expanduser(out_dir),
                             filename)

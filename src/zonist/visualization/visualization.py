@@ -74,8 +74,8 @@ def plot__moran_info(df, plot_folder, SAMPLE, text_notice,
                       moran_I_cutoff, moran_padj_cutoff) -> None:
     df["log_var_sim"] = np.log(df["var_sim"].to_numpy())
     df['padj class'] = f" > {moran_padj_cutoff}"
-    df.loc[df[
-                  "pval_sim_fdr_bh"] <= moran_padj_cutoff, 'padj class'] = f" <= {moran_padj_cutoff}"
+    df.loc[df["pval_sim_fdr_bh"] <= moran_padj_cutoff,
+        'padj class'] = f" <= {moran_padj_cutoff}"
     df['padj class'] = pd.Categorical(df['padj class'],
                                       categories=[f" <= {moran_padj_cutoff}",
                                                   f" > {moran_padj_cutoff}"] )

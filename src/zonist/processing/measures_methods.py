@@ -159,7 +159,7 @@ def tic_normalization(intensity_matrix: Union[csr_matrix, np.array],
     return normalized_matrix
 
 
-def compute_moran_i(adata, n_neighs: int=10, n_perms: int=5):
+def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5):
     """note: to run Moran's I, through squidpy, the `spatial_connectivities`
      in `adata.obsp` are required, so spatial neighbors must be run first"""
     logger.info("computing spatial neighbors")
@@ -210,7 +210,7 @@ def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
 
 
 def part_b_filter_with_autocorr(adata_mz, ok_part1, me_annots,
-                                moran_I_cutoff, moran_padj_cutoff):
+                                moran_I_cutoff, moran_padj_cutoff, n_neighs, n_perms):  #
     # prepare quality merged df
     all_quality_df = adata_mz.var.copy()
     all_quality_df["mz"] = all_quality_df["mz"].astype(str).tolist()
@@ -221,7 +221,6 @@ def part_b_filter_with_autocorr(adata_mz, ok_part1, me_annots,
             ['mz', me_annots.msm_column, me_annots.offsample_column,
              me_annots.fdr_column, me_annots.formula_col, "quality_msm_off_fdr"]], keycol='mz')
 
-    print("(Moran's metrics are only computed for the m/z that passed the a) filters)")
     copy_mz = adata_mz[:, ok_part1].copy()   # only compute moran for the ok_part1 features
     try:
         if copy_mz.uns['moranI'].shape[0] != len(ok_part1):
@@ -229,11 +228,8 @@ def part_b_filter_with_autocorr(adata_mz, ok_part1, me_annots,
     except Exception as e:
         pass
 
-    if not "moranI" in list(copy_mz.uns.keys()):
-        n_perms = 50
-        if copy_mz.obs.shape[0] > 100000:
-            n_perms = 3
-        copy_mz = zmm.compute_moran_i(copy_mz, n_neighs=20, n_perms=n_perms)
+    if not "moranI" in list(copy_mz.uns.keys()) :
+        copy_mz = compute_moran_i(copy_mz, n_neighs=n_neighs, n_perms=n_perms)
     else:
         print(f"will use the existing .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
         assert copy_mz.uns['moranI'].shape[0] == len(ok_part1), "Fatal: existing moranI dimensions do not match with length of m/z list passing a) filters. Killed! (solution: delete .uns['moranI'] dataframe and try again)"

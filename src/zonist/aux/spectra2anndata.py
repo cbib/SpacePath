@@ -15,8 +15,6 @@
 #  ~/spatial_thesis/spatial_metabolomics/tutorial_publicdata/example_data \
 #  example_data ED output/objects
 
-# TODO: transfomr this in ----> spectra2matrix -> and save a .h5ad file !!!!!
-
 import numpy as np
 import pandas as pd
 import anndata as ad

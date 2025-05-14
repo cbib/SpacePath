@@ -7,7 +7,7 @@ mz_decimal_places = 6
 
 supported_annotations: List[str] = ["LipidMaps",
                                     "LIPID_MAPS", # ancient db version too
-                                    "CoreMetabolome",  # new
+                                    "CoreMetabolome",
                                     "HMDB",
                                     "KEGG",
                                     "custom_kegg"]
@@ -22,7 +22,7 @@ not_metabolic_reactions_pathways = [
     "jak-stat", "kappa", "tnf", "rap1",  "foxo",
     "rage signal", "oxytocin", "relaxin", "prolactin", "renin","cytokine",
      "gnrh", "salivary secretion", "acid secretion",
-    "insulin secretion", "parathyroid", "aldosterone" ,"leukemia",
+    "insulin secretion", "parathyroid", "aldosterone", "leukemia",
     "syndrome", "thyroid", "endocrine",  "cushing", "ovarian", "contraction",
     "atherosclerosis", "cardiomyo", "arthritis", "inflammatory", "platelet",
     "lupus erythematosus",  "kaposi", "asthma", "disease", "depression",
@@ -31,14 +31,15 @@ not_metabolic_reactions_pathways = [
     "leishmania", "toxoplasmosis", "legionel", "malaria", "tuberculosis",
     "coccus", "virus", "virion", "viral", "measles", "dna adducts",
     "meiosis", "checkpoint", "resistance", "cell", "pathways in cancer",
-     "morphine addiction", "gentamicin", "xenobiotics",
+     "addiction", "gentamicin", "xenobiotics",
      "mineral absorption", "digestion and absorption",
     "glucagon signaling", "taste transduction", "drug",
     "lectin", "recombination", "vitamins and cofactors", "disorders of",
-    "number variation", "hypothetical", "hypothesis", "senescence",
+    "number variation", "hypothe", "senescence",
     "rhodopsin", "nf-kb", "spina bifida", "nucleotide gpcr", "telomere",
-    "follicle devel", "functionalization of compounds", "visual cycle"
-
+    "follicle devel", "functionalization of compounds", "visual cycle",
+    "alcoholism", "hepatitis", "pertussis", "sars-cov-2",
+    "autism", "signaling events", "cyclosporin"
 ]
 # Explanation of 'not_metabolic_reactions_pathways': any pathway name
 # that contains the specified substrings above, is classified as being
@@ -47,6 +48,6 @@ not_metabolic_reactions_pathways = [
 
 
 supported_mappings: List[str] = ["LipidMaps",
-                                 "CoreMetabolome",  # new
+                                 "CoreMetabolome",
                                  "HMDB"]  # this list >
 # > states the types of ref tables that match all not-kegg IDs with KEGG ones

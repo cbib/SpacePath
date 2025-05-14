@@ -37,6 +37,8 @@ class MethodConfig(BaseModel):
 
 class ClassifyMZProtocolConfig(MethodConfig):
     description: str = "phased protocol to filter m/z by the quality of molecular formulae annotations, and the spatial distributions"
+    n_neighs: int = 20   # for neighbors graph computation before Moran's I
+    n_perms: Union[int, str] = "auto"   # for Moran's I
 
 
 class SyncPathwaysAndAnnotsConfig(MethodConfig): # todo: use this config ?
@@ -92,11 +94,17 @@ class ClassifyMZProtocol:
         adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(
             mz_to_keep_part1)
 
+        if config.n_perms == "auto":
+            config.n_perms = 50
+            if adata_mz.obs.shape[0] > 100000:
+                config.n_perms = 3
+
         logger.info(f">> Part b): Classifying m/z features, by :\n"
               f"Moran's I value >= %s,  (BH) adjusted p-value <= %s", moran_I_cutoff, moran_padj_cutoff)
+        logger.info("Moran's metrics are only computed for the m/z that passed the a) filters)")
         all_quality_df, mz_to_keep_part2, moran_mz_df = zmm.part_b_filter_with_autocorr(
             adata_mz, mz_to_keep_part1, me_annots,
-            moran_I_cutoff, moran_padj_cutoff)
+            moran_I_cutoff, moran_padj_cutoff, config.n_neighs, config.n_perms)
 
         text_notice = f"valid $m/z$: n = {len(mz_to_keep_part2)}"
         zviz.plot__moran_info(moran_mz_df, plot_folder,
@@ -113,6 +121,7 @@ class ClassifyMZProtocol:
         n_good_mz = adata_mz.var.loc[
                 adata_mz.var['final_quality'] == "good", :].shape[0]
         logger.info("a total of %s are good quality m/z features (check column 'final_quality' of adata_mz.var)", n_good_mz)
+
         return adata_mz
 
 
