@@ -249,13 +249,19 @@ def prettify_gmt(gmt_df, undesired_name_substring: Union[str, None]):
     return gmt_df
 
 
-def purge_pathways(gmt_df, not_metabolic_reactions_pathways: List[str]):
+def purge_pathways(gmt_df, not_metabolic_reactions_pathways: List[str],
+                   inconvenient_id_name_df: Union[None, pd.DataFrame]=None):
     gmt_df["bad"] = 0
     gmt_df["lower"] = gmt_df.iloc[:, 1].str.lower()  # column 1 has the names
     gmt_df.loc[gmt_df["lower"].str.contains(
         "|".join(not_metabolic_reactions_pathways), regex=True), "bad"] = 1
     gmt_df = gmt_df.loc[gmt_df["bad"] != 1, :]
     gmt_df = gmt_df.drop(columns=["bad", "lower"])
+
+    if inconvenient_id_name_df is not None:
+        gmt_df["id"] = gmt_df.iloc[:, 1].tolist()  # column 0 has pathway_id
+        gmt_df = gmt_df.loc[~gmt_df["id"].isin(
+            inconvenient_id_name_df['pathway_id']),:]
 
     return gmt_df
 
@@ -347,7 +353,52 @@ def is_log_transformed(sparse_matrix):
 
     return False
 
-## ...
+
+def allocate_aliases_into_groups(aliases_df) -> (list, list):
+    accepted_ids = set()
+    precluded_ids = set()
+    for i, row in aliases_df.iterrows():
+        if row['LipidMaps'] != "empty":
+            precluded_ids = precluded_ids.union({row['KEGG'], row['HMDB']})
+            accepted_ids = accepted_ids.union(
+                {row['LipidMaps']})  # preference for lipidmaps
+        elif (row['LipidMaps'] == "empty") and (row['HMDB'] != "empty"):
+            precluded_ids = precluded_ids.union({row['KEGG']})
+            accepted_ids = accepted_ids.union(
+                {row['HMDB']})  # second pref hmdb
+        elif (row['LipidMaps'] == "empty") and (row['HMDB'] == "empty"):
+            accepted_ids = accepted_ids.union(
+                {row['KEGG']})  # kegg id : only if the other two are empty
+
+    return list(accepted_ids), list(precluded_ids)
+
+
+def aliases_groups(aliases_df, anno_df, usable_id):
+    m_ids = anno_df[usable_id].unique()
+    h = [u for u in m_ids if u.startswith("HMDB")]
+    lm = [u for u in m_ids if u.startswith("LM")]
+    kg = [u for u in m_ids if u.startswith("C")]
+    aliases_df = aliases_df.loc[(aliases_df["HMDB"].isin(h)
+                                 ) | (aliases_df["LipidMaps"].isin(lm)) | (
+                                    aliases_df["KEGG"].isin(kg)), :]
+    extra_kegg = set(kg) - set(aliases_df["KEGG"].unique())
+    tail_df = pd.DataFrame({}, columns=aliases_df.columns)
+    tail_df["KEGG"] = list(extra_kegg)
+    aliases_df = pd.concat([aliases_df, tail_df])
+    aliases_df = aliases_df.fillna("empty")
+    aliases_df = aliases_df.replace(to_replace='', value="empty")
+
+    accepted_ids, precluded = allocate_aliases_into_groups(aliases_df)
+
+    dout = {'accepted' : accepted_ids, 'precluded': precluded}
+
+    return dout
+
+
+
+
+
+
 
 
 

@@ -48,7 +48,7 @@ def compute_kpca(pw_as_df, adata, min_entity=2):
     if is_log_transformed(adata.X):
         df_log_transformed = adata.to_df()
     else:
-        print("log transforming data")
+        print("log transforming data (natural logarithm, as in sc.pp.log1p)")
         df_log_transformed = np.log(adata.to_df() + 1) # as sc.pp.log1p does
 
     kpca_scores = kpca_model.fit_transform(df_log_transformed)
@@ -154,5 +154,3 @@ def yield_compliant_pathways(pathways_dict,
     good_pathways: List[str] = list(good_pathways_sizes.keys())
 
     return good_pathways
-
-

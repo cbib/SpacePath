@@ -81,7 +81,7 @@ class ClassifyMZProtocol:
             SAMPLE, plot_folder, config=ClassifyMZProtocolConfig()):
         logger.info("Running %s", config.description)
         logger.info(f">> Part a): Select m/z features with parameters: "
-          f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff, offSample_cutoff,fdr_cutoff )
+          f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff, offSample_cutoff,fdr_cutoff)
         me_annots, mz_to_keep_part1 = zmm.part_a_filter(
             me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff)
 
@@ -144,12 +144,13 @@ class SyncPathwaysAndAnnots:
         pathwaysObj.intersect_with_annotations(annotsObj)  # this updates pathwaysObj
         pathwaysObj.constrain(min_pathway_size, max_pathway_size, mode)
 
-        # todo: check if this .df attribute update is enough (other attrs to update?) for annotations:
+        # todo: check if this .df  update is enough (other attrs to update?):
         annotsObj.df = annotsObj.df.loc[
             annotsObj.df[annotsObj.usable_id].isin(
-                        pathwaysObj.piled[pathwaysObj.molecule_id_type].unique()), :]
+                pathwaysObj.piled[pathwaysObj.molecule_id_type].unique()), :]
 
-        logger.info("Pathways and Annotations objects syncronized with success")
+        logger.info("Pathways and Annotations objects synchronized with"
+                    " %s min pathway size", min_pathway_size)
         return pathwaysObj, annotsObj
 
 

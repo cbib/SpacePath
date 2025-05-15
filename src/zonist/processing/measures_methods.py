@@ -40,7 +40,7 @@ def match_adata_mz_and_annots(annotationsObj: MetabolomeAnnotations,
     """
     Updates:
      - adata_mz
-     - the  following attributes of the annotations object:
+     - the following attributes of the annotation object:
         .preloaded
         .no_translated
         .df (if exists)
@@ -57,11 +57,9 @@ def match_adata_mz_and_annots(annotationsObj: MetabolomeAnnotations,
         me_annots.preloaded['mz'].isin(okmz),:].copy()
     me_annots.no_translated = me_annots.no_translated.loc[
         me_annots.no_translated['mz'].isin(okmz),:].copy()
-    try:
+    if me_annots.df.shape[0] != 0:  # if .df attr is not an empty df
         me_annots.df = me_annots.df.loc[
-                                  me_annots.df['mz'].isin(okmz), :].copy()
-    except:
-        pass
+                                      me_annots.df['mz'].isin(okmz), :].copy()
     adata_mz = adata_mz[:, np.array(sorted(okmz), dtype=str)].copy()
 
     return me_annots, adata_mz

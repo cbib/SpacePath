@@ -14,6 +14,8 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
 from pandas.api.types import is_numeric_dtype
 
+from pathlib import Path
+
 import zonist.helpers as helpers
 import zonist.processing.pathways_methods as pathways_methods
 
@@ -26,6 +28,8 @@ logger = logging.getLogger(__name__)
 logger = helpers.reset_log_config(logger)
 #logger.info("\nTime: {}".format(time.strftime('%Y%m%d-%H.%M.%S')))
 
+module_path = Path(__file__).resolve()
+library_path = module_path.parent.parent.parent.parent
 
 class BaseModel(PydanticBaseModel):
     # class Config:  # deprecated since pydantic v2
@@ -186,7 +190,7 @@ class MetabolomeAnnotations(Dataset):
 
     def discard_out_of_tissue_mz(self, prob_out=0.87,
                                  fraction_to_exclude=1):
-        # todo: check if not needed anymore this discard_out_of_tissue_mz: I am using a more complex strategy: see repo user-pipeline/scripts/classify_normalize_features
+        # TODO: check if not needed anymore this discard_out_of_tissue_mz: I am using a more complex strategy: see repo user-pipeline/scripts/classify_normalize_features
 
         """Recommended (optional), to discard the mz that are out-of-tissue.
         Among the off-sample features (those having >= prob_out)
@@ -269,6 +273,25 @@ class MetabolomeAnnotations(Dataset):
         except Exception as e:
             logger.warning("Error: %s", e)
 
+    def remove_redundant_aliases(self):
+        print("collapsing metabolites' identifiers aliases")
+        assert self.usable_id != "KEGG", "bad .usable_id"
+
+        aliases_df = pd.read_csv(os.path.join(library_path,
+            "ressources", "aliases-HMDB-05-07-24-LipidMaps-04-30-25.tsv"),
+            sep="\t", header=0, index_col=None)
+
+        tmp_out: Dict[str, list] = helpers.aliases_groups(
+            aliases_df, self.df, self.usable_id)
+        accepted_ids = tmp_out['accepted']
+
+        self.df = self.df.loc[
+                  self.df[self.usable_id].isin(
+                      accepted_ids), :].copy()
+        self.no_translated = self.no_translated.loc[
+                             self.no_translated[self.usable_id].isin(
+                                 accepted_ids), :].copy()
+
     def check_expectations_1(self):
         if len(set(list(self.annotation_files.keys())).intersection(
             set(supported_annotations))) == 0:
@@ -331,9 +354,14 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
         official_gmt = helpers.prettify_gmt(official_gmt,
                                             self.undesired_substring)
+        inconvenient_df = pd.read_csv(os.path.join(
+            library_path, "ressources", "inconvenient_list_wikipathways.csv"
+        ), header=0, index_col=None)
         if self.purge:
             official_gmt = helpers.purge_pathways(
-                official_gmt, not_metabolic_reactions_pathways)
+                official_gmt, not_metabolic_reactions_pathways,
+                inconvenient_id_name_df=inconvenient_df
+            )
         self.official = official_gmt
 
     def preload_custom(self):
@@ -398,7 +426,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
             self.molecule_id_type)
 
     def constrain(self, min_pathway_size, max_pathway_size, mode):
-        assert mode in ["default", "mz_aware"], "Error, mode param not recognized"
+        assert mode in ["default", "mz_aware"], "Error, mode not recognized"
         if mode == "default" :
             good_pathways_l = pathways_methods.yield_compliant_pathways(
                 self.to_dict(option="id"), min_pathway_size, max_pathway_size)
@@ -413,5 +441,5 @@ class MetabolicPathways(BaseModel, extra='allow'):
         self.piled = self.piled.loc[~self.piled[
             self.molecule_id_type].isin(metabolites_to_eject), :]
         self.pathways_ids = self.pathways_ids.loc[
-                                   self.pathways_ids[
-                                       self.pathway_id_col].isin(good_pathways_l), :]
+            self.pathways_ids[
+                self.pathway_id_col].isin(good_pathways_l), :]
