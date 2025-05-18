@@ -18,9 +18,9 @@ columns_ref_map_expected: List[str] = ["initial_id_unconverted", "KEGG", "databa
 not_metabolic_reactions_pathways = [
     "autophagy - other",  "amoebiasis", "cgmp-pkg signaling",
     "phagocytosis",  "fc gamma", "ri signaling", "mapk",
-    "wnt", "notch", "hedgehog",  "erbb", "tgf", "hippo", "vegf", "apelin",
+    "wnt", "notch", "hedgehog",  "erbb", "tgf", "hippo", "apelin",
     "jak-stat", "kappa", "tnf", "rap1",  "foxo",
-    "rage signal", "oxytocin", "relaxin", "prolactin", "renin","cytokine",
+    "rage signal", "oxytocin", "relaxin", "prolactin", "renin", "cytokine",
      "gnrh", "salivary secretion", "acid secretion",
     "insulin secretion", "parathyroid", "aldosterone", "leukemia",
     "syndrome", "thyroid", "endocrine",  "cushing", "ovarian", "contraction",
@@ -30,20 +30,22 @@ not_metabolic_reactions_pathways = [
     "trypanosomiasis", "shigellosis", "infection", "diabetes",
     "leishmania", "toxoplasmosis", "legionel", "malaria", "tuberculosis",
     "coccus", "virus", "virion", "viral", "measles", "dna adducts",
-    "meiosis", "checkpoint", "resistance", "cell", "pathways in cancer",
+    "meiosis", "checkpoint", "resistance", " cell ", # " cell " spaces comprised
+    "hepatocell", "cells", "pathways in cancer",
      "addiction", "gentamicin", "xenobiotics",
      "mineral absorption", "digestion and absorption",
     "glucagon signaling", "taste transduction", "drug",
-    "lectin", "recombination", "vitamins and cofactors", "disorders of",
-    "number variation", "hypothe", "senescence",
+    "lectin", "recombination", "vitamins and cofactors", "disorder",
+    "number variation", "hypothe", "senescence", "mitotic", "mitosis",
     "rhodopsin", "nf-kb", "spina bifida", "nucleotide gpcr", "telomere",
     "follicle devel", "functionalization of compounds", "visual cycle",
     "alcoholism", "hepatitis", "pertussis", "sars-cov-2",
-    "autism", "signaling events", "cyclosporin"
+    "autism", "signaling events",  "aspirin", "cyclosporin", "sulindac",
+    "rotenone", "overview", "workshop"
 ]
 # Explanation of 'not_metabolic_reactions_pathways': any pathway name
 # that contains the specified substrings above, is classified as being
-# NOT strictly associated to the sets of metabolic reactions.
+# NOT strictly associated to the sets of metabolic reactions, or too vague.
 # Such substrings refer to disease, or generalistic sets or terms.
 
 

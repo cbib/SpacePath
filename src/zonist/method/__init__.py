@@ -141,7 +141,7 @@ class SyncPathwaysAndAnnots:
         if (max_pathway_size == 1) and (mode != "default"):
             logger.info("max pathway size is 1, auto-set default mode")
             mode = "default"
-        pathwaysObj.intersect_with_annotations(annotsObj)  # this updates pathwaysObj
+        pathwaysObj.intersect_with_annotations(annotsObj)  # this updates pathwaysObj only
         pathwaysObj.constrain(min_pathway_size, max_pathway_size, mode)
 
         # todo: check if this .df  update is enough (other attrs to update?):
@@ -149,8 +149,8 @@ class SyncPathwaysAndAnnots:
             annotsObj.df[annotsObj.usable_id].isin(
                 pathwaysObj.piled[pathwaysObj.molecule_id_type].unique()), :]
 
-        logger.info("Pathways and Annotations objects synchronized with"
-                    " %s min pathway size", min_pathway_size)
+        logger.info("Pathways and Annotations objects synchronized, with"
+                    " min pathway size = %s", min_pathway_size)
         return pathwaysObj, annotsObj
 
 

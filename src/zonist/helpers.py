@@ -237,6 +237,8 @@ def warrant__one_to_one_mz_id(annotdf: pd.DataFrame,
 
 
 def prettify_gmt(gmt_df, undesired_name_substring: Union[str, None]):
+    gmt_df[0] = gmt_df[0].str.strip()
+    gmt_df[1] = gmt_df[1].str.strip()
     gmt_df["to_delete"] = 0
     # delete all rows that do not have any molecule (3rd col)
     gmt_df.loc[gmt_df.iloc[:, 2].isna(), "to_delete"] = 1
@@ -251,17 +253,22 @@ def prettify_gmt(gmt_df, undesired_name_substring: Union[str, None]):
 
 def purge_pathways(gmt_df, not_metabolic_reactions_pathways: List[str],
                    inconvenient_id_name_df: Union[None, pd.DataFrame]=None):
+    # part 1:
+    if inconvenient_id_name_df is not None:
+        gmt_df["id"] = gmt_df.iloc[:, 0].tolist()  # column 0 has pathway_id
+        gmt_df = gmt_df.loc[~gmt_df["id"].isin(
+            inconvenient_id_name_df['pathway_id'].unique()), :].copy()
+
+    gmt_df = gmt_df.drop(columns=["id"])
+    gmt_df = gmt_df.dropna(axis=1, how="all")  # drop if entire column is NaN
+
+    # part 2:
     gmt_df["bad"] = 0
     gmt_df["lower"] = gmt_df.iloc[:, 1].str.lower()  # column 1 has the names
     gmt_df.loc[gmt_df["lower"].str.contains(
         "|".join(not_metabolic_reactions_pathways), regex=True), "bad"] = 1
     gmt_df = gmt_df.loc[gmt_df["bad"] != 1, :]
     gmt_df = gmt_df.drop(columns=["bad", "lower"])
-
-    if inconvenient_id_name_df is not None:
-        gmt_df["id"] = gmt_df.iloc[:, 1].tolist()  # column 0 has pathway_id
-        gmt_df = gmt_df.loc[~gmt_df["id"].isin(
-            inconvenient_id_name_df['pathway_id']),:]
 
     return gmt_df
 

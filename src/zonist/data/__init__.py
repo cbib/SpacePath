@@ -349,6 +349,8 @@ class MetabolicPathways(BaseModel, extra='allow'):
                 os.path.join(self.data_dir, self.subfolder,
                              self.official_file),
                 header=None, sep='\t', index_col=False)
+            official_gmt = official_gmt.dropna(axis=1,
+                                               how="all")  # drop if entire column is NaN
         except Exception as e:
             logger.error(e)
 
@@ -357,6 +359,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
         inconvenient_df = pd.read_csv(os.path.join(
             library_path, "ressources", "inconvenient_list_wikipathways.csv"
         ), header=0, index_col=None)
+
         if self.purge:
             official_gmt = helpers.purge_pathways(
                 official_gmt, not_metabolic_reactions_pathways,
