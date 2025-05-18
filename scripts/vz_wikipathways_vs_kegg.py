@@ -11,8 +11,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_csv("../final-KEGG-compounds-counts.csv", index_col=None)
-df2 = pd.read_csv("../final-IDSmix-compounds-counts-psize2.csv", index_col=None)
+df = pd.read_csv("../figs/final-KEGG-compounds-counts.csv", index_col=None)
+df2 = pd.read_csv("../figs/final-IDSmix-compounds-counts-psize2.csv", index_col=None)
 
 df = df[['sample_name', 'ratio_keggid_mz', 'mz_mapped_to_pathways', 'pathways_number_final']]
 df2 = df2[['sample_name', 'ratio_id_mz', 'mz_mapped_to_pathways', 'pathways_number_final']]
@@ -31,16 +31,17 @@ df["ratio_mz_pathway_count"] = (df['mz_mapped_to_pathways'].to_numpy(
 
 df = df[['sample_name', 'ratio_id_mz', 'mz_mapped_to_pathways', 'pathways_number_final', 'ratio_mz_pathway_count', 'PType']]
 
-
-df = df.loc[df['ratio_id_mz'] <= 2.2, : ].copy()
-df = df.loc[df['pathways_number_final'] >= 10, :].copy()
+#df = df.loc[df['ratio_id_mz'] <= 2.2, : ].copy()
+#df = df.loc[df['pathways_number_final'] >= 5, :].copy()
 #df = df.loc[df['ratio_mz_pathway_count'] >=0.7,: ].copy()
-df = df.loc[df['mz_mapped_to_pathways'] >= 20,: ].copy()
+#df = df.loc[df['mz_mapped_to_pathways'] >= 5,: ].copy()
 
+bad_samples = df.loc[(df['ratio_id_mz'] >= 2.2) | (
+    df['pathways_number_final'] < 10) | (df['mz_mapped_to_pathways'] < 10) , "sample_name" ].unique()
 
-# df['quality_metric'] = (df["ratio_mz_pathway_count"] / df['ratio_keggid_mz']) * (
-#     df['pathways_number_final'] * 1/10)
-# df = df.sort_values("quality_metric", ascending=False)
+print("bad tissues:\n", bad_samples)
+
+df = df.loc[~df["sample_name"].isin(bad_samples), :]
 
 kk = df['sample_name'] + '&' +df['PType']
 df.index = kk
@@ -54,7 +55,7 @@ df.loc[df['sample_name'].isin(datasmalls), "data_type"] = "SmallMolecules"
 print(df)
 
 sns.set_theme(style="whitegrid")
-
+#plt.figure(figsize=(60, 8))
 # Make the PairGrid
 g = sns.PairGrid(df,
                  x_vars=df.columns[1:5], y_vars="sample_name",
@@ -71,7 +72,7 @@ g.add_legend()
 #g.set(xlim=(0, 25), xlabel="hohoho", ylabel="")
 
 # Use semantically meaningful titles for the columns
-titles = ["IDs per m/z", "m/z mapped to pathways", "pathways count", "m/z count per pathway", "new metric"]
+titles = ["IDs per m/z", "m/z mapped to pathways", "pathways count", "m/z count per pathway"]
 
 for ax, title in zip(g.axes.flat, titles):
 
@@ -83,4 +84,5 @@ for ax, title in zip(g.axes.flat, titles):
     ax.yaxis.grid(True)
 
 sns.despine(left=True, bottom=True)
+#plt.savefig("../plot_wiki_vs_kegg.pdf")
 plt.show()

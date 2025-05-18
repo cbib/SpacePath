@@ -3,6 +3,7 @@ import numpy as np
 import anndata as ad
 import pandas as pd
 from typing import List, Union, Dict
+import scanpy as sc
 import zonist.helpers as zh
 
 

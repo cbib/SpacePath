@@ -46,4 +46,4 @@ out_df = pd.DataFrame({'dataset_name': name_l,
                        'spot_number': spot_n,
                        'features_n' : features_n })
 
-out_df.to_csv("../initial_data_dimensions.tsv", index=False, sep='\t')
+out_df.to_csv("../figs/initial_data_dimensions.tsv", index=False, sep='\t')

@@ -55,7 +55,7 @@ def transform2plot(df, mode="all"):
     return df_pl
 
 
-df = pd.read_csv("../initial-pathways-KEGG.csv")
+df = pd.read_csv("../figs/initial-ids-pathways-KEGG.csv")
 df = df.replace(0, np.nan)
 
 df_pl = transform2plot_v2(df, mode="all")
@@ -67,7 +67,7 @@ df_pl2 = transform2plot_v2(df, mode="ids")
 size_range_markers2 = (df_pl2['amount'].min() / 10, df_pl2['amount'].max() / 10)
 ##
 
-dfx = pd.read_csv("../initial-pathways-KEGG.csv")
+dfx = pd.read_csv("../figs/initial-ids-pathways-KEGG.csv")
 dfx = dfx.replace(0, np.nan)
 df_pl3 = transform2plot_v2(dfx, mode="pathways")
 
@@ -88,7 +88,7 @@ plt.margins(x=1)
 sns.despine(fig=None, ax=None,
             top=True, right=True, left=True, bottom=True, offset=None, trim=False)
 plt.tight_layout()
-plt.savefig("../initial-ids-compounds-KEGG.pdf")
+plt.savefig("../figs/initial-ids-compounds-KEGG.pdf")
 plt.close()
 
 ##
@@ -112,7 +112,7 @@ plt.margins(x=1)
 sns.despine(fig=None, ax=None,
             top=True, right=True, left=True, bottom=True, offset=None, trim=False)
 plt.tight_layout()
-plt.savefig("../initial-ids-pathways-KEGG.pdf")
+plt.savefig("../figs/initial-ids-pathways-KEGG.pdf")
 plt.close()
 
 print("ended ok")

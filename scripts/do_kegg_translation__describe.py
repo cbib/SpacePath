@@ -10,7 +10,7 @@ import squidpy as sq
 import zonist.data as zd
 import zonist.method as zm
 
-from local_helpers.quantifs_methods import match_adata_mz_and_annots
+import zonist.processing.measures_methods as zmm
 from local_helpers.local_helpers import provide_annotation_dict
 
 from local_helpers.local_viz import *
@@ -152,7 +152,7 @@ if __name__ == "__main__":
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                    "mz"].astype(str).tolist()]
 
-        me_annots, adata_mz = match_adata_mz_and_annots(me_annots, adata_mz)
+        me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots, adata_mz)
 
         me_annots.convert_ids_to_kegg(me_refmap.table)
         me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())  #
@@ -182,17 +182,6 @@ if __name__ == "__main__":
             max_pathway_size=200,
             mode="mz_aware"
         )
-
-        print("one mz : one pw (not passed)")
-        print("oneTOone ", len(mz_one))
-        print("intersected oneTOone and those that passed:", len(set(
-            mz_one
-        ).intersection(set(mz_ok))))
-        print("passsed")
-        print("Mzs!!!!!", len(annots_2.df['mz'].unique()), len(mz_ok))
-        print("Kegg?????", len(annots_2.df['KEGG'].unique()), len(kg_ok))
-        print("pathways %%%%%%", len(pws_obj_2.piled['pathway_id'].unique()))
-
         myratio = 0
         try:
             if len(pws_obj_2.piled["pathway_id"].unique()) != 0:

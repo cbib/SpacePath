@@ -8,4 +8,5 @@ scripts/__pycache__/
 scripts/*/__pycache__/
 private-datasets-parameters.tsv
 private-datasets-information.tsv
-
+figs/
+legacy_wikipathways_aliases_treatment/

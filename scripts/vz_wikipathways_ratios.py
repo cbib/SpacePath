@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-df = pd.read_csv("../final-IDSmix-compounds-counts-psize2.csv", index_col=None)
+df = pd.read_csv("../figs/final-IDSmix-compounds-counts-psize2.csv", index_col=None)
 df = df.replace(0, np.nan)
 
 df = df[['sample_name', 'ratio_id_mz', 'mz_mapped_to_pathways', 'pathways_number_final']]
