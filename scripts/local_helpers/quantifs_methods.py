@@ -63,25 +63,28 @@ def mold_data_for_plot__task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df, ad
 
 def score_as_adata(kpca_scores, adata,
                    #pathwaysObj: MetabolicPathways,
-                   pathways_ids_df,
-                   pathways_piled,
-                   original_pathways_dict):
+                   pathways_ids_df: pd.DataFrame,
+                   pathways_piled: pd.DataFrame):  # deleted arg: original_pathways_dict
     score_adata = ad.AnnData(
         X=csr_matrix(kpca_scores),
         var=pd.DataFrame(
             {'pathway_id': kpca_scores.columns.tolist()},
             index=kpca_scores.columns.tolist()),
         obs=adata.obs,
-        obsm=adata.obsm,
-        uns=adata.uns
+        obsm=adata.obsm
     )
+    score_adata.uns['spatial'] = {'my_slice_name': {
+        'scalefactors': {'fiducial_diameter_fullres': 100,
+                         'spot_diameter_fullres': 1,
+                         'tissue_hires_scalef': 0.5,
+                         'tissue_lowres_scalef': 0.5}}}
     tmp = pathways_ids_df #pathwaysObj.pathways_ids.copy()
     tmp.index = tmp['pathway_id']
     tmp = tmp.loc[score_adata.var['pathway_id'],:]
     score_adata.var = score_adata.var.assign(
         pathway_name=tmp['pathway_name'].tolist())
-    score_adata.uns['former_pathways_dict'] = original_pathways_dict
-    score_adata.uns['current_pathways_df'] = pathways_piled #pathwaysObj.piled  # has m/z, KEGG and pathway id columns
+    # score_adata.uns['former_pathways_dict'] = original_pathways_dict    # deleted
+    score_adata.uns['current_pathways_df'] = pathways_piled.copy() #pathwaysObj.piled  # has m/z, KEGG and pathway id columns
 
     return score_adata
 
@@ -96,16 +99,16 @@ def compute_mz_binary_df(adata_mz: ad.AnnData):
     return X_mz_binary_df
 
 
-def compute_metabolites_probs_df(adata_mz: ad.AnnData, annots_OKdf):
+def compute_metabolites_probs_df(adata_mz: ad.AnnData, annots):
     X_mz_binary_df = compute_mz_binary_df(adata_mz)
     preX_probs = []
     col_names_kegg = []
     for a_mz in X_mz_binary_df.columns:
         i_arr = X_mz_binary_df[a_mz].to_numpy()
-        the_kegg_here = annots_OKdf.loc[
-            annots_OKdf['mz'] == a_mz, "KEGG"].tolist()
-        n = len(the_kegg_here)
-        for kid in the_kegg_here:
+        the_ids_here = annots.df.loc[
+            annots.df['mz'] == a_mz, annots.usable_id].tolist()
+        n = len(the_ids_here)
+        for kid in the_ids_here:
             col_names_kegg.append(kid)
             initial_prob = 1 / n
             # res = i_arr * np.array([initial_prob for v in range(len(i_arr))])

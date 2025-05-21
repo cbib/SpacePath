@@ -1,0 +1,4 @@
+dataset_name	metaspace_registry	annotations_to_use	annotations_download	in/out intensities for spot class	perform_spots_selection	TIC_normalization	offSample_cutoff	msm_cutoff	fdr_cutoff	Moran_I_cutoff	Moran_padj_cutoff	min_pathway_size	k_for_kmeans
+LP-brain-mouse-5	2023-07-09_23h26m29s	HMDB LipidMaps	manual	0.5	YES	YES	0.2	0.3	0.5	0.02	0.05	2	
+LP-brain-mouse-6	2023-07-14_09h09m42s	HMDB LipidMaps KEGG	manual	2	YES	YES	0.2	0.3	0.5	0.02	0.05	2	
+LP-brain-rat-2	2025-04-11_11h55m02s	HMDB LipidMaps	manual	0.22	YES	YES	0.2	0.2	0.5	0.02	0.05	2	

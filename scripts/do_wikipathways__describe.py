@@ -35,7 +35,7 @@ if __name__ == "__main__":
     my_new_dict = dict()
 
     # define here my files and dirs
-    pwsizeONE = 1
+
     mydata_dir = "../../data"
     plot_parent_folder = "../../figures/"
 
@@ -60,6 +60,7 @@ if __name__ == "__main__":
     pathwaysObj.load()
 
     print("\nDo .....")
+    pwsizeONE = 1  # constant
 
     for i, row in datasets_parameters_df.iterrows():
         SAMPLE = row["dataset_name"]
