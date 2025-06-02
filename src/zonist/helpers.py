@@ -258,8 +258,8 @@ def purge_pathways(gmt_df, not_metabolic_reactions_pathways: List[str],
         gmt_df["id"] = gmt_df.iloc[:, 0].tolist()  # column 0 has pathway_id
         gmt_df = gmt_df.loc[~gmt_df["id"].isin(
             inconvenient_id_name_df['pathway_id'].unique()), :].copy()
+        gmt_df = gmt_df.drop(columns=["id"])
 
-    gmt_df = gmt_df.drop(columns=["id"])
     gmt_df = gmt_df.dropna(axis=1, how="all")  # drop if entire column is NaN
 
     # part 2:
