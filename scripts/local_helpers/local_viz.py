@@ -14,7 +14,8 @@ def plot_spots(adata_mz, plot_out_path, title='my title'):
     print("Saving plot of spots")
     sq.pl.spatial_scatter(
         adata_mz, color=["spot_quality"], img=False,
-        title=title, save=os.path.abspath(plot_out_path))
+        title=title, save=os.path.abspath(plot_out_path),
+        dpi=600)
     plt.close()
 
     return adata_mz
@@ -33,10 +34,10 @@ def plot_standard_computs(adata,
                               f'{prefix}--Kmeans-{k}.png')
         sq.pl.spatial_scatter(adata, color=[f'kmeans{k}'],
                               img=False, title=f"Kmeans (k={k})",
-                              save=os.path.abspath(tmpstr))
+                              save=os.path.abspath(tmpstr), dpi=600)
     else:
         sq.pl.spatial_scatter(adata, color=[f'kmeans{k}'],
-                              img=False, title=f"Kmeans (k={k})"
+                              img=False, title=f"Kmeans (k={k})", dpi=600
                               )
         plt.show()
 
@@ -53,7 +54,7 @@ def plot_selected_kegg_compound_ids(adata, me_annots,
         sq.pl.spatial_scatter(adata, color=[item],
                               img=False,
                               title=f"({mz_here}) {item}: {item_name}",
-                              save=os.path.abspath(tmpstr)
+                              save=os.path.abspath(tmpstr), dpi=600
                               )
 
 
@@ -83,7 +84,7 @@ def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
                                   f'{SAMPLEANDDETALS}-{pw_name}.png')  # TODO: improve destination folder
             sq.pl.spatial_scatter(adata_scores, color=[m_id],
                                   img=False, title=f"{m_id} {pw_name}",
-                                  save=os.path.abspath(tmpstr))
+                                  save=os.path.abspath(tmpstr), dpi=600)
             plt.close()
         except Exception as e:
             print("[plot_selected_pathways]Could NOT plot: {} {}".format(
@@ -122,7 +123,7 @@ def plot_moran_results(adata_mz, plot_folder, SAMPLE):
                                   img=False,
                                   size=1.5, shape="square",
                                   title=f'{title} - {i_mz} - {morani}',
-                                  save=os.path.abspath(tmp_str))
+                                  save=os.path.abspath(tmp_str), dpi=600)
             plt.close()
 
     plot_that(positives, plot_folder, f"{SAMPLE}-MoranPos")

@@ -28,6 +28,11 @@ def build_ids_adata(adata_mz, X_metabolites_probs_df, annots):
         sub_adata = adata_mz[:, str(a_mz)].copy()
         i_mz_arr = np.array(sub_adata.X.todense().T).flatten()
         for a_kg in the_kegg_here:
+            try:
+                if X_metabolites_probs_df[a_kg].to_numpy().shape[1] >= 2:
+                    print("OH NO THIS IS A BIG BIG PROBLEM !!!!!!!!!!!!!!!!")
+            except:
+                pass
             curr_prod_arr = \
                 X_metabolites_probs_df[a_kg].to_numpy() * i_mz_arr
             tmp_X[a_kg] = np.array(curr_prod_arr, dtype=np.float32)
@@ -64,12 +69,12 @@ def run_scores_chapter(adata_mz, pws_obj, annots):
 if __name__ == "__main__":
 
    # define here my files and dirs
-    pwtype = "KEGG"
+    pwtype = "WIKI"  # set KEGG or WIKI  # TODO: think of a best alternative to do this
 
     mydata_dir = "../../data"
     plot_parent_folder = "../../figures/"
 
-    my_csv_table_path_1 = "../subset2.tsv"  # "../../small_test.csv"
+    my_csv_table_path_1 =  "../public-datasets-parameters.tsv" # "../subset2.tsv"  # "../../small_test.csv"
 
     df2 = pd.read_csv(my_csv_table_path_1, header=0,
                       index_col=None, sep='\t')
@@ -169,20 +174,23 @@ if __name__ == "__main__":
             index=False
         )
 
-        #
-        # scores_adata = run_scores_chapter(adata_mz.copy(), pws_obj_2, annots_2)
-        #
-        # scores_adata.write_h5ad(
-        #     os.path.join(mydata_dir, subfolder, f'{SAMPLE}-scores-{pwtype}.h5ad'))
-        #
-        # print("printing extra info")
-        # for a_pw in scores_adata.var['pathway_id'].unique():
-        #     print(a_pw, pws_obj_2.get_name(a_pw))
-        #     cpw = scores_adata.uns['current_pathways_df']
-        #     cpw = cpw.loc[cpw['pathway_id'] == a_pw].drop(
-        #         columns = ['pathway_id']
-        #     ).sort_values(by="mz")
-        #     print(cpw)
+        ofipw = os.path.join(mydata_dir, subfolder, f'{SAMPLE}-scores-{pwtype}.h5ad')
+
+        if not os.path.exists(ofipw):
+            scores_adata = run_scores_chapter(adata_mz.copy(), pws_obj_2, annots_2)
+
+            scores_adata.write_h5ad(ofipw)
+
+            print("printing extra info")
+            for a_pw in scores_adata.var['pathway_id'].unique():
+                print(a_pw, pws_obj_2.get_name(a_pw))
+                cpw = scores_adata.uns['current_pathways_df']
+                cpw = cpw.loc[cpw['pathway_id'] == a_pw].drop(
+                    columns = ['pathway_id']
+                ).sort_values(by="mz")
+                print(cpw)
+        else:
+            print(f"{SAMPLE} : the scores file '{ofipw}' already exists. Nothing to do.")
 
 
 

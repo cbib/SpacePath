@@ -36,7 +36,7 @@ df = df[['sample_name', 'ratio_id_mz', 'mz_mapped_to_pathways', 'pathways_number
 #df = df.loc[df['ratio_mz_pathway_count'] >=0.7,: ].copy()
 #df = df.loc[df['mz_mapped_to_pathways'] >= 5,: ].copy()
 
-bad_samples = df.loc[(df['ratio_id_mz'] >= 2.2) | (
+bad_samples = df.loc[(df['ratio_id_mz'] > 2.25) | (
     df['pathways_number_final'] < 10) | (df['mz_mapped_to_pathways'] < 10) , "sample_name" ].unique()
 
 print("bad tissues:\n", bad_samples)

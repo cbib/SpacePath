@@ -106,7 +106,7 @@ def compute_metabolites_probs_df(adata_mz: ad.AnnData, annots):
     for a_mz in X_mz_binary_df.columns:
         i_arr = X_mz_binary_df[a_mz].to_numpy()
         the_ids_here = annots.df.loc[
-            annots.df['mz'] == a_mz, annots.usable_id].tolist()
+            annots.df['mz'] == a_mz, annots.usable_id].unique().tolist()
         n = len(the_ids_here)
         for kid in the_ids_here:
             col_names_kegg.append(kid)

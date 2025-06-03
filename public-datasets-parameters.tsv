@@ -1,31 +1,15 @@
 dataset_name	metaspace_registry	annotations_to_use	annotations_download	in/out intensities for spot class	perform_spots_selection	TIC_normalization	offSample_cutoff	msm_cutoff	fdr_cutoff	Moran_I_cutoff	Moran_padj_cutoff	min_pathway_size	k_for_kmeans
-LP-kidney1	2019-04-20_01h02m45s	HMDB LipidMaps	manual	1	YES	YES	0.55	0.1	0.5	0.001	0.05	2	5
-LP-kidney2	2019-04-20_00h55m20s	HMDB LipidMaps	manual	1	YES	YES	0.45	0.1	0.5	0.001	0.05	2	
-LP-heart	2023-10-24_17h13m08s	HMDB LipidMaps	manual	0.01	YES	YES	0.4	0.2	0.5	0.001	0.05	2	
 LP-lung	2018-10-04_14h21m09s	HMDB LipidMaps	manual	1.5	YES	YES	0.25	0.25	0.5	0.02	0.05	2	
 LP-brain-rat-2	2025-04-11_11h55m02s	HMDB LipidMaps	manual	0.22	YES	YES	0.2	0.2	0.5	0.02	0.05	2	
 LP-skin-cancer-1	2018-07-23_12h19m37s	HMDB LipidMaps	manual	0.1	YES	YES	0.2	0.4	0.5	0.02	0.05	2	
 LP-stomach	2017-11-09_11h42m17s	HMDB LIPID_MAPS	manual	0.01	YES	YES	0.2	0.25	0.5	0.02	0.05	2	
-LP-liver-cancer	2017-11-17_14h52m42s	HMDB LIPID_MAPS	manual	0.01	YES	YES	0.55	0.1	0.5	0.001	0.05	2	5
-LP-brain-rat-1	2025-04-11_12h18m07s	HMDB LipidMaps	manual	1.3	YES	YES	0.2	0.5	0.5	0.02	0.05	2	
 LP-breast-cancer-1	2023-11-22_10h40m34s	HMDB LipidMaps CoreMetabolome	manual	1.5	YES	YES	0.2	0.5	0.5	0.02	0.05	2	
 LP-skin-cancer-2	2023-05-25_10h07m40s	HMDB LipidMaps CoreMetabolome	manual	0.1	YES	YES	0.3	0.2	0.5	0.02	0.05	2	
-LP-eye	2018-03-20_11h02m36s	HMDB LIPID_MAPS	manual	1	YES	YES	0.3	0.1	0.5	0.02	0.05	2	
 LP-gut	2022-07-06_09h33m52s	HMDB LipidMaps	manual	1	YES	YES	0.2	0.5	0.5	0.02	0.05	2	
 LP-brain-mouse-1	2025-04-10_23h29m14s	HMDB LipidMaps CoreMetabolome	manual	2	YES	YES	0.2	0.5	0.5	0.02	0.05	2	
-LP-brain-mouse-2	2025-04-10_14h45m11s	HMDB LipidMaps CoreMetabolome	manual	0.1	YES	YES	0.2	0.2	0.5	0.02	0.05	2	
-LP-brain-rat-3	2025-04-10_15h11m23s	HMDB LipidMaps	manual	2	YES	YES	0.2	0.15	0.5	0.02	0.05	2	
-LP-cerebellum-rat	2025-04-10_14h53m38s	HMDB LipidMaps	manual	0.1	NO	YES	0.55	0.1	0.5	0.02	0.05	2	
 LP-brain-mouse-3	2023-09-29_18h44m00s	HMDB LipidMaps	manual	0.2	YES	YES	0.2	0.5	0.2	0.02	0.05	2	
 LP-brain-mouse-4	2020-01-16_13h13m47s	HMDB LipidMaps	manual	1.5	YES	YES	0.25	0.15	0.5	0.02	0.05	2	
 LP-brain-mouse-5	2023-07-09_23h26m29s	HMDB LipidMaps	manual	0.5	YES	YES	0.2	0.3	0.5	0.02	0.05	2	
-LP-brain-mouse-6	2023-07-14_09h09m42s	HMDB LipidMaps KEGG	manual	2	YES	YES	0.2	0.3	0.5	0.02	0.05	2	
 LP-heart-mouse-1	2021-12-06_14h55m46s	HMDB LipidMaps CoreMetabolome	manual	1.5	YES	YES	0.25	0.15	0.5	0.02	0.05	2	
 LP-bladder-cancer	2021-01-04_01h15m46s	HMDB LipidMaps	manual	0.3	YES	YES	0.2	0.15	0.5	0.02	0.05	2	
 LP-heart-mouse-2	2023-12-18_17h45m47s	HMDB LipidMaps CoreMetabolome	manual	1.3	YES	YES	0.2	0.3	0.5	0.02	0.05	2	
-MALDI_248_T	not provided	HMDB	manual	1	NO	YES	0.2	0.1	0.5	0.02	0.05	2	
-MALDI_259_T	not provided	HMDB	manual	1	NO	YES	0.2	0.1	0.5	0.02	0.05	2	
-MALDI_260_T	not provided	HMDB	manual	1	NO	YES	0.2	0.1	0.5	0.02	0.05	2	
-MALDI_262_T	not provided	HMDB	manual	1	NO	YES	0.2	0.1	0.5	0.02	0.05	2	
-MALDI_269_T	not provided	HMDB	manual	1	NO	YES	0.2	0.1	0.5	0.02	0.05	2	
-MALDI_275_T	not provided	HMDB	manual	1	NO	YES	0.2	0.1	0.5	0.02	0.05	2	

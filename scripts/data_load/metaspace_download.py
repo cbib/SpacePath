@@ -9,7 +9,7 @@ download any dataset using info in a .csv table
 """
 
 # define here my files and dirs
-my_csv_table_path = "../../small-test-parameters.tsv"   #"../../small_test.csv"
+my_csv_table_path = "../../privateNEW-datasets-parameters.tsv"   #"../../small_test.csv"
 
 
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
@@ -57,7 +57,7 @@ for i, r in datasets_parameters_df.iterrows():
         out_df, annotations_dfs_dict = mfm.steps_get_united_df(
             metaspace_registry, api_versions, api_fdr)
 
-        # new : save annotations on the fly:
+        # new : save annotations on the fly: TODO: in 2026, contact Metaspace team to ask them the offsample column as floats (not bool) when using their metaspace-converter API
         if annot_how_dwld == "automatic":
             for k in api_versions.keys():
                 annotations_dfs_dict[k].to_csv(

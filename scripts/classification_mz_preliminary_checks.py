@@ -13,7 +13,7 @@ bad or good quality of m/z features
 """
 # define here my files and dirs
 mydata_dir = "../../data"
-my_csv_table_path = "../small-test-parameters.tsv"
+my_csv_table_path = "../privateNEW-datasets-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start

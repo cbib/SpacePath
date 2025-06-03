@@ -8,7 +8,7 @@ import squidpy as sq
 import networkx as nx
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-
+import json
 
 import zonist.data as zd
 import zonist.processing.measures_methods as zmm
@@ -20,17 +20,35 @@ from local_helpers.local_viz import plot_spots
 
 
 
+
+def custom_out_tissue(adata_mz, mydata_dir, subfolder, SAMPLE):
+    file_custom_list_good_spots = os.path.join(
+        mydata_dir, subfolder, f'{SAMPLE}_out_tissue.json'
+    )
+    if os.path.exists(file_custom_list_good_spots):
+        with open(file_custom_list_good_spots, "r") as f:
+            mydict = json.load(f)
+
+        bad_spots = mydict['out_tissue_spots']
+        adata_mz.obs.loc[adata_mz.obs["obs"].isin(bad_spots), "spot_quality"] = "bad"
+    else:
+        raise FileNotFoundError
+
+    return adata_mz
+
+
 if __name__ == "__main__":
     # define here my input
     mydata_dir = "../../data"
-    my_csv_table_path = "../small-test-parameters.tsv"
+    my_csv_table_path = "../privateNEW-datasets-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
     # start
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                       index_col=None, sep='\t')
 
-    force_for_these = ["LP-example0"] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
+    #  , "TD-Lipido-836", "TD-Lipido-827"
+    force_for_these = [ "TD-Lipido-635", "TD-Lipido-636"] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
 
     print("\nRunning spots classification (with option to select or not) across specified datasets")
 
@@ -73,10 +91,18 @@ if __name__ == "__main__":
                 adata_mz = zmm.compute_spot_quality(adata_mz, me_annots,
                                                    allowed_in_out_ratio, fdr_cutoff=x)
                 adata_mz = zmm.mark_weak_signal_spots(adata_mz, cutoff=100)
+
+                try:
+                    adata_mz = custom_out_tissue(
+                        adata_mz, mydata_dir, subfolder, SAMPLE)
+                except:
+                    pass
+
                 plot_out_path = os.path.join(plot_folder, f'{SAMPLE}-spotsBefore.png')
 
                 plot_spots(adata_mz, plot_out_path, title="Before spots selection")
                 print(f"plot of initial spots saved to: {plot_out_path}")
+
                 if select_spots_yes_no.lower() in ["yes", "y"]:
                     adata_mz = adata_mz[adata_mz.obs["spot_quality"] == "good", :]
                     plot_out_path = os.path.join(plot_folder,

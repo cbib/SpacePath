@@ -208,6 +208,6 @@ if __name__ == "__main__":
         "mz_mapped_to_pathways":mz_mapped_to_pathways,
     "ratio_keggid_mz": kegg_compound_ids_to_mz_ratio_after_pathway_mapped,
     "pathways_number_final" : how_many_pathways    })
-    out_df.to_csv("../final-KEGG-compounds-counts.csv")
+    out_df.to_csv("../figs/final-KEGG-compounds-counts.csv")
 
 

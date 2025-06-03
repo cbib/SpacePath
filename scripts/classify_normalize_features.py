@@ -21,10 +21,10 @@ if __name__ == "__main__":
     """
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path = "../small-test-parameters.tsv"   # "../public-datasets-parameters.tsv"
+    my_csv_table_path = "../privateNEW-datasets-parameters.tsv"   # "../public-datasets-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
-    force_for_these = []    # keep empty if no sample to force   # e.g.  , "TD-635-1-A", "TD-635-1-B"   "TD-hemi-635-1-A", "TD-hemi-635-1-B"
+    force_for_these = ["TD-Lipido-635", "TD-Lipido-636", "TD-Lipido-836", "TD-Lipido-827" ]    # keep empty if no sample to force   # e.g.  , "TD-635-1-A", "TD-635-1-B"   "TD-hemi-635-1-A", "TD-hemi-635-1-B"
 
     # start
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
