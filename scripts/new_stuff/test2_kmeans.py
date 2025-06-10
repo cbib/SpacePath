@@ -3,21 +3,16 @@ import os
 import numpy as np
 import pandas as pd
 import anndata as ad
-from scipy.sparse import csr_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 import squidpy as sq
-import zonist.data as zd
-import zonist.method as zm
-import zonist.processing.measures_methods as zmm
-import zonist.helpers as zh
 from sklearn.cluster import KMeans
 
 from local_helpers.local_helpers import provide_annotation_dict
 
 
 
-def save_clusters(obs_df, k, mydata_dir, subfolder, SAMPLE):
+def save_clusters_constant_file_rootname_distinct_k(obs_df, k, mydata_dir, subfolder, SAMPLE):
     df = obs_df[['obs', f'kmeans_{k}']]
     df.to_csv(os.path.join(mydata_dir, subfolder, f'{SAMPLE}-clusters-k_{k}.tsv'),
               sep='\t', header=True, index=False)
@@ -32,7 +27,7 @@ if __name__ == "__main__":
     mydata_dir = "../../data"
     plot_parent_folder = "../../figures/"
 
-    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  # "../../small_test.csv"
+    my_csv_table_path_1 = "../private-datasets-parameters.tsv"  # "../../small_test.csv"
 
     datasets_parameters_df = pd.read_csv(my_csv_table_path_1, header=0,
                       index_col=None, sep='\t')
@@ -90,7 +85,7 @@ if __name__ == "__main__":
 
         mydata.obs[f'kmeans_{k}'] = the_labels_str_l
         plot_out_path = os.path.join(plot_folder,
-                                     f'{SAMPLE}-Initial-k-{k}')
+                                     f'{SAMPLE}-Initial-k-{k}.png')
         sq.pl.spatial_scatter(
             mydata, color=[f'kmeans_{k}'], img=False,
             title='Initial', save=os.path.abspath(plot_out_path), dpi=600)
@@ -150,7 +145,7 @@ if __name__ == "__main__":
                 )
                 plt.close()
 
-                save_clusters(adata.obs.copy(), k, mydata_dir, subfolder, SAMPLE)
+                save_clusters_constant_file_rootname_distinct_k(adata.obs.copy(), k, mydata_dir, subfolder, SAMPLE)
 
                 # if SUFFIX == 'Scores':
                 #     k -= 1
@@ -178,7 +173,7 @@ if __name__ == "__main__":
                 #             dpi=600
                 #         )
                 #         plt.close()
-                #         save_clusters(adata.obs.copy(), k, mydata_dir,
+                #         save_clusters_constant_file_rootname_distinct_k(adata.obs.copy(), k, mydata_dir,
                 #                       subfolder, SAMPLE)
                 #         k -= 1
                 #     # end while

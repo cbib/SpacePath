@@ -40,15 +40,14 @@ def custom_out_tissue(adata_mz, mydata_dir, subfolder, SAMPLE):
 if __name__ == "__main__":
     # define here my input
     mydata_dir = "../../data"
-    my_csv_table_path = "../privateNEW-datasets-parameters.tsv"
+    my_csv_table_path = "../subset2.tsv"
     plot_parent_folder = "../../figures/"
 
     # start
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                       index_col=None, sep='\t')
 
-    #  , "TD-Lipido-836", "TD-Lipido-827"
-    force_for_these = [ "TD-Lipido-635", "TD-Lipido-636"] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
+    force_for_these = [ ] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
 
     print("\nRunning spots classification (with option to select or not) across specified datasets")
 

@@ -18,13 +18,7 @@ df["ratio_mz_pathway_count"] = df['mz_mapped_to_pathways'].to_numpy(
 #     df['pathways_number_final'] * 1/10)
 # df = df.sort_values("quality_metric", ascending=False)
 
-# order_samples = ["MET-breast-cancer-1", "MET-skin-cancer-1",
-#                  "MET-lung", "MET-stomach", "MET-gut", "MET-skin-cancer-2",
-#                  "MET-brain-mouse", "MET-brain-rat", "MET-eye",
-#                   "MET-heart", "UBcalibr2",
-#                   "MET-kidney2","MET-kidney1", "MET-liver-cancer",
-#                  "UBcalibr1", "UBcalibr4",  "MALDI_259_T",
-#                  "MALDI_269_T", "MALDI_275_T", "MALDI_262_T", "MALDI_260_T",  "MALDI_248_T"]
+
 df.index = df['sample_name'].tolist()
 #df = df.loc[order_samples,: ]
 df['data_type'] = "Lipidomics"

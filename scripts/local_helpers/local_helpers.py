@@ -18,8 +18,8 @@ get the matrix of KEGG given the annotations, and the adata_mz
 
 def provide_annotation_dict(SAMPLE, annotation_types_list):
     out_d = {}
-    for anntype in annotation_types_list:
-        out_d[anntype] = f"{SAMPLE}-{anntype}.csv"
+    for annotation_type in annotation_types_list:
+        out_d[annotation_type] = f"{SAMPLE}-{annotation_type}.csv"
 
     return out_d
 

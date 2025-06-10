@@ -61,7 +61,9 @@ if __name__ == "__main__":
 
     print("\nDo .....")
     pwsizeONE = 1  # constant
-
+    # todo: delete this !§§§§§§§§§§§§§§§§§§§§§
+    datasets_parameters_df = datasets_parameters_df.iloc[[8,12,13], :]   # todo: delete this !§§§§§§§§§§§§§§§§§§§§§
+    # todo: delete this !§§§§§§§§§§§§§§§§§§§§§
     for i, row in datasets_parameters_df.iterrows():
         SAMPLE = row["dataset_name"]
         min_pathway_size = row["min_pathway_size"]
@@ -78,6 +80,7 @@ if __name__ == "__main__":
         me_annots.usable_id = "moleculeIds"  # todo: mark as new
 
         me_annots.load()
+
         adata_mz = ad.read_h5ad(filename=os.path.join(
             mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
@@ -90,8 +93,9 @@ if __name__ == "__main__":
         me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots, adata_mz)
         me_annots.verify()
         me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())  #
+        print("removing aliases")
         me_annots.remove_redundant_aliases()  # when using multitype 'moleculeIds' annotations
-
+        print("removed aliases")
         my_new_dict[SAMPLE] = thisfun1(me_annots.df['moleculeIds'].unique())  # me_annots.df['moleculeIds']
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.

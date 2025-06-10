@@ -74,7 +74,7 @@ if __name__ == "__main__":
     mydata_dir = "../../data"
     plot_parent_folder = "../../figures/"
 
-    my_csv_table_path_1 =  "../public-datasets-parameters.tsv" # "../subset2.tsv"  # "../../small_test.csv"
+    my_csv_table_path_1 =  "../small-test-parameters.tsv" # "../subset2.tsv"  # "../../small_test.csv"
 
     df2 = pd.read_csv(my_csv_table_path_1, header=0,
                       index_col=None, sep='\t')

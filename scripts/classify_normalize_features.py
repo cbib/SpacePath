@@ -14,17 +14,17 @@ from local_helpers.local_helpers import provide_annotation_dict
 
 
 
-
 if __name__ == "__main__":
     """
     bad or good quality of m/z features
     """
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path = "../privateNEW-datasets-parameters.tsv"   # "../public-datasets-parameters.tsv"
+    my_csv_table_path = "../private-datasets-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
-    force_for_these = ["TD-Lipido-635", "TD-Lipido-636", "TD-Lipido-836", "TD-Lipido-827" ]    # keep empty if no sample to force   # e.g.  , "TD-635-1-A", "TD-635-1-B"   "TD-hemi-635-1-A", "TD-hemi-635-1-B"
+    force_for_these = ["TD-Lipido-635", "TD-Lipido-636", "TD-Lipido-836", "TD-Lipido-827",
+                       "LP-example0", "WW-breast-cancer-1"]    # keep empty if no sample to force   # e.g.  , "TD-635-1-A", "TD-635-1-B"   "TD-hemi-635-1-A", "TD-hemi-635-1-B"
 
     # start
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
@@ -83,9 +83,10 @@ if __name__ == "__main__":
             print(adata_mz)
             print(adata_mz.uns['history'])
 
-            answer = input(
-                f"will save *{SAMPLE}* adata_mz with the computed m/z classification"
-                f"\nDo you agree to continue?")
+            # answer = input(
+            #     f"will save *{SAMPLE}* adata_mz with the computed m/z classification"
+            #     f"\nDo you agree to continue?")
+            answer = "yes"
             if not answer.lower() in ["y", "yes"]:
                 print("going to the next, nothing saved")
                 continue

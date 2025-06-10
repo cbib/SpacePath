@@ -145,7 +145,7 @@ if __name__ == "__main__":
     "LipidMaps identifiers all" : lipidmaps_ids,
     "LipidMaps ids having KEGG ids" : lipidmaps_mapped,
     })
-    out_df.to_csv("../figs/initial-ids-compounds-KEGG.csv")
+    #out_df.to_csv("../figs/initial-ids-compounds-KEGG.csv")
 
     out_df = pd.DataFrame({
         "sample_name": name_sample,
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         "KEGG ids KEGG ids": kegg_mapped,
         "KEGG in pathways": kegg_inpws
     })
-    out_df.to_csv("../figs/initial-ids-pathways-KEGG.csv")
+    #out_df.to_csv("../figs/initial-ids-pathways-KEGG.csv")
 
 
         # sub_annots_df = me_annots.no_translated.loc[me_annots.no_translated['database'] == "LipidMaps", :]

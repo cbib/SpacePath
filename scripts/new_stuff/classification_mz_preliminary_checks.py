@@ -5,7 +5,7 @@ import anndata as ad
 import zonist.data as zd
 
 from local_helpers.local_helpers import provide_annotation_dict
-from zonist.processing.measures_methods import part_a_filter
+from zonist.processing.measures_methods import part_a__mz_quality_mark
 from zonist.visualization.visualization import plot_mz_given_quality_metrics
 
 """
@@ -13,7 +13,7 @@ bad or good quality of m/z features
 """
 # define here my files and dirs
 mydata_dir = "../../data"
-my_csv_table_path = "../privateNEW-datasets-parameters.tsv"
+my_csv_table_path = "../subset2.tsv" # "../privateNEW-datasets-parameters.tsv"
 plot_parent_folder = "../../figures/"
 
 # start
@@ -21,6 +21,9 @@ datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                   index_col=None, sep='\t')
 
 print("\nCheck quality m/z across specified datasets (no-modify object)")
+
+all_hmdbs_names = []
+all_hmdbs_ids = []
 
 for i, row in datasets_parameters_df.iterrows():
     SAMPLE = row["dataset_name"]
@@ -59,7 +62,7 @@ for i, row in datasets_parameters_df.iterrows():
         print("Nothing to do for this sample.")
     elif not "is_X_TIC_normalized" in adata_mz.uns.keys():
         print("no normalization yet applied")
-    me_annots, mz_to_keep_part1 = part_a_filter(
+    me_annots, mz_to_keep_part1 = part_a__mz_quality_mark(
             me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff
             )
     text_notice = f"valid $m/z$\n n = {len(mz_to_keep_part1)}"

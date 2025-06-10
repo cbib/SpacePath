@@ -21,8 +21,7 @@ spot_n = []
 features_n = []
 for i, r in datasets_parameters_df.iterrows():
     SAMPLE = r["dataset_name"]
-    #annotations_to_use = r["annotations_to_use"].split(" ")
-    #annot_how_dwld = r["annotations_download"]
+
     subfolder = SAMPLE
     adata_mz = ad.read_h5ad(filename=os.path.join(
         mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
