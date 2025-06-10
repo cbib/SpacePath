@@ -82,17 +82,17 @@ class ClassifyMZProtocol:
         logger.info("Running %s", config.description)
         logger.info(f">> Part a): Select m/z features with parameters: "
           f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff, offSample_cutoff,fdr_cutoff)
-        me_annots, mz_to_keep_part1 = zmm.part_a_filter(
+        me_annots, mz_good_from_part_a = zmm.part_a__mz_quality_mark(
             me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff)
 
-        logger.info(f"A total of %s m/z pass MSM, offSample and FDR cutoffs.", len(set(mz_to_keep_part1)))
-        text_notice = f"valid $m/z$\n n = {len(mz_to_keep_part1)}"
+        logger.info(f"A total of %s m/z pass MSM, offSample and FDR cutoffs.", len(set(mz_good_from_part_a)))
+        text_notice = f"valid $m/z$\n n = {len(mz_good_from_part_a)}"
         zviz.plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,
                                       plot_folder, msm_cutoff,
                                       offSample_cutoff, text_notice)
         logger.info("saved plot (MSM, offSample, FDR) to %s", plot_folder)
         adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(
-            mz_to_keep_part1)
+            mz_good_from_part_a)
 
         if config.n_perms_moran_calc == "auto":
             config.n_perms_moran_calc = 50
@@ -102,18 +102,18 @@ class ClassifyMZProtocol:
         logger.info(f">> Part b): Classifying m/z features, by :\n"
               f"Moran's I value >= %s,  (BH) adjusted p-value <= %s", moran_I_cutoff, moran_padj_cutoff)
         logger.info("Moran's metrics are only computed for the m/z that passed the a) filters)")
-        all_quality_df, mz_to_keep_part2, moran_mz_df = zmm.part_b_filter_with_autocorr(
-            adata_mz, mz_to_keep_part1, me_annots,
+        all_quality_df, mz_good_part_b, moran_mz_df = zmm.part_b__mz_quality_by_autocorr(
+            adata_mz, mz_good_from_part_a, me_annots,
             moran_I_cutoff, moran_padj_cutoff, config.n_neighs_for_graph, config.n_perms_moran_calc)
 
-        text_notice = f"valid $m/z$: n = {len(mz_to_keep_part2)}"
+        text_notice = f"valid $m/z$: n = {len(mz_good_part_b)}"
         zviz.plot__moran_info(moran_mz_df, plot_folder,
                          SAMPLE,
                          text_notice, moran_I_cutoff, moran_padj_cutoff)
         logger.info("saved plot (autocorrelation) to %s", plot_folder)
 
         adata_mz.uns["history"]['features_n_after_mz_clean_2'] = len(
-            mz_to_keep_part2)
+            mz_good_part_b)
 
         adata_mz = zmm.adata_mz_insert_full_quality(adata_mz,
                                                     moran_mz_df,

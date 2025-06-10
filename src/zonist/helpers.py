@@ -216,7 +216,7 @@ def DEPRECATED_multimz_oneid(adata: ad.AnnData, df: pd.DataFrame,  # todo: delet
 
 
 def warrant__one_to_one_mz_id(annotdf: pd.DataFrame,
-                             var_df, #
+                              var_df, #
                               mz_col: str, id_col: str, msm_col: str, fdr_col:str, offsam: str
                               ) -> pd.DataFrame:
     ok_mz_kegg_tuples = get_approved_mz_id_pairs(
@@ -225,13 +225,15 @@ def warrant__one_to_one_mz_id(annotdf: pd.DataFrame,
     annotdf["keep"] = 0
     for tup in ok_mz_kegg_tuples:
         mz_i = tup[0]
-        keggid = tup[1]
+        metabolite_id = tup[1]
         annotdf.loc[(annotdf[mz_col] == mz_i) & (
-                    annotdf[id_col] == keggid), "keep"] = 1
+                    annotdf[id_col] == metabolite_id), "keep"] = 1
 
-    rejected = annotdf.loc[annotdf["keep"] == 0, :].copy()
+    # rejected = annotdf.loc[annotdf["keep"] == 0, :].copy()  # for debugging
     annotdf = annotdf.loc[annotdf["keep"] == 1, :].copy()
     annotdf = annotdf.drop(columns=["keep"])
+    annotdf = annotdf.sort_values(by='database', ascending=True)
+    annotdf = annotdf.drop_duplicates(subset=[mz_col, id_col], keep='first')
 
     return annotdf
 

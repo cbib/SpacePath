@@ -9,10 +9,12 @@ supported_annotations: List[str] = ["LipidMaps",
                                     "LIPID_MAPS", # ancient db version too
                                     "CoreMetabolome",
                                     "HMDB",
+                                    "Swisslipids",
                                     "KEGG",
                                     "custom_kegg"]
 
-columns_ref_map_expected: List[str] = ["initial_id_unconverted", "KEGG", "database"]
+columns_kegg_conversion_expected: List[str] = [
+    "initial_id_unconverted", "KEGG", "database"]
 
 
 not_metabolic_reactions_pathways = [

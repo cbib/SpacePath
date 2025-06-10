@@ -170,7 +170,7 @@ def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5):
 
 # phases of classification for m/z
 
-def part_a_filter(me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff):
+def part_a__mz_quality_mark(me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff):
     me_annots.pull_mz_quality_df()
     me_annots.mz_quality['quality_msm_off_fdr'] = "bad"
     me_annots.mz_quality.loc[
@@ -207,8 +207,8 @@ def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
         return None
 
 
-def part_b_filter_with_autocorr(adata_mz, ok_part1, me_annots,
-                                moran_I_cutoff, moran_padj_cutoff, n_neighs, n_perms):  #
+def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
+                                   moran_I_cutoff, moran_padj_cutoff, n_neighs, n_perms):  #
     # prepare quality merged df
     all_quality_df = adata_mz.var.copy()
     all_quality_df["mz"] = all_quality_df["mz"].astype(str).tolist()
@@ -219,9 +219,9 @@ def part_b_filter_with_autocorr(adata_mz, ok_part1, me_annots,
             ['mz', me_annots.msm_column, me_annots.offsample_column,
              me_annots.fdr_column, me_annots.formula_col, "quality_msm_off_fdr"]], keycol='mz')
 
-    copy_mz = adata_mz[:, ok_part1].copy()   # only compute moran for the ok_part1 features
+    copy_mz = adata_mz[:, mz_good_from_part_a].copy()   # only compute moran for the ok_part1 features
     try:
-        if copy_mz.uns['moranI'].shape[0] != len(ok_part1):
+        if copy_mz.uns['moranI'].shape[0] != len(mz_good_from_part_a):
             del copy_mz.uns['moranI']
     except Exception as e:
         pass
@@ -230,7 +230,7 @@ def part_b_filter_with_autocorr(adata_mz, ok_part1, me_annots,
         copy_mz = compute_moran_i(copy_mz, n_neighs=n_neighs, n_perms=n_perms)
     else:
         print(f"will use the existing .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
-        assert copy_mz.uns['moranI'].shape[0] == len(ok_part1), "Fatal: existing moranI dimensions do not match with length of m/z list passing a) filters. Killed! (solution: delete .uns['moranI'] dataframe and try again)"
+        assert copy_mz.uns['moranI'].shape[0] == len(mz_good_from_part_a), "Fatal: existing moranI dimensions do not match with length of m/z list passing a) filters. Killed! (solution: delete .uns['moranI'] dataframe and try again)"
     moran_mz_df = copy_mz.uns['moranI'].copy()
     moran_mz_df['mz'] = moran_mz_df.index.astype(str).tolist()
     all_quality_df = pd.merge(all_quality_df,

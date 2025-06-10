@@ -20,7 +20,7 @@ import zonist.helpers as helpers
 import zonist.processing.pathways_methods as pathways_methods
 
 from zonist.constants import (supported_mappings, supported_annotations,
-                              columns_ref_map_expected,
+                              columns_kegg_conversion_expected,
                               not_metabolic_reactions_pathways,
                               mz_decimal_places)
 
@@ -188,33 +188,39 @@ class MetabolomeAnnotations(Dataset):
                 self.offsample_column, self.total_intens_col, self.fdr_column, self.msm_column
                 ])
 
-    def discard_out_of_tissue_mz(self, prob_out=0.87,
-                                 fraction_to_exclude=1):
-        # TODO: check if not needed anymore this discard_out_of_tissue_mz: I am using a more complex strategy: see repo user-pipeline/scripts/classify_normalize_features
+    def verify(self):
+        if self.usable_id != "KEGG":
+            self.df = self.no_translated
+        try:
+            excess_mz_bool: bool = helpers.identify_multi_mz_to_one_compound(
+                self.df, self.mz_col, self.usable_id)
+            if excess_mz_bool:
+                # logger.warning("Please run keep_unique_mz_id_tuples(anndata_mz)")
+                # print(message_multimz)
+                message_multimz = (
+                    "Identified 'multi m/z to one compound ID' cases!: Please run "
+                    "'<metabo_annotations>.keep_unique_mz_id_tuples(anndata_mz)'.")
+                logger.warning(message_multimz)
+                print(message_multimz)
+        except Exception as e:
+            logger.warning("Error: %s", e)
 
-        """Recommended (optional), to discard the mz that are out-of-tissue.
-        Among the off-sample features (those having >= prob_out)
-        ordered by decreasing total intensity, exclude the defined fraction"""
-        self.pull_mz_quality_df()
-        # if column is not empty NaN entirely, skip:
-        if self.mz_quality[self.offsample_column].isnull().all():
-            logger.warning("Useless: %s is NaN", self.offsample_column)
-        else:
-            if not self.mz_quality[self.offsample_column].max() <= 1:
-                raise AssertionError("% must be between 0 and 1", self.offsample_column)
-
-            bad_feat_df = self.mz_quality.loc[self.mz_quality[
-                self.offsample_column] >= prob_out, :]
-
-            bad_feat_df = bad_feat_df.sort_values(by=[
-                self.mz_col, self.total_intens_col], ascending=[True, False])
-            n_bad = int(bad_feat_df.shape[0] * fraction_to_exclude)
-            mz_out = bad_feat_df[self.mz_col].tolist()[:n_bad]
-
-            self.no_translated = self.no_translated.loc[~self.no_translated[
-                self.mz_col].isin(mz_out)]
-            logger.info('[discard_out_of_tissue_mz]: Excluded %s m/z '
-                        'features that are "out-of-the-tissue"', len(mz_out))
+    def convert_ids_to_kegg(self, ref_table: pd.DataFrame):
+        logger.info('Translating ids in the metabolome annotation'
+                    ' table, to KEGG (into .df attribute)')
+        if not self.usable_id == "KEGG":
+            logger.error('The .usable_id must be "KEGG". Aborted.')
+            raise ValueError
+        assert np.all(np.array(list(ref_table.columns)) == np.array(
+                columns_kegg_conversion_expected)), f"Metabolite reference"
+        f" mappings columns must be {columns_kegg_conversion_expected}"
+        try:
+            self.df = helpers.convert_metabo_annots_tokegg(
+                self.no_translated, ref_table,
+                self.molecule_ids_col, self.mz_col, self.usable_id)
+            self.verify()
+        except Exception as e:
+            logger.warning("Error: %s", e)
 
     def keep_unique_mz_id_tuples(self, var_df: pd.DataFrame):
         logger.info(
@@ -233,45 +239,15 @@ class MetabolomeAnnotations(Dataset):
                                     self.mz_col]), "the 'mz' column in adata.var must be of type float"
         assert len(set(var_df[self.mz_col].tolist()).intersection(
             set(self.df[self.mz_col].unique()))
-        ) == len(self.df[self.mz_col].unique()), "Error, no perfect match with var_df mz"
+        ) == len(self.df[
+                     self.mz_col].unique()), "Error, no perfect match with var_df mz"
 
         self.df = helpers.warrant__one_to_one_mz_id(self.df, var_df,
-            self.mz_col, self.usable_id, self.msm_column,
-            self.fdr_column, self.offsample_column)
-
-    def convert_ids_to_kegg(self, ref_table: pd.DataFrame):
-        logger.info('Translating ids in the metabolome annotation'
-                    ' table, to KEGG (into .df attribute)')
-        if not self.usable_id == "KEGG":
-            logger.error('The .usable_id must be "KEGG". Aborted.')
-            raise ValueError
-        assert np.all(np.array(list(ref_table.columns)) == np.array(
-                columns_ref_map_expected)), f"Metabolite reference"
-        f" mappings columns must be {columns_ref_map_expected}"
-        try:
-            self.df = helpers.convert_metabo_annots_tokegg(
-                self.no_translated, ref_table,
-                self.molecule_ids_col, self.mz_col, self.usable_id)
-            self.verify()
-        except Exception as e:
-            logger.warning("Error: %s", e)
-
-    def verify(self):
-        if self.usable_id != "KEGG":
-            self.df = self.no_translated
-        try:
-            excess_mz_bool: bool = helpers.identify_multi_mz_to_one_compound(
-                self.df, self.mz_col, self.usable_id)
-            if excess_mz_bool:
-                # logger.warning("Please run keep_unique_mz_id_tuples(anndata_mz)")
-                # print(message_multimz)
-                message_multimz = (
-                    "Identified 'multi m/z to one KEGGid' cases!: Please run "
-                    "'<metabo_annotations>.keep_unique_mz_id_tuples(anndata_mz)'.")
-                logger.warning(message_multimz)
-                print(message_multimz)
-        except Exception as e:
-            logger.warning("Error: %s", e)
+                                                    self.mz_col,
+                                                    self.usable_id,
+                                                    self.msm_column,
+                                                    self.fdr_column,
+                                                    self.offsample_column)
 
     def remove_redundant_aliases(self):
         print("collapsing metabolites' identifiers aliases")
