@@ -31,6 +31,7 @@ logger = helpers.reset_log_config(logger)
 module_path = Path(__file__).resolve()
 library_path = module_path.parent.parent.parent.parent
 
+
 class BaseModel(PydanticBaseModel):
     # class Config:  # deprecated since pydantic v2
     #     arbitrary_types_allowed = True
@@ -119,6 +120,9 @@ class MetabolomeAnnotations(Dataset):
     usable_id: str = "KEGG"  # or moleculeIds if not using conversion to kegg
     df: pd.DataFrame = pd.DataFrame()
     mz_quality: pd.DataFrame = pd.DataFrame()
+    discard_plant_compounds: bool = True
+    discard_pharmaceuticals: bool = True
+    discard_other_non_mammalian: bool = True
 
     def load(self):
         logger.info("Loading annotations")
@@ -168,6 +172,11 @@ class MetabolomeAnnotations(Dataset):
 
         self.no_translated[self.mz_col] = np.around(
             self.no_translated[self.mz_col].to_numpy(), decimals=mz_decimal_places)
+
+        self.no_translated = helpers.purge_annotations(
+            self.no_translated, self.discard_pharmaceuticals,
+            self.discard_plant_compounds,  self.discard_other_non_mammalian,
+            library_path=library_path)
 
     def pull_mz_quality_df(self):
         """Builds df, if quality columns exist"""
@@ -255,11 +264,10 @@ class MetabolomeAnnotations(Dataset):
 
         aliases_df = pd.read_csv(os.path.join(library_path,
             "ressources", "aliases-HMDB-05-07-24-LipidMaps-04-30-25.tsv"),
-            sep="\t", header=0, index_col=None)
+            sep="\t", header=0, index_col=None, low_memory=False)
 
-        tmp_out: Dict[str, list] = helpers.aliases_groups(
+        accepted_ids = helpers.aliases_handler(
             aliases_df, self.df, self.usable_id)
-        accepted_ids = tmp_out['accepted']
 
         self.df = self.df.loc[
                   self.df[self.usable_id].isin(
@@ -324,7 +332,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
             official_gmt = pd.read_csv(
                 os.path.join(self.data_dir, self.subfolder,
                              self.official_file),
-                header=None, sep='\t', index_col=False)
+                header=None, sep='\t', index_col=False, low_memory=False)
             official_gmt = official_gmt.dropna(axis=1,
                                                how="all")  # drop if entire column is NaN
         except Exception as e:

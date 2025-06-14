@@ -1,4 +1,5 @@
 import sys
+import os
 import logging
 from typing import List, Dict, Union
 import pandas as pd
@@ -63,6 +64,31 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
     df_out = pd.concat([tmp1, tmp2], axis=1)
 
     return df_out
+
+
+def purge_annotations(df_notranslated: pd.DataFrame,
+                      discard_pharmaceuticals: bool, discard_plant_compounds: bool,
+                      discard_other_non_mammalian: bool, library_path: str) -> pd.DataFrame:
+    ids_col = "moleculeIds"
+    f_picker = {"pharma": {'istrue': discard_pharmaceuticals,
+                            'file': "pharmaceuticals.tsv"},
+                "plant": {'istrue': discard_plant_compounds,
+                          'file': "plant_compounds.tsv"},
+                "other": {'istrue': discard_other_non_mammalian,
+                          'file': "non_mammalian_other.tsv"}
+    }
+    for k in f_picker:
+        if f_picker[k]['istrue']:
+            tmp_df = pd.read_csv(
+                os.path.join(library_path, "ressources", f_picker[k]['file']),
+                sep="\t", header=0, index_col=None)
+            df_notranslated = df_notranslated.loc[
+                              ~df_notranslated[ids_col].isin(tmp_df[ids_col]),
+                              :].copy()
+        else:
+            print("% % % NOT TOUCHED % % ")
+
+    return df_notranslated
 
 
 def pick_mz_quality_infos(df, mz_col: str, offsample_col: str,
@@ -363,45 +389,62 @@ def is_log_transformed(sparse_matrix):
     return False
 
 
-def allocate_aliases_into_groups(aliases_df) -> (list, list):
+def yield_clean_noalias_ids(annots_with_aliases_df) -> List[str]:
     accepted_ids = set()
-    precluded_ids = set()
-    for i, row in aliases_df.iterrows():
+    for i, row in annots_with_aliases_df.iterrows():
         if row['LipidMaps'] != "empty":
-            precluded_ids = precluded_ids.union({row['KEGG'], row['HMDB']})
             accepted_ids = accepted_ids.union(
                 {row['LipidMaps']})  # preference for lipidmaps
         elif (row['LipidMaps'] == "empty") and (row['HMDB'] != "empty"):
-            precluded_ids = precluded_ids.union({row['KEGG']})
             accepted_ids = accepted_ids.union(
                 {row['HMDB']})  # second pref hmdb
         elif (row['LipidMaps'] == "empty") and (row['HMDB'] == "empty"):
             accepted_ids = accepted_ids.union(
                 {row['KEGG']})  # kegg id : only if the other two are empty
 
-    return list(accepted_ids), list(precluded_ids)
+    return list(accepted_ids)
 
 
-def aliases_groups(aliases_df, anno_df, usable_id):
+def ids_not_in_internal_aliases_table(aliases_df, hmdb_ids, lm_idf, kegg_ids):
+    exclusive_h = list(
+        set(hmdb_ids) - set(aliases_df["HMDB"].unique().tolist()))
+    exclusive_lm = list(
+        set(lm_idf) - set(aliases_df["LipidMaps"].unique().tolist()))
+    exclusive_kg = list(
+        set(kegg_ids) - set(aliases_df["KEGG"].unique().tolist()))
+
+    annots_nomate_ids = pd.DataFrame({
+        "HMDB": exclusive_h + ['' for i in range(len(exclusive_lm))] + [
+            '' for i in range(len(exclusive_kg))],
+        "LipidMaps": ['' for i in range(len(exclusive_h))
+                      ] + exclusive_lm + ['' for i in
+                                          range(len(exclusive_kg))],
+        "KEGG": ['' for i in range(len(exclusive_h))
+                 ] + ['' for i in range(len(exclusive_lm))] + exclusive_kg
+    })
+
+    return annots_nomate_ids
+
+
+def aliases_handler(aliases_df, anno_df, usable_id):
     m_ids = anno_df[usable_id].unique()
-    h = [u for u in m_ids if u.startswith("HMDB")]
-    lm = [u for u in m_ids if u.startswith("LM")]
-    kg = [u for u in m_ids if u.startswith("C")]
-    aliases_df = aliases_df.loc[(aliases_df["HMDB"].isin(h)
-                                 ) | (aliases_df["LipidMaps"].isin(lm)) | (
-                                    aliases_df["KEGG"].isin(kg)), :]
-    extra_kegg = set(kg) - set(aliases_df["KEGG"].unique())
-    tail_df = pd.DataFrame({}, columns=aliases_df.columns)
-    tail_df["KEGG"] = list(extra_kegg)
-    aliases_df = pd.concat([aliases_df, tail_df])
-    aliases_df = aliases_df.fillna("empty")
-    aliases_df = aliases_df.replace(to_replace='', value="empty")
+    hmdb_ids = [u for u in m_ids if u.startswith("HMDB")]
+    lm_ids = [u for u in m_ids if u.startswith("LM")]
+    kegg_ids = [u for u in m_ids if u.startswith("C")]
 
-    accepted_ids, precluded = allocate_aliases_into_groups(aliases_df)
+    annots_nomate_ids = ids_not_in_internal_aliases_table(aliases_df,
+                                                hmdb_ids, lm_ids, kegg_ids)
+    # intersection of aliases_df and current annots
+    annots_aliases = aliases_df.loc[(aliases_df["HMDB"].isin(hmdb_ids)
+                                     ) | (aliases_df["LipidMaps"].isin(
+        lm_ids)) | (aliases_df["KEGG"].isin(kegg_ids)), :].copy()
+    del aliases_df
+    annots_aliases = pd.concat([annots_aliases, annots_nomate_ids])
+    annots_aliases = annots_aliases.fillna("empty")
+    annots_aliases = annots_aliases.replace(to_replace='', value="empty")
+    accepted_ids = yield_clean_noalias_ids(annots_aliases)
 
-    dout = {'accepted' : accepted_ids, 'precluded': precluded}
-
-    return dout
+    return accepted_ids
 
 
 

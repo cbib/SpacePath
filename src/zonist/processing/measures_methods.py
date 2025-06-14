@@ -100,8 +100,8 @@ def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
     out_sum_arr = give_sum_array(adata_mz, df_out['mz'].astype(str).tolist())
     ratios_arr = (in_sum_arr + 1) / (out_sum_arr + 1)
     adata_mz.obs = adata_mz.obs.assign(
-        sum_out_tissue_quants=in_sum_arr,
-        sum_in_tissue_quants=out_sum_arr,
+        sum_out_tissue_quants=out_sum_arr,
+        sum_in_tissue_quants=in_sum_arr,
         ratio_in_out=ratios_arr)
 
     return adata_mz
@@ -170,7 +170,8 @@ def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5):
 
 # phases of classification for m/z
 
-def part_a__mz_quality_mark(me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff):
+def part_a__mz_quality_mark(me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff
+                            ) -> (MetabolomeAnnotations, List[str]):
     me_annots.pull_mz_quality_df()
     me_annots.mz_quality['quality_msm_off_fdr'] = "bad"
     me_annots.mz_quality.loc[
@@ -208,7 +209,9 @@ def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
 
 
 def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
-                                   moran_I_cutoff, moran_padj_cutoff, n_neighs, n_perms):  #
+                                   moran_I_cutoff, moran_padj_cutoff,
+                                   n_neighs, n_perms
+) -> (pd.DataFrame, List[str], pd.DataFrame):
     # prepare quality merged df
     all_quality_df = adata_mz.var.copy()
     all_quality_df["mz"] = all_quality_df["mz"].astype(str).tolist()
