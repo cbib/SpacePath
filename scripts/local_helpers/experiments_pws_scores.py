@@ -20,8 +20,8 @@ def compounds_counts_by_pathway(pathwaysObj):
     for pw_id in pathwaysObj.to_dict().keys():
         metabolites = pathwaysObj.to_dict()[pw_id]
         pw_id_l.append(pw_id)
-        pw_name.append(pathwaysObj.pathways_ids.loc[
-                           pathwaysObj.pathways_ids["pathway_id"] == pw_id,
+        pw_name.append(pathwaysObj.sets_ids_df.loc[
+                           pathwaysObj.sets_ids_df["pathway_id"] == pw_id,
                            "pathway_name"].item())
         pw_compounds.append("; ".join(metabolites))
         pw_count.append(len(metabolites))

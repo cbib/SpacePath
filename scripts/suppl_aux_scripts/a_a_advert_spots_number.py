@@ -3,11 +3,11 @@ import pandas as pd
 import anndata as ad
 
 
-mydata_dir = "../../data"
+mydata_dir = "../../../data"
 
 # define here my input
-my_csv_table_path_1 = "../public-datasets-parameters.tsv"   #"../../small_test.csv"
-my_csv_table_path_2 = "../private-datasets-parameters.tsv"   #"../../small_test.csv"
+my_csv_table_path_1 = "../../public-datasets-parameters.tsv"  #"../../small_test.csv"
+my_csv_table_path_2 = "../../private-datasets-parameters.tsv"  #"../../small_test.csv"
 
 
 df1 = pd.read_csv(my_csv_table_path_1, header=0,
@@ -45,4 +45,4 @@ out_df = pd.DataFrame({'dataset_name': name_l,
                        'spot_number': spot_n,
                        'features_n' : features_n })
 
-out_df.to_csv("../figs/initial_data_dimensions.tsv", index=False, sep='\t')
+out_df.to_csv("../../figs/initial_data_dimensions.tsv", index=False, sep='\t')

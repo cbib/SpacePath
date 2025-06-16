@@ -52,7 +52,7 @@ if __name__ == "__main__":
     SAMPLE = "TD-Lipido-635"
     subfolder = SAMPLE
 
-    min_pathway_size = 5
+    min_pathway_size = 5  # changed !!!
     print("\nSample: ", SAMPLE)
     subfolder = SAMPLE
     plot_folder = os.path.join(plot_parent_folder, SAMPLE)
@@ -88,8 +88,8 @@ if __name__ == "__main__":
     pws_obj_2, annots_2 = zm.SyncPathwaysAndAnnots.run(
         pathwaysObj.model_copy(),
         me_annots.model_copy(),
-        min_pathway_size=min_pathway_size,
-        max_pathway_size=500,   # todo: highlight that changed !!!
+        min_pathway_size=min_pathway_size,  # changed !!!
+        max_pathway_size=500,   # changed !!!
         mode="mz_aware")
 
     mz_in_pws = set(annots_2.df['mz'].unique())
@@ -99,8 +99,7 @@ if __name__ == "__main__":
         os.path.join(mydata_dir, subfolder, f'{SAMPLE}-{pwtype}-YES.txt'),
         index=False
     )
-   # todo: remembre that I deleted the NO part because no sense in tanimoto experiment
-
+   # remember that I deleted the NO part because no sense in tanimoto experiment
 
     ofipw = os.path.join(mydata_dir, subfolder, f'{SAMPLE}-scores-{pwtype}.h5ad')
 

@@ -1,76 +1,30 @@
 import sys
 import os
-import numpy as np
-import pandas as pd
+
 import anndata as ad
-from scipy.sparse import csr_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
-import squidpy as sq
+
 import zonist.data as zd
 import zonist.method as zm
-import zonist.helpers as zh
 
 import zonist.processing.measures_methods as zmm
 from local_helpers.local_helpers import provide_annotation_dict
 
 from local_helpers.local_viz import *
-from do_wikipathways__describe import thisfun1
 
 
-def thisfun2OO(me_annots, me_refmap):
-    out_l = [0, 0, 0]
-    position_dict =  {0 : ["HMDB", "CoreMetabolome"], 1 : ['LipidMaps'], 2: ["KEGG"]}
-    for k in position_dict.keys():
-        # local_mzs = me_annots.no_translated.loc[
-        #     me_annots.no_translated["database"].isin(k), "mz"].astype(str).tolist()
-        # the_found_kegg =
-        # out_l[k] = len(the_found_kegg)
 
-        sub_annots_df = me_annots.no_translated.loc[
-                        me_annots.no_translated['database'].isin(
-                            position_dict[k]), :]
-
-        sub_annots_piled = zh.spreadout_annotation_df(
-            sub_annots_df, mz_col="mz", formula_col="formula",
-            molecule_ids_col="moleculeIds",
-            molecule_names_col="moleculeNames")
-
-        sub_refs = me_refmap.table.loc[
-                   me_refmap.table['database'].isin(position_dict[k]), :]
-
-        # size of the set of ids that can truly be translated to KEGG
-        out_l[k] = len(set(
-            sub_refs['initial_id_unconverted'].unique()).intersection(
-            set(sub_annots_piled['moleculeIds'].unique())))
-
-    return out_l
-
-#def thisfun2(me_annots)::
-#    # the .df attr of annots object has always the database of origin of the metabolites
-
-
-def thisfunUNIVERSAL(me_annots):
+def counts_per_orig_db(annotsdf):
     # the .df attr of annots object has always the database of origin of the metabolites
     out_l = [0, 0, 0]
     position_dict = {0: ["HMDB", "CoreMetabolome"], 1: ['LipidMaps'],
                      2: ["KEGG"]}
     for k in position_dict.keys():
-        # local_mzs = me_annots.no_translated.loc[
-        #     me_annots.no_translated["database"].isin(position_dict[k]), "mz"].astype(str).tolist()
-        # the_found_kegg =
-        # out_l[k] = len(the_found_kegg)
-
-        out_l[k] = me_annots.df.loc[
-                        me_annots.df['database'].isin(position_dict[k]), :].shape[0]
+        out_l[k] = annotsdf.loc[
+                        annotsdf['database'].isin(position_dict[k]), :].shape[0]
     return out_l
 
 
-"""
-"""
 if __name__ == "__main__":
-    # also add to the anndata.var if a feature was yes Y or no N in pathways that will pass.
-    # that will allow to "paste" the mz or kegg that were not in the pw trick (? if makes sense such "paste" ?)
     name_sample = []
     mz_mapped_to_pathways = []
     kegg_compound_ids_to_mz_ratio_after_pathway_mapped = []
@@ -108,8 +62,12 @@ if __name__ == "__main__":
 
     pathwaysObj.load()
 
-    print("\nDo XXXX across specified datasets")
+    print("\nRunning a general quantitative description of the KEGG mappings "
+          "(both compound ids and pathways) across specified datasets."
+          " Output: .csv files with counts")
+
     pwsizeONE = 1  # constant
+
     for i, row in datasets_parameters_df.iterrows():
         SAMPLE = row["dataset_name"]
         min_pathway_size = row["min_pathway_size"]
@@ -138,28 +96,29 @@ if __name__ == "__main__":
 
         me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots, adata_mz)
 
-        my_new_dict[SAMPLE] = thisfun1(me_annots.no_translated['moleculeIds'].unique())
+        my_new_dict[SAMPLE] = counts_per_orig_db(me_annots.no_translated)
 
         me_annots.convert_ids_to_kegg(me_refmap.table)
         me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())  #
 
-        #my_new_dict[SAMPLE] += thisfun2(me_annots, me_refmap)
-        my_new_dict[SAMPLE] += thisfunUNIVERSAL(me_annots)
+        my_new_dict[SAMPLE] += counts_per_orig_db(me_annots.df)
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
-        pws1, ann1 = zm.SyncPathwaysAndAnnots.run(
+        pws1, ann1_df = zm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
-            me_annots.model_copy(),
+            me_annots.df.copy(),
+            usable_id="KEGG",
             min_pathway_size=pwsizeONE,
             max_pathway_size=200,
             mode="mz_aware"
         )
-        my_new_dict[SAMPLE] += thisfunUNIVERSAL(ann1)
+        my_new_dict[SAMPLE] += counts_per_orig_db(ann1_df)
 
-        pws_obj_2, annots_2 = zm.SyncPathwaysAndAnnots.run(
+        pws_obj_2, annots_2_df = zm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
-            me_annots.model_copy(),
+            me_annots.df.copy(),
+            usable_id="KEGG",
             min_pathway_size=min_pathway_size,
             max_pathway_size=200,
             mode="mz_aware"
@@ -168,16 +127,14 @@ if __name__ == "__main__":
         myratio = 0
         try:
             if len(pws_obj_2.piled["pathway_id"].unique()) != 0:
-                myratio = len(annots_2.df['mz'].unique()) / len(pws_obj_2.piled['pathway_id'].unique())
+                myratio = len(annots_2_df['mz'].unique()) / len(pws_obj_2.piled['pathway_id'].unique())
         except:
             pass
         print("ratio mzs/pathwayNumber : ", myratio)
-        # print(f"when mapped to KEGG, with min pathwaysize {min_pathway_size}, "
-        #       f"remained {me_annots.df.shape[0]} different KEGG id")
 
         name_sample.append(SAMPLE)
-        mz_ok = annots_2.df['mz'].unique()
-        kg_ok = annots_2.df["KEGG"].unique()
+        mz_ok = annots_2_df['mz'].unique()
+        kg_ok = annots_2_df["KEGG"].unique()
         mz_mapped_to_pathways.append(len(mz_ok))
         try:
             kegg_compound_ids_to_mz_ratio_after_pathway_mapped.append(
@@ -202,6 +159,7 @@ if __name__ == "__main__":
                        "KEGG in pathways"  ]
 
     out_df1.to_csv("../figs/initial-ids-pathways-KEGG.csv")
+    print("saved", "../figs/initial-ids-pathways-KEGG.csv")
 
     out_df2 = pd.DataFrame({
         "sample_name": name_sample,
@@ -209,5 +167,6 @@ if __name__ == "__main__":
     "ratio_keggid_mz": kegg_compound_ids_to_mz_ratio_after_pathway_mapped,
     "pathways_number_final" : how_many_pathways    })
     out_df2.to_csv("../figs/final-KEGG-compounds-counts.csv")
+    print("saved", "../figs/final-KEGG-compounds-counts.csv")
 
 

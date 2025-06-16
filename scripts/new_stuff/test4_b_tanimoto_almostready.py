@@ -12,7 +12,7 @@ import zonist.processing.measures_methods as zmm
 
 
 smiles_lipidmaps = pd.read_csv(
-    "../resources/LipidMaps-SMILES_.06-08-25tsv",
+    "../resources/LipidMaps-SMILES_06-08-25.tsv",
      sep='\t',
     header=0)
 

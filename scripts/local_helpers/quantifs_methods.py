@@ -62,9 +62,8 @@ def mold_data_for_plot__task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df, ad
 
 
 def score_as_adata(kpca_scores, adata,
-                   #pathwaysObj: MetabolicPathways,
-                   pathways_ids_df: pd.DataFrame,
-                   pathways_piled: pd.DataFrame):  # deleted arg: original_pathways_dict
+                   sets_ids_df_df: pd.DataFrame,
+                   pathways_piled: pd.DataFrame):
     score_adata = ad.AnnData(
         X=csr_matrix(kpca_scores),
         var=pd.DataFrame(
@@ -78,13 +77,13 @@ def score_as_adata(kpca_scores, adata,
                          'spot_diameter_fullres': 1,
                          'tissue_hires_scalef': 0.5,
                          'tissue_lowres_scalef': 0.5}}}
-    tmp = pathways_ids_df #pathwaysObj.pathways_ids.copy()
+    tmp = sets_ids_df_df
     tmp.index = tmp['pathway_id']
     tmp = tmp.loc[score_adata.var['pathway_id'],:]
     score_adata.var = score_adata.var.assign(
         pathway_name=tmp['pathway_name'].tolist())
-    # score_adata.uns['former_pathways_dict'] = original_pathways_dict    # deleted
-    score_adata.uns['current_pathways_df'] = pathways_piled.copy() #pathwaysObj.piled  # has m/z, KEGG and pathway id columns
+
+    score_adata.uns['current_pathways_df'] = pathways_piled.copy() # # has m/z, KEGG/moleculeIds and pathway id columns
 
     return score_adata
 
@@ -99,14 +98,15 @@ def compute_mz_binary_df(adata_mz: ad.AnnData):
     return X_mz_binary_df
 
 
-def compute_metabolites_probs_df(adata_mz: ad.AnnData, annots):
+def compute_metabolites_probs_df(adata_mz: ad.AnnData, annots_df,
+                                 usable_id, mz_col="mz"):
     X_mz_binary_df = compute_mz_binary_df(adata_mz)
     preX_probs = []
     col_names_kegg = []
     for a_mz in X_mz_binary_df.columns:
         i_arr = X_mz_binary_df[a_mz].to_numpy()
-        the_ids_here = annots.df.loc[
-            annots.df['mz'] == a_mz, annots.usable_id].unique().tolist()
+        the_ids_here = annots_df.loc[
+            annots_df[mz_col] == a_mz, usable_id].unique().tolist()
         n = len(the_ids_here)
         for kid in the_ids_here:
             col_names_kegg.append(kid)

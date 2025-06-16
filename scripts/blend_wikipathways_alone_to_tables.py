@@ -1,31 +1,22 @@
 import sys
 import os
-import numpy as np
 import pandas as pd
 import anndata as ad
-from scipy.sparse import csr_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
-import squidpy as sq
+
 import zonist.data as zd
 import zonist.method as zm
 import zonist.processing.measures_methods as zmm
-import zonist.helpers as zh
 
 from local_helpers.local_helpers import provide_annotation_dict
 
+from blend_keggids_keggpathways_to_tables import counts_per_orig_db
 
 
-def thisfun1(ids_mixture_list):
-    hmdb_l = [u for u in ids_mixture_list if u.startswith("HMDB")]
-    lpmp_l = [u for u in ids_mixture_list if u.startswith("LM")]
-    kegg_l = [u for u in ids_mixture_list if u.startswith("C")]
 
-    return [len(hmdb_l), len(lpmp_l), len(kegg_l)]
-
-"""
-"""
 if __name__ == "__main__":
+
+    print("\nRunning a general quantitative description of the WIKIPATHWAYS"
+          " mappings across specified datasets. Output: .csv files with counts")
 
     name_sample = []
     mz_mapped_to_pathways = []
@@ -47,7 +38,7 @@ if __name__ == "__main__":
     df2 = pd.read_csv(my_csv_table_path_2, header=0,
                       index_col=None, sep='\t')
     datasets_parameters_df = pd.concat([df1, df2])
-
+    datasets_parameters_df.reset_index(inplace=True)
     # start
     print("doing with new version of 'aliases collapse' that is done before the pathways mapping")
 
@@ -59,11 +50,9 @@ if __name__ == "__main__":
     pathwaysObj.molecule_id_type = "moleculeIds"
     pathwaysObj.load()
 
-    print("\nDo .....")
+    print("\nDo ")
     pwsizeONE = 1  # constant
-    # todo: delete this !§§§§§§§§§§§§§§§§§§§§§
-    datasets_parameters_df = datasets_parameters_df.iloc[[8,12,13], :]   # todo: delete this !§§§§§§§§§§§§§§§§§§§§§
-    # todo: delete this !§§§§§§§§§§§§§§§§§§§§§
+
     for i, row in datasets_parameters_df.iterrows():
         SAMPLE = row["dataset_name"]
         min_pathway_size = row["min_pathway_size"]
@@ -77,7 +66,7 @@ if __name__ == "__main__":
             name=SAMPLE, data_dir=mydata_dir, subfolder=subfolder,
             annotation_files=anno_dict)
 
-        me_annots.usable_id = "moleculeIds"  # todo: mark as new
+        me_annots.usable_id = "moleculeIds"
 
         me_annots.load()
 
@@ -91,28 +80,29 @@ if __name__ == "__main__":
                    "mz"].astype(str).tolist()]
 
         me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots, adata_mz)
+
+        my_new_dict[SAMPLE] = counts_per_orig_db(me_annots.no_translated)
+
         me_annots.verify()
-        me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())  #
-        print("removing aliases")
-        me_annots.remove_redundant_aliases()  # when using multitype 'moleculeIds' annotations
-        print("removed aliases")
-        my_new_dict[SAMPLE] = thisfun1(me_annots.df['moleculeIds'].unique())  # me_annots.df['moleculeIds']
+        me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())  # todo: check why this function is so slow with original identifiers
+
+        me_annots.remove_redundant_aliases()  # because using multitype 'moleculeIds' annotations
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
-        pw1, ann1 = zm.SyncPathwaysAndAnnots.run(
+        pw1, ann1_df = zm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
-            me_annots.model_copy(),
+            me_annots.df.copy(),
+            usable_id="moleculeIds",
             min_pathway_size=pwsizeONE,
             max_pathway_size=200 )
 
-        my_new_dict[SAMPLE] += thisfun1(ann1.df[me_annots.usable_id
-                                        ].unique())
+        my_new_dict[SAMPLE] += counts_per_orig_db(ann1_df)
 
-        # correct mapping again
-        pws_obj_2, annots_2 = zm.SyncPathwaysAndAnnots.run(
+        pws_obj_2, annots_2_df = zm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
-            me_annots.model_copy(),
+            me_annots.df.copy(),
+            usable_id="moleculeIds",
             min_pathway_size=min_pathway_size,
             max_pathway_size=200,
             mode="mz_aware"
@@ -120,14 +110,14 @@ if __name__ == "__main__":
         myratio = 0
         try:
             if len(pws_obj_2.piled["pathway_id"].unique()) != 0:
-                myratio = len(annots_2.df['mz'].unique()) / len(pws_obj_2.piled['pathway_id'].unique())
+                myratio = len(annots_2_df['mz'].unique()) / len(pws_obj_2.piled['pathway_id'].unique())
         except:
             pass
         print("ratio mzs/pathwayNumber : ", myratio)
 
         name_sample.append(SAMPLE)
-        mz_ok = annots_2.df['mz'].unique()
-        theIDok = annots_2.df[annots_2.usable_id].unique()
+        mz_ok = annots_2_df['mz'].unique()
+        theIDok = annots_2_df[me_annots.usable_id].unique()
         mz_mapped_to_pathways.append(len(mz_ok))
         try:
             compound_ids_to_mz_ratio_after_pathway_mapped.append(

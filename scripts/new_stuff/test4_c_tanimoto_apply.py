@@ -7,12 +7,11 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 import pickle
 
-def give_ok_order(smiles_df, the_identifiers_may):
+def compounds_and_smiles_ordered(smiles_df, the_identifiers_may):
     mycopy = smiles_df.copy()
     mycopy = mycopy.drop_duplicates(subset=['moleculeIds', 'SMILES'], keep='first')
     mycopy = mycopy[['moleculeIds', 'SMILES']].copy()
     mycopy.index = mycopy['moleculeIds'].tolist()
-    print("hourray ! ")
     mycopy = mycopy.T
     mycopy = mycopy[list(set(the_identifiers_may))]
     mycopy = mycopy.T
@@ -48,7 +47,7 @@ the_identifiers_may = list(set(
 )))
 print(len(the_identifiers_may), ":) ")
 
-the_identifiers_almost, the_smiles_good_order = give_ok_order(smiles_df, the_identifiers_may)
+the_identifiers_almost, the_smiles_good_order = compounds_and_smiles_ordered(smiles_df, the_identifiers_may)
 print(len(the_identifiers_almost), ":D")
 
 print("*****", the_smiles_good_order[-7:])
@@ -72,21 +71,6 @@ the_ms = [Chem.MolFromSmiles(k) for k in the_smiles_enter]
 
 fps = [fpgen.GetFingerprint(x) for x in the_ms]
 
-# carajo = [fpgen.GetFingerprint(x) for x in ['[C@H](O)([C@H]1OC(=O)C=C1)CCCCCCCCCCCCCCC']]
-# print(carajo, "fingerprint §§§§§§§")
-# all_exeptions = 0
-# for i in range(len(the_identifiers_almost)):
-#     i_smile = the_smiles_good_order[i]
-#     i_name = the_identifiers_almost[i]
-#     try :
-#         fps.append(fpgen.GetFingerprint(i_smile))
-#         the_identifiers_that_enter.append(i_name)
-#         the_smiles_enter(i_smile)
-#     except:
-#         all_exeptions += 1
-#         continue
-
-#print("oh no", all_exeptions)
 
 print("filling the array")
 for u in range(len(the_identifiers_that_enter)):

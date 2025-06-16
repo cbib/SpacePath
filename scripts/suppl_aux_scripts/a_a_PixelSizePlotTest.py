@@ -19,8 +19,8 @@ import zonist.processing.measures_methods as zmm
 
 if __name__ == "__main__":
     # define here my input
-    mydata_dir = "../../data"
-    my_csv_table_path = "../privateNEW-datasets-parameters.tsv"
+    mydata_dir = "../../../data"
+    my_csv_table_path = "../../privateNEW-datasets-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
     # start

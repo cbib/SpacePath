@@ -36,7 +36,7 @@ arr_df
 sns.clustermap(arr_df, cmap="Blues")
 plt.title(f"the clustering of molecules")
 plt.tight_layout()
-plt.show()
+plt.show()   # TODO: save with 600dpi
 
 distance_matrix = 1 - arr_df
 # make the hierarchical clustering reproducible

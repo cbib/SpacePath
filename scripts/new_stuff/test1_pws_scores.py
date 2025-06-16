@@ -58,7 +58,7 @@ def run_scores_chapter(adata_mz, pws_obj, annots):
         pws_obj.to_dict(), adataIds
     )
     scores_adata = score_as_adata(scores_df, adataIds,
-                   pws_obj.pathways_ids,
+                   pws_obj.sets_ids_df,
                    pws_obj.piled)
 
     return scores_adata
