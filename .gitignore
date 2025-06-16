@@ -9,3 +9,4 @@ src/.ipynb_checkpoints/
 .idea
 .idea/
 log.log
+resources/SMILES/HMDB*.tsv  # because too big. TODO : think in solution to save as gzip and unzip at firt usage 

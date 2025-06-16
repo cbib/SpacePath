@@ -399,17 +399,18 @@ class MetabolicPathways(BaseModel, extra='allow'):
         return helpers.pws_piled_to_dict(
             self.piled, self.pathway_id_col, mz_or_identity_col=mz_or_id)
 
-    def intersect_with_annotations(self, annots_obj: MetabolomeAnnotations):
+    def intersect_with_annotations(self, annots_df: pd.DataFrame,
+                                   usable_id: str, mz_col: str):
         """
          - adds the mz column to the .piled df in the MetabolicPathways obj
          - retains only the elements that are in the intersection of both objs
         """
-        if not self.molecule_id_type == annots_obj.usable_id:
-            logger.error("%s and %s are not identical. Aborted.", self.molecule_id_type, annots_obj.usable_id)
+        if not self.molecule_id_type == usable_id:
+            logger.error("%s and %s are not identical. Aborted.", self.molecule_id_type, usable_id)
             raise AssertionError
         self.piled = helpers.pathways_and_annots_join(
             self.piled[[self.pathway_id_col, self.molecule_id_type]],
-            annots_obj.df[[annots_obj.mz_col, annots_obj.usable_id]],
+            annots_df[[mz_col, usable_id]],
             self.molecule_id_type)
 
     def constrain(self, min_pathway_size, max_pathway_size, mode):

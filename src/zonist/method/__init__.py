@@ -12,6 +12,14 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
 from pydantic import Extra
 
+from pathlib import Path
+
+from rdkit import DataStructs
+from rdkit import Chem
+from rdkit.Chem import AllChem
+
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+from scipy.spatial.distance import squareform
 
 import zonist.helpers as helpers
 from zonist.data import MetabolicPathways, MetabolomeAnnotations
@@ -22,6 +30,10 @@ import zonist.visualization.visualization as zviz
 
 logger = logging.getLogger(__name__)
 logger = helpers.reset_log_config(logger)
+
+module_path = Path(__file__).resolve()
+library_path = module_path.parent.parent.parent.parent
+
 
 
 class BaseModel(PydanticBaseModel):
@@ -51,6 +63,132 @@ class ComputePathwaysScoresConfig(MethodConfig):
     min_entity: int = 2
     n_groups_of_spots: int = 30
     threshold_n_spots_is_high: int = 15000   # todo : in the stable version use 20K
+
+
+class ComputeMoleculesSimilarityMatrixConfig(MethodConfig):
+    description : str = "...."
+    #method: str=""
+
+
+class ComputeMoleculesFamiliesConfig(MethodConfig):
+    description : str = "...."
+    #method: str=""
+
+
+def compounds_and_smiles_ordered(smiles_df, molecules_ids_list):
+    mycopy = smiles_df.copy()
+    mycopy = mycopy.drop_duplicates(subset=['moleculeIds', 'SMILES'],
+                                    keep='first')
+    the_identifiers_allowed = list(
+        set(mycopy['moleculeIds'].unique().tolist()).intersection(
+            set(molecules_ids_list))
+    )
+    mycopy = mycopy[['moleculeIds', 'SMILES']].copy()
+    mycopy.index = mycopy['moleculeIds'].tolist()
+    mycopy = mycopy.T
+    mycopy = mycopy[list(set(the_identifiers_allowed))]
+    mycopy = mycopy.T
+    mycopy = mycopy.drop_duplicates()
+
+    return mycopy['moleculeIds'].tolist(), mycopy['SMILES'].tolist()
+
+class ComputeMoleculesSimilarityMatrix:
+    config = ComputeMoleculesSimilarityMatrixConfig
+    @staticmethod
+    def run(molecules_ids_list, threshold_similarity=None):
+        smiles_dfs  = []
+        for file_name in ["LipidMaps-SMILES_06-08-25.tsv",
+                          "HMDB-SMILES_05-07-24.tsv"]:
+            df = pd.read_csv(
+                os.path.join(library_path, "ressources", "SMILES", file_name),
+             sep='\t', header=0)
+            smiles_dfs.append(df)
+
+        smiles_df = pd.concat(smiles_dfs)
+        smiles_df = smiles_df.loc[~smiles_df['SMILES'].isnull(), :].copy()
+
+        the_identifiers_that_entered, these_smiles_entered = compounds_and_smiles_ordered(
+            smiles_df, molecules_ids_list)
+
+        fpgen = AllChem.GetRDKitFPGenerator()
+        the_ms = [Chem.MolFromSmiles(k) for k in these_smiles_entered]
+        fps = [fpgen.GetFingerprint(x) for x in the_ms]
+
+        arr = np.zeros(shape=(len(the_identifiers_that_entered),
+                              len(the_identifiers_that_entered)))
+
+        logger.info("filling array with Tanimoto similarities, computed for all pairs of SMILES")
+        for u in range(len(the_identifiers_that_entered)):
+            for v in range(u + 1, len(the_identifiers_that_entered)):
+                tanimoto_similarity = DataStructs.TanimotoSimilarity(
+                    fps[u],  fps[v])
+                arr[u, v] = tanimoto_similarity
+                arr[v, u] = tanimoto_similarity
+
+        np.fill_diagonal(arr, 1)
+        if threshold_similarity is not None:
+            arr[arr < threshold_similarity] = 0  # todo: verify this with unittest
+
+        mol_similarities_result = {"array": arr,
+                                   "the_ids": the_identifiers_that_entered,
+                                   "the_smiles": these_smiles_entered}
+
+        return mol_similarities_result
+
+
+class ComputeMoleculesFamilies:
+    config = ComputeMoleculesFamiliesConfig
+    @staticmethod
+    def run(mol_similarities_result, molecules_ids_df,
+            mydata_dir, subfolder, SAMPLE,
+            cutoff_tree=15, method_linkage="ward", metric_linkage="cosine") -> dict:
+        print("now doing the hierarchical clustering of the computed matrix")
+        # make the hierarchical clustering reproducible
+        np.random.seed(42)
+
+        distance_matrix = 1 - mol_similarities_result['array']
+        # squareform saves memory by representing the matrix with the upper right triangle
+        computed_dendrogram = linkage(squareform(distance_matrix),
+                                      method=method_linkage,
+                                      metric=metric_linkage
+                                      )
+        clusters = fcluster(computed_dendrogram,
+                            t=cutoff_tree, criterion='distance')
+        myannots = molecules_ids_df.loc[molecules_ids_df["moleculeIds"].isin(
+            mol_similarities_result['the_ids']),:]
+        myannots = myannots.assign(molecules_cluster=clusters)
+
+        logger.info("the clusters are: %s",
+              sorted(myannots['molecules_cluster'].unique().tolist()))
+
+        molecs_families_dict = {}  # initialize and save as mmt
+        for clu in sorted(myannots['molecules_cluster'].unique().tolist()):
+            mols_in_clus = myannots.loc[myannots[
+                                            'molecules_cluster'] == clu, "moleculeIds"].unique().tolist()
+            first_molecule_group = myannots.loc[
+                myannots['molecules_cluster'] == clu, "moleculeNames"].head(
+                1).item()
+            molecs_families_dict[
+                f'tg_{clu}'] = [first_molecule_group] + mols_in_clus
+
+        max_length = max(len(v) for v in molecs_families_dict.values())
+
+        for key in molecs_families_dict:
+            if len(molecs_families_dict[key]) < max_length:
+                molecs_families_dict[key] += [np.nan] * (
+                            max_length - len(molecs_families_dict[key]))
+
+        molecs_families_mmt_df = pd.DataFrame(molecs_families_dict)
+        molecs_families_mmt_df = molecs_families_mmt_df.T
+        molecs_families_mmt_df.to_csv(os.path.join(
+            mydata_dir, subfolder, f"{SAMPLE}-molecules_families.mmt"),
+            sep='\t', header=False)
+        logger.info("saved .mmt file")
+
+        return {"computed_dendrogram" : computed_dendrogram,
+                "molecules_families": molecs_families_dict,
+                "cutoff_tree": cutoff_tree}
+
 
 
 class FakeMethodConfig(MethodConfig):
@@ -128,30 +266,33 @@ class ClassifyMZProtocol:
 class SyncPathwaysAndAnnots:
     #config: SyncPathwaysAndAnnotsConfig  TODO : use ?
     @staticmethod
-    def run(pathwaysObj: MetabolicPathways, annotsObj: MetabolomeAnnotations,  # TODO make it to accept also TranscriptomeAnnotations and create such TranscriptomeAnnotations (should be easy)
+    def run(pathwaysObj: MetabolicPathways,
+            annots_df: pd.DataFrame,  # TODO make it to accept also TranscriptomeAnnotations and create such TranscriptomeAnnotations (should be easy)
+            usable_id: str="",
+            mz_col: str="mz",
             min_pathway_size: int=2,
             max_pathway_size: int=500,
-            mode: str="default"  # or mz_aware  # todo?: make automatic? "mz_aware" ??if an object of type MetabolomeAnnotations is the second argument  ??
+            mode: str="mz_aware"  # or "default", but mz_aware is preferred
             )-> Tuple[MetabolicPathways, MetabolomeAnnotations]:
-        if not (annotsObj.usable_id == pathwaysObj.molecule_id_type):
+        if not (usable_id == pathwaysObj.molecule_id_type):
             logger.error(
                 "No same types of compound ids: %s and %s, respectively",
-                pathwaysObj.molecule_id_type, annotsObj.usable_id)
+                pathwaysObj.molecule_id_type, usable_id)
             raise AssertionError("see the error in .log file. Aborted.")
         if (max_pathway_size == 1) and (mode != "default"):
-            logger.info("max pathway size is 1, auto-set default mode")
+            logger.info("max pathway size is 1, auto-setting default mode")
             mode = "default"
-        pathwaysObj.intersect_with_annotations(annotsObj)  # this updates pathwaysObj only
+        pathwaysObj.intersect_with_annotations(annots_df, usable_id, mz_col)  # this updates pathwaysObj only
         pathwaysObj.constrain(min_pathway_size, max_pathway_size, mode)
 
         # todo: check if this .df  update is enough (other attrs to update?):
-        annotsObj.df = annotsObj.df.loc[
-            annotsObj.df[annotsObj.usable_id].isin(
+        annots_df = annots_df.loc[
+            annots_df[usable_id].isin(
                 pathwaysObj.piled[pathwaysObj.molecule_id_type].unique()), :]
 
         logger.info("Pathways and Annotations objects synchronized, with"
                     " min pathway size = %s", min_pathway_size)
-        return pathwaysObj, annotsObj
+        return pathwaysObj, annots_df
 
 
 class ComputePathwaysScores:

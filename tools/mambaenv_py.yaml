@@ -1,4 +1,4 @@
-name: prototype_py
+name: mambaenv
 channels:
   - bioconda
   - conda-forge
@@ -26,7 +26,6 @@ dependencies:
   - conda-forge::mypy
   - conda-forge::python-dotenv>=0.5.1
   - conda-forge::jupyterlab
-  - conda-forge::polars
   - requests
   - tqdm
   - scanpy
@@ -37,6 +36,9 @@ dependencies:
     - sspa    
     - pyimzml
     - metaspace-converter
+    - rdkit # new
+    - fastcluster # new
     - pywikipathways  # new 
     - matplotlib-venn # new
+    
 

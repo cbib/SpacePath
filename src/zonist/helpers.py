@@ -85,8 +85,6 @@ def purge_annotations(df_notranslated: pd.DataFrame,
             df_notranslated = df_notranslated.loc[
                               ~df_notranslated[ids_col].isin(tmp_df[ids_col]),
                               :].copy()
-        else:
-            print("% % % NOT TOUCHED % % ")
 
     return df_notranslated
 
@@ -259,7 +257,7 @@ def warrant__one_to_one_mz_id(annotdf: pd.DataFrame,
     annotdf = annotdf.loc[annotdf["keep"] == 1, :].copy()
     annotdf = annotdf.drop(columns=["keep"])
     annotdf = annotdf.sort_values(by='database', ascending=True)
-    annotdf = annotdf.drop_duplicates(subset=[mz_col, id_col], keep='first')
+    annotdf = annotdf.drop_duplicates(subset=[mz_col, id_col], keep='first')  # favors CoreMetabolome, ok
 
     return annotdf
 
@@ -445,19 +443,4 @@ def aliases_handler(aliases_df, anno_df, usable_id):
     accepted_ids = yield_clean_noalias_ids(annots_aliases)
 
     return accepted_ids
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

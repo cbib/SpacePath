@@ -17,6 +17,8 @@ HMDB0000481	Allopurinol riboside
 HMDB0001850	Verapamil
 HMDB0001923	Naproxen
 HMDB0001935	Warfarin
+HMDB0003572	Rosmarinic acid
+HMDB0005000	Loratadine
 HMDB0005006	Atorvastatin
 HMDB0005007	Simvastatin
 HMDB0005008	Lansoprazole
@@ -66,24 +68,35 @@ HMDB0014246	O-Desmethylverapamil (D-703)
 HMDB0014323	Valsartan
 HMDB0014372	Lovastatin
 HMDB0014383	Nevirapine
+HMDB0014448	Ertapenem
 HMDB0014548	Alprazolam
 HMDB0014581	Allopurinol
 HMDB0014612	Tenoxicam
+HMDB0014659	Albendazole
 HMDB0014694	Piroxicam
 HMDB0014724	Diclofenac
 HMDB0014757	Imatinib
 HMDB0014816	Losartan
+HMDB0014898	Meropenem
 HMDB0014952	Meloxicam
+HMDB0015102	Desloratadine
 HMDB0015227	Fluvastatin
 HMDB0015230	Rosuvastatin
 HMDB0015267	Carvedilol
 HMDB0015403	Lumiracoxib
+HMDB0015536	Imipenem
 HMDB0015565	Etoricoxib
 HMDB0015666	Lornoxicam
+HMDB0035446	Methylrosmarinic acid
+HMDB0041667	3-O-Methylrosmarinic acid
+HMDB0041883	Doripenem
+HMDB0041892	Faropenem
 HMDB0041991	Pitavastatin
+HMDB0059609	albendazole S-oxide
 HMDB0060540	Norverapamil
 HMDB0060542	5-Hydroxydiclofenac
 HMDB0060554	4-hydroxyalprazolam
+HMDB0060561	Albendazole sulfone
 HMDB0060571	Carboxycelecoxib
 HMDB0060575	Dehydrowarfarin
 HMDB0060705	12-Hydroxynevirapine glucuronide
@@ -120,32 +133,46 @@ HMDB0061132	Celecoxib glucuronide
 HMDB0243666	(R)-6-Hydroxywarfarin
 HMDB0243667	(R)-7-Hydroxywarfarin
 HMDB0243760	[3H]Rosiglitazone
+HMDB0244440	3-Hydroxydesloratadine
+HMDB0244863	1beta-Methylcarbapenem
 HMDB0245502	2,5-Dimethylcelecoxib
 HMDB0245654	(R)-Naproxen
 HMDB0246450	4-Hydroxyatorvastatin
+HMDB0247482	Albendazole-2-aminosulfone
 HMDB0247974	S-Diclofenac
+HMDB0248115	Albendazole 2-aminosulphone
 HMDB0248361	Ampiroxicam
 HMDB0248704	Atorvastatin lactone
+HMDB0249178	Biapenem
+HMDB0249611	Carbapenem
 HMDB0249626	Apricoxib
 HMDB0249823	Cerivastatin lactone
 HMDB0250253	Cimicoxib
 HMDB0251022	Deracoxib
+HMDB0251032	Descarboxyethoxyloratadine
 HMDB0251624	Droxicam
 HMDB0251827	ent-Rosuvastatin Lactone
 HMDB0252268	Firocoxib
 HMDB0253438	Imrecoxib
 HMDB0253714	isoxicam
+HMDB0254007	Lenapenem
 HMDB0254177	Lovastatin acid
 HMDB0254349	Mavacoxib
 HMDB0254692	Mevastatin
 HMDB0255656	Nitropravastatin
 HMDB0256054	p-O-Desmethyl Verapamil
+HMDB0256111	Panipenem
 HMDB0256127	Parecoxib
+HMDB0256222	Penem
 HMDB0256618	Pitavastatin Lactone
 HMDB0256737	Pravastatin lactone
+HMDB0257244	Ritipenem
 HMDB0257284	Robenacoxib
 HMDB0258562	Sudoxicam
+HMDB0258760	Tebipenem
+HMDB0258761	Tebipenem pivoxil
 HMDB0259094	Tilmacoxib
+HMDB0259573	Ritipenem acetoxymethyl ester
 HMDB0259747	valeryl 4-hydroxy valsartan
 HMDB0259843	Vitacoxib
 HMDB0014004	Norhydromorphone
@@ -284,7 +311,6 @@ HMDB0014444	Penciclovir
 HMDB0014445	Tenofovir
 HMDB0014446	Flucloxacillin
 HMDB0014447	Tranexamic Acid
-HMDB0014448	Ertapenem
 HMDB0014449	Desogestrel
 HMDB0014450	Mitomycin
 HMDB0014451	Talbutal
@@ -453,7 +479,6 @@ HMDB0014651	Dextrothyroxine
 HMDB0014652	Acetyldigitoxin
 HMDB0014653	Vancomycin
 HMDB0014656	Cisplatin
-HMDB0014659	Albendazole
 HMDB0014660	Trandolapril
 HMDB0014661	Caspofungin
 HMDB0014662	Carteolol
@@ -647,7 +672,6 @@ HMDB0014892	Ethotoin
 HMDB0014894	Hexachlorophene
 HMDB0014895	Dolasetron
 HMDB0014897	Tetracycline
-HMDB0014898	Meropenem
 HMDB0014900	Irinotecan
 HMDB0014901	Methimazole
 HMDB0014902	Mometasone
@@ -821,7 +845,6 @@ HMDB0015097	Zaleplon
 HMDB0015098	Bromfenac
 HMDB0015099	Apraclonidine
 HMDB0015101	Telmisartan
-HMDB0015102	Desloratadine
 HMDB0015104	Alosetron
 HMDB0015105	Dactinomycin
 HMDB0015106	Selenium Sulfide
@@ -1191,7 +1214,6 @@ HMDB0015532	Zinc
 HMDB0015533	Cinolazepam
 HMDB0015534	Nitrazepam
 HMDB0015535	Cilastatin
-HMDB0015536	Imipenem
 HMDB0015537	Probucol
 HMDB0015538	Tiaprofenic acid
 HMDB0015539	Lopinavir
