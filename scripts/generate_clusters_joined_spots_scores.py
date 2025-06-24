@@ -22,10 +22,10 @@ def cluster_families_alone(adata, k, mydata_dir, subfolder, SAMPLE):
     sq.pl.spatial_scatter(
         adata, color=[f'kmeans_{k}'], img=False,
         title=f'Families alone k={k}',
-        # save=os.path.abspath(plot_out_path),
-        # dpi=600
+        save=os.path.abspath(plot_out_path),
+        dpi=600
     )
-    plt.show()
+    plt.close()
 
     df = adata.obs[['obs', f'kmeans_{k}']].copy()
     df.to_csv(os.path.join(mydata_dir, subfolder, f'{SAMPLE}-clusters-FamiliesScores-k_{k}.txt'),
@@ -54,6 +54,12 @@ if __name__ == "__main__":
     #
     # datasets_parameters_df = pd.read_csv(my_csv_table_path_1, header=0,
     #                                      index_col=None, sep='\t')
+    too_heavy_do_later = ["UB-breast-cancer-1", "UB-breast-cancer-2",
+                          "LP-brain-mouse-3"]
+    datasets_parameters_df = datasets_parameters_df.loc[
+                             ~datasets_parameters_df['dataset_name'].isin(
+                                 too_heavy_do_later), :]
+
 
 # start
     print("\nDo .....")
@@ -120,10 +126,10 @@ if __name__ == "__main__":
         sq.pl.spatial_scatter(
             mydata, color=[f'kmeans_{k}'], img=False,
             title=f'Families & pathways combined k={k}',
-            #save=os.path.abspath(plot_out_path),
-            #dpi=600
+            save=os.path.abspath(plot_out_path),
+            dpi=600
         )
-        plt.show()
+        #plt.show()
         plt.close()
 
 

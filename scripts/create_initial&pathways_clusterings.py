@@ -5,6 +5,7 @@ import anndata as ad
 import matplotlib.pyplot as plt
 import squidpy as sq
 from sklearn.cluster import KMeans
+from sklearn.utils import sparsefuncs
 
 # TODO: solve problem with k definition (file not taken into account ????)
 
@@ -57,15 +58,21 @@ if __name__ == "__main__":
         mydata = mydata[:,
                  mydata.var.loc[mydata.var['final_quality'] == "good",
                  "mz"].astype(str).tolist()].copy()
-
-        if not os.path.exists(os.path.join(
+        #todo: do correction: if not
+        if os.path.exists(os.path.join(
                 mydata_dir, subfolder,
                 f'{SAMPLE}-clusters-initial.txt')):
 
-            data_sp_valid = mydata[:, mydata.var.loc[mydata.var['I'] >= 0.2,
-                "mz"].astype(str).tolist()].copy()
+            data_feat_valid = mydata.copy()
 
-            X = np.array(data_sp_valid.X.todense())
+            means_vars, variance_computed = sparsefuncs.mean_variance_axis(
+                data_feat_valid.X, axis=0)
+            data_feat_valid.var['variance'] = variance_computed
+            top_var_mz = data_feat_valid.var.sort_values(by='variance',
+                                                         ascending=False).head(1500)
+            data_feat_valid = mydata[:,top_var_mz['mz'].astype(str).tolist() ].copy()
+
+            X = np.array(data_feat_valid.X.todense())
             X = np.log1p(X)  # ok log the initial X
             k = k_for_original_dataset
 
@@ -99,62 +106,62 @@ if __name__ == "__main__":
             title='Initial', save=os.path.abspath(plot_out_path), dpi=600)
         plt.close()
 
-        for pwtype in ['WIKI', 'KEGG']:
-            adata = mydata.copy()
-            for SUFFIX in ['NO', 'Scores']:  # strict order to respect
-                if SUFFIX == 'NO':
-                    no_pws_mzs = pd.read_csv(
-                        os.path.join(mydata_dir, subfolder,
-                                     f'{SAMPLE}-{pwtype}-{SUFFIX}.txt'),
-                        index_col=None)
-                    adata = adata[:, no_pws_mzs['mz'].astype(str).tolist()].copy()
-                elif SUFFIX == 'Scores':
-                    adata = ad.read_h5ad(
-                os.path.join(mydata_dir, subfolder, f'{SAMPLE}-scores-{pwtype}.h5ad'))
-
-                X = np.array(adata.X.todense())
-
-                if SUFFIX != "Scores":
-                    X = np.log1p(X)   # do not log  the pathway scores, ok
-
-                k = dict_of_k[SUFFIX]
-
-                if not os.path.exists(os.path.join(
-                            mydata_dir, subfolder,
-                            f'{SAMPLE}-{pwtype}-clusters-{SUFFIX}-k-{k}.txt')):
-
-                    kmeans = KMeans(n_clusters=k, n_init=10, random_state=0 ).fit(X)
-                    the_labels_str_l =  kmeans.labels_.astype(str)
-
-                    pd.DataFrame(
-                        {'obs': adata.obs['obs'].tolist(),
-                         f'kmeans_{k}': the_labels_str_l}
-                    ).to_csv(
-                        os.path.join(
-                            mydata_dir, subfolder,
-                            f'{SAMPLE}-{pwtype}-clusters-{SUFFIX}-k-{k}.txt'),
-                        index=False)
-                else:
-                    print(f" for {SAMPLE}: {pwtype}: {SUFFIX}: {k}, kmeans exists")
-                    tdf = pd.read_csv(os.path.join(
-                        mydata_dir, subfolder,
-                        f'{SAMPLE}-{pwtype}-clusters-{SUFFIX}-k-{k}.txt'), index_col=None)
-                    the_labels_str_l = tdf[f'kmeans_{k}'].astype(str).tolist()
-                    del tdf
-
-                adata.obs[f'kmeans_{k}'] = the_labels_str_l
-                plot_out_path = os.path.join(plot_folder,
-                                             f'{SAMPLE}-{pwtype}-{SUFFIX}-k-{k}.png')
-                sq.pl.spatial_scatter(
-                    adata, color=[f'kmeans_{k}'], img=False,
-                    title=f'{pwtype} {SUFFIX} k={k}',
-                    save=os.path.abspath(plot_out_path),
-                    dpi=600
-                )
-                plt.close()
+        # for pwtype in ['WIKI', 'KEGG']:
+        #     adata = mydata.copy()
+        #     for SUFFIX in ['NO', 'Scores']:  # strict order to respect
+        #         if SUFFIX == 'NO':
+        #             no_pws_mzs = pd.read_csv(
+        #                 os.path.join(mydata_dir, subfolder,
+        #                              f'{SAMPLE}-{pwtype}-{SUFFIX}.txt'),
+        #                 index_col=None)
+        #             adata = adata[:, no_pws_mzs['mz'].astype(str).tolist()].copy()
+        #         elif SUFFIX == 'Scores':
+        #             adata = ad.read_h5ad(
+        #         os.path.join(mydata_dir, subfolder, f'{SAMPLE}-scores-{pwtype}.h5ad'))
+        #
+        #         X = np.array(adata.X.todense())
+        #
+        #         if SUFFIX != "Scores":
+        #             X = np.log1p(X)   # do not log  the pathway scores, ok
+        #
+        #         k = dict_of_k[SUFFIX]
+        #
+        #         if not os.path.exists(os.path.join(
+        #                     mydata_dir, subfolder,
+        #                     f'{SAMPLE}-{pwtype}-clusters-{SUFFIX}-k-{k}.txt')):
+        #
+        #             kmeans = KMeans(n_clusters=k, n_init=10, random_state=0 ).fit(X)
+        #             the_labels_str_l =  kmeans.labels_.astype(str)
+        #
+        #             pd.DataFrame(
+        #                 {'obs': adata.obs['obs'].tolist(),
+        #                  f'kmeans_{k}': the_labels_str_l}
+        #             ).to_csv(
+        #                 os.path.join(
+        #                     mydata_dir, subfolder,
+        #                     f'{SAMPLE}-{pwtype}-clusters-{SUFFIX}-k-{k}.txt'),
+        #                 index=False)
+        #         else:
+        #             print(f" for {SAMPLE}: {pwtype}: {SUFFIX}: {k}, kmeans exists")
+        #             tdf = pd.read_csv(os.path.join(
+        #                 mydata_dir, subfolder,
+        #                 f'{SAMPLE}-{pwtype}-clusters-{SUFFIX}-k-{k}.txt'), index_col=None)
+        #             the_labels_str_l = tdf[f'kmeans_{k}'].astype(str).tolist()
+        #             del tdf
+        #
+        #         adata.obs[f'kmeans_{k}'] = the_labels_str_l
+        #         plot_out_path = os.path.join(plot_folder,
+        #                                      f'{SAMPLE}-{pwtype}-{SUFFIX}-k-{k}.png')
+        #         sq.pl.spatial_scatter(
+        #             adata, color=[f'kmeans_{k}'], img=False,
+        #             title=f'{pwtype} {SUFFIX} k={k}',
+        #             save=os.path.abspath(plot_out_path),
+        #             dpi=600
+        #         )
+        #         plt.close()
 
                 # save_clusters_constant_file_rootname_distinct_k(adata.obs.copy(), k, mydata_dir, subfolder, SAMPLE)
 
             # end for SUFFIX
-            del adata
+        #    del adata
         # end for pwtype
