@@ -80,7 +80,7 @@ def purge_annotations(df_notranslated: pd.DataFrame,
     for k in f_picker:
         if f_picker[k]['istrue']:
             tmp_df = pd.read_csv(
-                os.path.join(library_path, "ressources", f_picker[k]['file']),
+                os.path.join(library_path, "resources", f_picker[k]['file']),
                 sep="\t", header=0, index_col=None)
             df_notranslated = df_notranslated.loc[
                               ~df_notranslated[ids_col].isin(tmp_df[ids_col]),

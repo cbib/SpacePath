@@ -263,7 +263,7 @@ class MetabolomeAnnotations(Dataset):
         assert self.usable_id != "KEGG", "bad .usable_id"
 
         aliases_df = pd.read_csv(os.path.join(library_path,
-            "ressources", "aliases-HMDB-05-07-24-LipidMaps-04-30-25.tsv"),
+            "resources", "aliases-HMDB-05-07-24-LipidMaps-04-30-25.tsv"),
             sep="\t", header=0, index_col=None, low_memory=False)
 
         accepted_ids = helpers.aliases_handler(
@@ -341,7 +341,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
         official_gmt = helpers.prettify_gmt(official_gmt,
                                             self.undesired_substring)
         inconvenient_df = pd.read_csv(os.path.join(
-            library_path, "ressources", "inconvenient_list_wikipathways.csv"
+            library_path, "resources", "inconvenient_list_wikipathways.csv"
         ), header=0, index_col=None)
 
         if self.purge:

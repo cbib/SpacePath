@@ -100,7 +100,7 @@ class ComputeMoleculesSimilarityMatrix:
         for file_name in ["LipidMaps-SMILES_06-08-25.tsv",
                           "HMDB-SMILES_05-07-24.tsv"]:
             df = pd.read_csv(
-                os.path.join(library_path, "ressources", "SMILES", file_name),
+                os.path.join(library_path, "resources", "SMILES", file_name),
              sep='\t', header=0)
             smiles_dfs.append(df)
 
