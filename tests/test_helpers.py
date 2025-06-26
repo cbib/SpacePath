@@ -5,6 +5,10 @@ import src.zonist.helpers as helpers
 import pandas as pd
 import numpy as np
 
+from pathlib import Path
+
+module_path = Path(__file__).resolve()
+library_path = module_path.parent.parent
 
 class Test(TestCase):
 
@@ -132,26 +136,42 @@ class Test(TestCase):
         self.assertTrue(np.all(result[:, 0] == np.array([4, 4, 5, 6, 6])))
         self.assertTrue(np.all(result[:, 1] == np.array([1, 2, 3, 8, 9])))
 
-
     def test_pick_mz_quality_infos(self):
         df = pd.DataFrame({'mz': [300.77, 300.77, 300.77, 456.2, 456.2],
                            'rawOffSampleProb': [0.1, 0.1, 0.44, 0.3, 0.15],
-                           'totalIntensity':[888, 999, 898, 4576, 4700],
+                           'totalIntensity': [888, 999, 898, 4576, 4700],
                            'msm': [0.7, 0.7, 0.1, 0.8, 0.7],
                            'fdr': [0.5, 0.2, 0.5, 0.5, 0.2],
-                           'isobars': [0, 0 ,0, 0, 0],
+                           'isobars': [0, 0, 0, 0, 0],
                            'formula': ["HCO3", "H2", "C7H4O4", "COO3", "PO2"],
                            'database': ["KEGG", "HMDB", "C", "HMDB", "KEGG"]})
         res = helpers.pick_mz_quality_infos(
             df, 'mz', 'rawOffSampleProb',
             'totalIntensity', 'fdr', 'msm',
-         'formula')
+            'formula')
         self.assertEqual(res.shape[0], 2)
         self.assertTrue(np.all(np.array(
             res['fdr'].to_numpy()
-        ) == np.array( [0.2, 0.2] )))
+        ) == np.array([0.2, 0.2])))
         self.assertTrue(
             np.all(np.array(
                 res['rawOffSampleProb'].to_numpy()
             ) == np.array([0.1, 0.15]))
         )
+
+    def test_purge_annotations(self):
+        df = pd.DataFrame({
+            'moleculeIds': ["LMPK09000001", "LMPK09000036", "HMDB0014659" ,
+                            "HMDB0029611", "LMPK12010439", "LMFA01010018"],
+            'moleculeNames' : ["Monensin A", "Aureothin", "Albendazole",
+                               "Asparagusic acid", "Rosacyanin B", "Stearate"]
+        })
+        df = helpers.purge_annotations(df, discard_pharmaceuticals=True,
+                                       discard_plant_compounds=True,
+                                       discard_other_non_animal=True,
+                                       library_path=library_path)
+        #print(df.values[0])
+        #print(type(df.values))
+        self.assertEqual(df.shape, (1, 2))
+        self.assertTrue(np.all(df.values[0] == np.array(
+            ['LMFA01010018', 'Stearate'])))

@@ -54,7 +54,7 @@ class ClassifyMZProtocolConfig(MethodConfig):
 
 
 class SyncPathwaysAndAnnotsConfig(MethodConfig): # todo: use this config ?
-    description: str = "parameters to synchronize pathways and annotations"
+    description: str = "parameters to synchronize pathways -or families of compounds- and annotations"
 
 
 class ComputePathwaysScoresConfig(MethodConfig):
@@ -153,7 +153,7 @@ class ComputeMoleculesFamilies:
                                       metric=metric_linkage
                                       )
         clusters = fcluster(computed_dendrogram,
-                            t=cutoff_tree, criterion='distance')
+                            t=cutoff_tree, criterion='ward')
         myannots = molecules_ids_df.loc[molecules_ids_df["moleculeIds"].isin(
             mol_similarities_result['the_ids']),:]
         myannots = myannots.assign(molecules_cluster=clusters)
@@ -270,28 +270,27 @@ class SyncPathwaysAndAnnots:
             annots_df: pd.DataFrame,  # TODO make it to accept also TranscriptomeAnnotations and create such TranscriptomeAnnotations (should be easy)
             usable_id: str="",
             mz_col: str="mz",
-            min_pathway_size: int=2,
-            max_pathway_size: int=500,
+            min_set_size: int=2,
+            max_set_size: int=500,
             mode: str="mz_aware"  # or "default", but mz_aware is preferred
             )-> Tuple[MetabolicPathways, MetabolomeAnnotations]:
-        if not (usable_id == pathwaysObj.molecule_id_type):
+        if not usable_id == pathwaysObj.molecule_id_type:
             logger.error(
                 "No same types of compound ids: %s and %s, respectively",
                 pathwaysObj.molecule_id_type, usable_id)
             raise AssertionError("see the error in .log file. Aborted.")
-        if (max_pathway_size == 1) and (mode != "default"):
-            logger.info("max pathway size is 1, auto-setting default mode")
+        if max_set_size == 1:
             mode = "default"
         pathwaysObj.intersect_with_annotations(annots_df, usable_id, mz_col)  # this updates pathwaysObj only
-        pathwaysObj.constrain(min_pathway_size, max_pathway_size, mode)
+        pathwaysObj.constrain(min_set_size, max_set_size, mode)
 
-        # todo: check if this .df  update is enough (other attrs to update?):
         annots_df = annots_df.loc[
             annots_df[usable_id].isin(
                 pathwaysObj.piled[pathwaysObj.molecule_id_type].unique()), :]
 
         logger.info("Pathways and Annotations objects synchronized, with"
-                    " min pathway size = %s", min_pathway_size)
+                    " min set size = %s", min_set_size)
+
         return pathwaysObj, annots_df
 
 

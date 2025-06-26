@@ -1,0 +1,7 @@
+Notes:
+
+Found compounds being present both in animals (metazoa) and in plants, so manually curated
+ the list of plant_compounds.tsv. Therefore following compounds are no longer within that file:
+
+HMDB0029174	3-Sn-phosphatidylethanolamine
+HMDB0032260	Ethylene glycol distearate

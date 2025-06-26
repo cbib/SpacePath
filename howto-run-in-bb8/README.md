@@ -28,7 +28,7 @@ cd /mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics
 
 ### Python environment
 The conda environment  was installed by Aurélien into the module `Metabo/stable`.
-
+(Note: the .yaml file that Aurélien used is `prototype2_py.yml`)
 It is automatically activated if running in bb8:
 
 ```
@@ -36,14 +36,12 @@ module load Metabo/stable
 
 ```
 
-Note: the .yaml file that Aurélien used is `prototype2_py.yml`
+then:
 
-
-### R environment (if needed)
-
-**Only if GSVA** is necessary (e.g. called in a given R script), run `conda activate r_spatial`.  Its .yaml is found in `/mnt/cbib/thesis_gbm/spatial_thesis/r_spatial.yml` 
-
-
+```commandline
+cd THISLIBRARY
+poetry install
+```
 
 ## 2. Notebook: tunnel
 
@@ -67,5 +65,4 @@ Supplemental information
 
 - Python environment:  `/module/apps/miniconda/python3_isilon/envs/prototype2_py`
 
-- R environment:  /home/jgalvis/.conda/envs/r_spatial
 

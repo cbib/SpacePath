@@ -122,7 +122,7 @@ class MetabolomeAnnotations(Dataset):
     mz_quality: pd.DataFrame = pd.DataFrame()
     discard_plant_compounds: bool = True
     discard_pharmaceuticals: bool = True
-    discard_other_non_mammalian: bool = True
+    discard_other_non_animal: bool = True
 
     def load(self):
         logger.info("Loading annotations")
@@ -175,7 +175,7 @@ class MetabolomeAnnotations(Dataset):
 
         self.no_translated = helpers.purge_annotations(
             self.no_translated, self.discard_pharmaceuticals,
-            self.discard_plant_compounds,  self.discard_other_non_mammalian,
+            self.discard_plant_compounds,  self.discard_other_non_animal,
             library_path=library_path)
 
     def pull_mz_quality_df(self):
@@ -310,11 +310,11 @@ class MetabolicPathways(BaseModel, extra='allow'):
     custom_file: Optional[str] = ''
     download: Union[str, None] = None   # "sspa-kegg" if download is desired
     undesired_substring: str = " - Homo sapiens (human)" # in names
-    pathway_id_col: str = "pathway_id"
-    pathway_name_col: str = "pathway_name"
+    set_id_col: str = "pathway_id"
+    set_name_col: str = "pathway_name"
     molecule_id_type: str = "KEGG"  # or moleculeIds (identical to annots.usable_id)
     piled: pd.DataFrame = pd.DataFrame()
-    pathways_ids: pd.DataFrame = pd.DataFrame()
+    sets_ids_df: pd.DataFrame = pd.DataFrame()
     purge: bool = True
 
     def preload_official(self):
@@ -375,18 +375,18 @@ class MetabolicPathways(BaseModel, extra='allow'):
             dfs_dict['custom'] = self.custom
 
         id_name_pathways_df, pws_piled = helpers.gmts_merge_pile_splitid(
-            dfs_dict, self.pathway_id_col, self.pathway_name_col,
+            dfs_dict, self.set_id_col, self.set_name_col,
             self.molecule_id_type)
 
-        self.pathways_ids = id_name_pathways_df
+        self.sets_ids_df = id_name_pathways_df
         self.piled = pws_piled
 
         logger.info("success, attributes : piled, pathways_ids")
 
     def get_name(self, a_pathway_id):
-        pathway_name = self.pathways_ids.loc[
-            self.pathways_ids[self.pathway_id_col] == a_pathway_id,
-            self.pathway_name_col].item()
+        pathway_name = self.sets_ids_df.loc[
+            self.sets_ids_df[self.set_id_col] == a_pathway_id,
+            self.set_name_col].item()
         return pathway_name
 
     def to_dict(self, option="id") -> Dict[str, List[str]]:
@@ -397,7 +397,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
         else:
             logger.error("unrecognized option, must be 'id' or 'mz'")
         return helpers.pws_piled_to_dict(
-            self.piled, self.pathway_id_col, mz_or_identity_col=mz_or_id)
+            self.piled, self.set_id_col, mz_or_identity_col=mz_or_id)
 
     def intersect_with_annotations(self, annots_df: pd.DataFrame,
                                    usable_id: str, mz_col: str):
@@ -409,7 +409,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
             logger.error("%s and %s are not identical. Aborted.", self.molecule_id_type, usable_id)
             raise AssertionError
         self.piled = helpers.pathways_and_annots_join(
-            self.piled[[self.pathway_id_col, self.molecule_id_type]],
+            self.piled[[self.set_id_col, self.molecule_id_type]],
             annots_df[[mz_col, usable_id]],
             self.molecule_id_type)
 
@@ -425,9 +425,9 @@ class MetabolicPathways(BaseModel, extra='allow'):
         metabolites_to_eject = pathways_methods.find_metabolites_to_exclude(
             good_pathways_l, self.to_dict())
         self.piled = self.piled.loc[
-            self.piled[self.pathway_id_col].isin(good_pathways_l)]
+            self.piled[self.set_id_col].isin(good_pathways_l)]
         self.piled = self.piled.loc[~self.piled[
             self.molecule_id_type].isin(metabolites_to_eject), :]
-        self.pathways_ids = self.pathways_ids.loc[
-            self.pathways_ids[
-                self.pathway_id_col].isin(good_pathways_l), :]
+        self.sets_ids_df = self.sets_ids_df.loc[
+            self.sets_ids_df[
+                self.set_id_col].isin(good_pathways_l), :]

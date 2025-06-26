@@ -68,14 +68,14 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
 
 def purge_annotations(df_notranslated: pd.DataFrame,
                       discard_pharmaceuticals: bool, discard_plant_compounds: bool,
-                      discard_other_non_mammalian: bool, library_path: str) -> pd.DataFrame:
+                      discard_other_non_animal: bool, library_path: str) -> pd.DataFrame:
     ids_col = "moleculeIds"
     f_picker = {"pharma": {'istrue': discard_pharmaceuticals,
                             'file': "pharmaceuticals.tsv"},
                 "plant": {'istrue': discard_plant_compounds,
                           'file': "plant_compounds.tsv"},
-                "other": {'istrue': discard_other_non_mammalian,
-                          'file': "non_mammalian_other.tsv"}
+                "other": {'istrue': discard_other_non_animal,
+                          'file': "non_animal_other.tsv"}
     }
     for k in f_picker:
         if f_picker[k]['istrue']:
@@ -299,7 +299,7 @@ def purge_pathways(gmt_df, not_metabolic_reactions_pathways: List[str],
     return gmt_df
 
 
-def gmt_to_piled_form(gmt_df, pathway_id_col: str, molecule_id_col: str):
+def gmt_to_piled_form(gmt_df, set_id_col: str, molecule_id_col: str):
     """return df with 2 columns:  pathway name, molecule kegg identifiers"""
     l_1 = []
     l_2 = []
@@ -309,19 +309,19 @@ def gmt_to_piled_form(gmt_df, pathway_id_col: str, molecule_id_col: str):
         l_1 += [p_id for i in range(len(molecules))]
         l_2 += molecules
 
-    piled_df = pd.DataFrame({pathway_id_col: l_1, molecule_id_col: l_2})
+    piled_df = pd.DataFrame({set_id_col: l_1, molecule_id_col: l_2})
 
     return piled_df
 
 
 def gmts_merge_pile_splitid(dfs_dict, pathway_id_col: str,
-                            pathway_name_col: str, molec_ids_pws_col: str):
+                            set_name_col: str, molec_ids_pws_col: str):
     pathways_identities_dfs = {}
     for k in dfs_dict.keys():
         tmp = dfs_dict[k]
         pathways_identities_dfs[k] = pd.DataFrame(
             {pathway_id_col: tmp.iloc[:,0].tolist(),
-             pathway_name_col: tmp.iloc[:,1].tolist()})
+             set_name_col: tmp.iloc[:,1].tolist()})
         dfs_dict[k] = gmt_to_piled_form(     # is a table in piled form
             tmp, pathway_id_col, molec_ids_pws_col)
     # end for

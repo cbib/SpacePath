@@ -22,6 +22,7 @@ class Test(TestCase):
         result = pmm.tic_normalization(intensities_matrix,
                                                   spots_names,
                                                   features_names)
+        result = result.toarray()
 
         self.assertTrue(np.all(
             np.array(np.around(result[0, :], 4)).flatten(

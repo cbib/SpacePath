@@ -1,4 +1,4 @@
-name: mambaenv
+name: mambaenv   # for local install purposes
 channels:
   - bioconda
   - conda-forge
@@ -31,7 +31,6 @@ dependencies:
   - scanpy
   - anndata
   - squidpy
-  - bioconda::gseapy  # TODO: if never used, delete this line !!! 
   - pip:
     - sspa    
     - pyimzml
