@@ -50,7 +50,6 @@ if __name__ == "__main__":
     pathwaysObj.molecule_id_type = "moleculeIds"
     pathwaysObj.load()
 
-    print("\nDo ")
     pwsizeONE = 1  # constant
 
     for i, row in datasets_parameters_df.iterrows():
@@ -94,8 +93,8 @@ if __name__ == "__main__":
             pathwaysObj.model_copy(),
             me_annots.df.copy(),
             usable_id="moleculeIds",
-            min_pathway_size=pwsizeONE,
-            max_pathway_size=200 )
+            min_set_size=pwsizeONE,
+            max_set_size=200 )
 
         my_new_dict[SAMPLE] += counts_per_orig_db(ann1_df)
 
@@ -103,8 +102,8 @@ if __name__ == "__main__":
             pathwaysObj.model_copy(),
             me_annots.df.copy(),
             usable_id="moleculeIds",
-            min_pathway_size=min_pathway_size,
-            max_pathway_size=200,
+            min_set_size=min_pathway_size,
+            max_set_size=200,
             mode="mz_aware"
         )
         myratio = 0
@@ -146,5 +145,3 @@ if __name__ == "__main__":
     "ratio_id_mz": compound_ids_to_mz_ratio_after_pathway_mapped,
     "pathways_number_final" : how_many_pathways    })
     out_df2.to_csv(f"../figs/final-IDSmix-compounds-counts-psize{min_pathway_size}.csv")
-
-

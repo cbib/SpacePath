@@ -19,7 +19,7 @@ def save_clusters_constant_file_rootname_distinct_k(obs_df, k, mydata_dir, subfo
 """
 if __name__ == "__main__":
 
-   # define here my files and dirs
+    # define here my files and dirs
 
     mydata_dir = "../../data"
     plot_parent_folder = "../../figures/"
@@ -32,11 +32,20 @@ if __name__ == "__main__":
     df2 = pd.read_csv(my_csv_table_path_2, header=0,
                       index_col=None, sep='\t')
     datasets_parameters_df = pd.concat([df1, df2])
+    # todo: remove
 
+    datasets_parameters_df = datasets_parameters_df.loc[
+        datasets_parameters_df['dataset_name'].isin(
+            ["LP-gut",  ""])
+    ]
+
+    # todo: how to pass these options to the input tsv files ?
+    dict_of_k = {'NO': 5, 'Scores': 5}
+    k_for_original_dataset = 5
+    option_top_features = "MoranI"
+    moran_cutoff_features = 0.2
 
     # start
-    dict_of_k = { 'NO': 5,   'Scores': 5}
-    k_for_original_dataset = 5
     print("\nDo .....")
 
     for i, row in datasets_parameters_df.iterrows():
@@ -59,19 +68,24 @@ if __name__ == "__main__":
                  mydata.var.loc[mydata.var['final_quality'] == "good",
                  "mz"].astype(str).tolist()].copy()
         #todo: do correction: if not
-        if os.path.exists(os.path.join(
+        if not os.path.exists(os.path.join(
                 mydata_dir, subfolder,
-                f'{SAMPLE}-clusters-initial.txt')):
+                f'{SAMPLE}-clusters-initial-{option_top_features}.txt')):
 
             data_feat_valid = mydata.copy()
 
-            means_vars, variance_computed = sparsefuncs.mean_variance_axis(
-                data_feat_valid.X, axis=0)
-            data_feat_valid.var['variance'] = variance_computed
-            top_var_mz = data_feat_valid.var.sort_values(by='variance',
-                                                         ascending=False).head(1500)
-            data_feat_valid = mydata[:,top_var_mz['mz'].astype(str).tolist() ].copy()
-
+            if option_top_features == "variances":
+                data_feat_valid.var['variance'] = variance_computed
+                means_vars, variance_computed = sparsefuncs.mean_variance_axis(
+                    data_feat_valid.X, axis=0)
+                top_var_mz = data_feat_valid.var.sort_values(by='variance',
+                                                             ascending=False).head(1500)
+                data_feat_valid = mydata[:, top_var_mz['mz'].astype(str).tolist() ].copy()
+            elif option_top_features == "MoranI":
+                top_moran_i = mydata.var.loc[
+                    mydata.var['I'] >= moran_cutoff_features, "mz"].astype(
+                    str).tolist()
+                data_feat_valid = mydata[:, top_moran_i].copy()
             X = np.array(data_feat_valid.X.todense())
             X = np.log1p(X)  # ok log the initial X
             k = k_for_original_dataset
@@ -85,12 +99,12 @@ if __name__ == "__main__":
             ).to_csv(
                 os.path.join(
                     mydata_dir, subfolder,
-                    f'{SAMPLE}-clusters-initial.txt'), index=False)
+                    f'{SAMPLE}-clusters-initial-{option_top_features}.txt'), index=False)
         else:
             print(f" for {SAMPLE}, initial kmeans exists")
             tdf = pd.read_csv(os.path.join(
                     mydata_dir, subfolder,
-                    f'{SAMPLE}-clusters-initial.txt'), index_col=None)
+                    f'{SAMPLE}-clusters-initial-{option_top_features}.txt'), index_col=None)
             try:
                 the_labels_str_l = tdf[f'kmeans_{k}'].astype(str).tolist()
             except:
@@ -100,10 +114,10 @@ if __name__ == "__main__":
 
         mydata.obs[f'kmeans_{k}'] = the_labels_str_l
         plot_out_path = os.path.join(plot_folder,
-                                     f'{SAMPLE}-Initial-k-{k}.png')
+                                     f'{SAMPLE}-Initial-k-{k}-{option_top_features}.png')
         sq.pl.spatial_scatter(
             mydata, color=[f'kmeans_{k}'], img=False,
-            title='Initial', save=os.path.abspath(plot_out_path), dpi=600)
+            title='All m/z (good quality)', save=os.path.abspath(plot_out_path), dpi=600)
         plt.close()
 
         # for pwtype in ['WIKI', 'KEGG']:

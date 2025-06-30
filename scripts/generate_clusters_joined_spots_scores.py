@@ -8,7 +8,7 @@ from sklearn.cluster import KMeans
 
 # TODO: solve problem with k definition (file not taken into account ????)
 
-def cluster_families_alone(adata, k, mydata_dir, subfolder, SAMPLE):
+def cluster_families_alone(adata, k, mydata_dir, subfolder, SAMPLE, suffix):
     X = np.array(adata.X.todense())
 
     kmeans = KMeans(n_clusters=k, n_init=10, random_state=0).fit(X)
@@ -17,7 +17,7 @@ def cluster_families_alone(adata, k, mydata_dir, subfolder, SAMPLE):
     adata.obs[f'kmeans_{k}']   =  the_labels_str_l
 
     plot_out_path = os.path.join(plot_folder,
-                                 f'{SAMPLE}-clusters-FamiliesScores-k-{k}.png')
+                                 f'{SAMPLE}-clusters-FamiliesScores-k-{k}{suffix}.png')
 
     sq.pl.spatial_scatter(
         adata, color=[f'kmeans_{k}'], img=False,
@@ -28,7 +28,7 @@ def cluster_families_alone(adata, k, mydata_dir, subfolder, SAMPLE):
     plt.close()
 
     df = adata.obs[['obs', f'kmeans_{k}']].copy()
-    df.to_csv(os.path.join(mydata_dir, subfolder, f'{SAMPLE}-clusters-FamiliesScores-k_{k}.txt'),
+    df.to_csv(os.path.join(mydata_dir, subfolder, f'{SAMPLE}-clusters-FamiliesScores-k_{k}{suffix}.txt'),
               sep='\t', header=True, index=False)
     print("saved clusters as tsv file :)")
 
@@ -49,6 +49,8 @@ if __name__ == "__main__":
     df2 = pd.read_csv(my_csv_table_path_2, header=0,
                       index_col=None, sep='\t')
     datasets_parameters_df = pd.concat([df1, df2])
+
+    min_set_size = 3
 
     # my_csv_table_path_1 = "../small-test-parameters.tsv"  # "../../small_test.csv"
     #
@@ -75,13 +77,17 @@ if __name__ == "__main__":
         subfolder = SAMPLE
         plot_folder = os.path.join(plot_parent_folder, SAMPLE)
 
+        suffix = f"-sz{min_set_size}"  # ''
+
         o_fam = os.path.join(mydata_dir, subfolder,
-                             f'{SAMPLE}-scores-Families.h5ad')
+                             f'{SAMPLE}-scores-Families{suffix}.h5ad')
         o_kegg = os.path.join(mydata_dir, subfolder,
                              f'{SAMPLE}-scores-KEGG.h5ad')
         dafam = ad.read_h5ad(o_fam)
 
-        cluster_families_alone(dafam,  k, mydata_dir, subfolder, SAMPLE)
+
+
+        cluster_families_alone(dafam,  k, mydata_dir, subfolder, SAMPLE, suffix)
 
 
         dapw = ad.read_h5ad(o_kegg)
@@ -97,7 +103,7 @@ if __name__ == "__main__":
 
         print(mydata)
 
-        yep = True
+        yep = False
         if yep :
         #if not os.path.exists(os.path.join( mydata_dir, subfolder,f'{SAMPLE}-clusters-initial.txt')):
             X = np.array(mydata.X.todense())
@@ -111,17 +117,17 @@ if __name__ == "__main__":
             ).to_csv(
                 os.path.join(
                     mydata_dir, subfolder,
-                    f'{SAMPLE}-clusters-CombiFamilPathScores.txt'), index=False)
+                    f'{SAMPLE}-clusters-CombiFamilPathScores-sz{min_set_size}.txt'), index=False)
         else:
             tdf = pd.read_csv(os.path.join(
                     mydata_dir, subfolder,
-                    f'{SAMPLE}-clusters-CombiFamilPathScores.txt'), index_col=None)
+                    f'{SAMPLE}-clusters-CombiFamilPathScores-sz{min_set_size}.txt'), index_col=None)
             the_labels_str_l = tdf[f'kmeans_{k}'].astype(str).tolist()
             del tdf
 
         mydata.obs[f'kmeans_{k}'] = the_labels_str_l
         plot_out_path = os.path.join(plot_folder,
-                                     f'{SAMPLE}-clusters-CombiFamilPathScores-k-{k}.png')
+                                     f'{SAMPLE}-clusters-CombiFamilPathScores-k-{k}-sz-{min_set_size}.png')
 
         sq.pl.spatial_scatter(
             mydata, color=[f'kmeans_{k}'], img=False,

@@ -19,8 +19,9 @@ def counts_per_orig_db(annotsdf):
     position_dict = {0: ["HMDB", "CoreMetabolome"], 1: ['LipidMaps'],
                      2: ["KEGG"]}
     for k in position_dict.keys():
-        out_l[k] = annotsdf.loc[
-                        annotsdf['database'].isin(position_dict[k]), :].shape[0]
+        sdf = annotsdf.loc[
+                        annotsdf['database'].isin(position_dict[k]), :].copy()
+        out_l[k] = len(sdf['moleculeIds'].unique())
     return out_l
 
 
@@ -109,8 +110,8 @@ if __name__ == "__main__":
             pathwaysObj.model_copy(),
             me_annots.df.copy(),
             usable_id="KEGG",
-            min_pathway_size=pwsizeONE,
-            max_pathway_size=200,
+            min_set_size=pwsizeONE,
+            max_set_size=200,
             mode="mz_aware"
         )
         my_new_dict[SAMPLE] += counts_per_orig_db(ann1_df)
@@ -119,8 +120,8 @@ if __name__ == "__main__":
             pathwaysObj.model_copy(),
             me_annots.df.copy(),
             usable_id="KEGG",
-            min_pathway_size=min_pathway_size,
-            max_pathway_size=200,
+            min_set_size=min_pathway_size,
+            max_set_size=200,
             mode="mz_aware"
         )
 

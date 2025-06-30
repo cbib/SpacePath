@@ -178,11 +178,11 @@ def build_kegg_resolved_adata(adata_mz, X_metabolites_probs_df, annots_df):
     return adata
 
 
-# def build_coords_df(adata):  # todo: if never used, del
-#     df = pd.DataFrame(data=adata.obsm['spatial'],
-#                  columns=['x', 'y'],
-#                  index=adata.obs.index.tolist())
-#     return df
+def coordinates_as_df(adata):
+    df = pd.DataFrame(data=adata.obsm['spatial'],
+                 columns=['x', 'y'],
+                 index=adata.obs.index.tolist())
+    return df
 
 
 #if __name__ == "__main__":

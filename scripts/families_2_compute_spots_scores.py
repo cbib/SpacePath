@@ -30,6 +30,7 @@ if __name__ == "__main__":
     too_heavy_do_later= ["UB-breast-cancer-1", "UB-breast-cancer-2", "LP-brain-mouse-3"]
     datasets_parameters_df = datasets_parameters_df.loc[~datasets_parameters_df['dataset_name'].isin(too_heavy_do_later),:]
 
+    min_set_size = 3   # already did with 5
 
     print("\nDo .....")
 
@@ -70,12 +71,13 @@ if __name__ == "__main__":
             familiesObj.model_copy(),
             annots_df,
             usable_id="moleculeIds",
-            min_set_size=5,
+            min_set_size=min_set_size,
             max_set_size=700,
             mode="mz_aware")
 
+        print("new name to outputs: now include the suffix -sz<MINSETSIZE>.h5ad")
         ofipw = os.path.join(mydata_dir, subfolder,
-                             f'{SAMPLE}-scores-Families.h5ad')
+                             f'{SAMPLE}-scores-Families-sz{min_set_size}.h5ad')
 
         if not os.path.exists(ofipw):
             scores_adata = run_pathway_scores_steps(adata_mz,

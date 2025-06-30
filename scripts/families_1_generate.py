@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+from typing import Union
 import zonist.method as zm
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -8,26 +9,31 @@ import seaborn as sns
 import pickle
 
 
-def differential_results_filter(differential_results, lfc=0.8,
-                                pvals_adj=0.05, ntop_per_cluster=70):
+def differential_results_filter(differential_results, lfc: float=0.8,
+                                pvals_adj: float=0.05,
+                                ntop_per_cluster: Union[str, int]="auto",
+                                total_n_features:int=500):
     def get_top_n(group, *args):
-        n = args[0]
-        # todo: fix this warning:  /home/johanna/spatial_thesis/spatial_metabolomics/user-pipeline/scripts/families_1_generate.py:28: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+        ntop_per_cluster = args[0]
         sorted_group = group.sort_values(
-            by=['pvals_adj', 'abslfc'], ascending=[True, False] )
+            by=['pvals_adj', 'abslfc'], ascending=[True, False])
+        return sorted_group.head(ntop_per_cluster)
 
-        return sorted_group.head(n)
+    if ntop_per_cluster == "auto":
+        ntop_per_cluster = int(total_n_features / len(
+            differential_results['group'].unique()))
 
     tmp = differential_results.loc[(abs(differential_results[
              'logfoldchanges']) >= lfc) & (
-            differential_results[
-                'pvals_adj'] <= pvals_adj), :].copy()
+            differential_results['pvals_adj'] <= pvals_adj), :].copy()
 
-    tmp = tmp.assign(abslfc=abs(differential_results['logfoldchanges']))
+    tmp = tmp.assign(abslfc=abs(tmp['logfoldchanges']),
+                     cluster=tmp['group'].astype(str))
 
-    tmp = tmp.groupby('group', group_keys=False, as_index=False).apply(
-        get_top_n, ntop_per_cluster).reset_index(drop=True)
-
+    tmp = tmp.groupby('cluster', group_keys=False, as_index=False
+                      ).apply(get_top_n, ntop_per_cluster,
+                              include_groups=False  # avoid DeprecationWarning
+                              ).reset_index(drop=True)
     return tmp
 
 
@@ -97,7 +103,8 @@ if __name__ == "__main__":
         left_on = 'names', right_on = 'mz')
         molecules_ids_df.dropna(how='any', inplace=True)
         molecules_ids_df = molecules_ids_df.loc[
-                           molecules_ids_df['mz'].astype(float).isin(list(ALL_MZ_NOT_MAPPED)),:]
+                           molecules_ids_df['mz'].astype(float).isin(
+                               list(ALL_MZ_NOT_MAPPED)),:]  # todo: highlight as relevant
         molecules_ids_df = molecules_ids_df[['moleculeIds', 'mz', 'moleculeNames']].copy()
 
         molecules_ids_df.drop_duplicates(inplace=True)
