@@ -64,7 +64,7 @@ if __name__ == "__main__":
         min_pathway_size = row["min_pathway_size"]
         k = 8 # row["k_for_kmeans"]  # todo: correct this
 
-        moran_cutoff_features = 0.15
+        moran_cutoff_features = 0.2
 
         print("\nSample: ", SAMPLE)
         subfolder = SAMPLE
@@ -86,6 +86,8 @@ if __name__ == "__main__":
                 str).tolist()
         mydata = mydata[:, top_moran_i].copy()
 
+        print("vars of the data for clustering:", mydata.var.shape[0])
+
 
         # X = np.array(mydata.X.todense())
         # X = np.log1p(X)  # ok log the initial X
@@ -101,7 +103,7 @@ if __name__ == "__main__":
         the_labels_str_l = kmeans.labels_.astype(str)
         mydata.obs["kmeans_direct"] = the_labels_str_l
         plot_out_path = os.path.join(plot_folder,
-                                     f'{SAMPLE}-directkmeans.png')
+                                     f'{SAMPLE}-directkmeans-{k}.png')
         sq.pl.spatial_scatter(
             mydata, color=["kmeans_direct"], img=False,
             title='All m/z (good quality)',
@@ -123,19 +125,24 @@ if __name__ == "__main__":
         the_labels_str_l = kmeans.labels_.astype(str)
         mydata.obs["kmeans_pca"] = the_labels_str_l
         plot_out_path = os.path.join(plot_folder,
-                                     f'{SAMPLE}-pca-kmeans.png')
+                                     f'{SAMPLE}-pca-kmeans-{k}.png')
         sq.pl.spatial_scatter(
             mydata, color=["kmeans_pca"], img=False,
             title='All m/z (good quality): pca + kmeans',
             save=os.path.abspath(plot_out_path), dpi=600
         )
 
+        ##  time computing neighbors and umap, needed for the following steps
+        t0 = time.time()
+        sc.pp.neighbors(mydata, metric="cosine")
+        sc.tl.umap(mydata)
+        t1 = time.time()
+        print("umap and neighbors computation", give_time(t1- t0))
 
         ##
         t0 = time.time()
         # here the action
-        sc.pp.neighbors(mydata, metric="cosine")
-        sc.tl.umap(mydata)
+
         kmeans = KMeans(n_clusters=k, random_state=0).fit(
             mydata.obsm['X_umap'])
         t1 = time.time()
@@ -144,22 +151,19 @@ if __name__ == "__main__":
         the_labels_str_l = kmeans.labels_.astype(str)
         mydata.obs["kmeans_umap"] = the_labels_str_l
         plot_out_path = os.path.join(plot_folder,
-                                     f'{SAMPLE}-umap-kmeans.png')
+                                     f'{SAMPLE}-umap-kmeans-{k}.png')
         sq.pl.spatial_scatter(
             mydata, color=["kmeans_umap"], img=False,
             title='All m/z (good quality): umap + kmeans',
             save=os.path.abspath(plot_out_path), dpi=600
         )
-        print(yoyoyo)
         ##
-        my_resolution_leiden = 0.6 # 0.4
-        my_resolution_leiden_wsg = 0.8  # 0.7
+        my_resolution_leiden = 0.7 # 0.4
+        my_resolution_leiden_spa = 0.7  # 0.7
 
         ##
         t0 = time.time()
         # here the action, recompute umap to take the time whole step
-        sc.pp.neighbors(mydata, metric="cosine")
-        #sc.tl.umap(mydata)
         sc.tl.leiden(mydata,
                      directed=False, key_added="leiden",
                      flavor="igraph",
@@ -169,7 +173,7 @@ if __name__ == "__main__":
         print("leiden", give_time(elapsed_seconds=t1 - t0))
 
         plot_out_path = os.path.join(plot_folder,
-                                     f'{SAMPLE}-leiden.png')
+                                     f'{SAMPLE}-leiden-{my_resolution_leiden}.png')
         sq.pl.spatial_scatter(
             mydata, color=["leiden"], img=False,
             title='All m/z (good quality): leiden',
@@ -184,7 +188,7 @@ if __name__ == "__main__":
         sq.gr.spatial_neighbors(mydata)
         nn_graph_space = mydata.obsp["spatial_connectivities"]
 
-        alpha = 0.4  # weight spatial graph
+        alpha = 0.35  # weight spatial graph
 
         joint_graph = (1 - alpha) * nn_graph_genes + alpha * nn_graph_space
         sc.tl.leiden(mydata,
@@ -193,11 +197,11 @@ if __name__ == "__main__":
                      flavor="igraph",
                      directed=False,
                      key_added="leiden_w_spatial_gr",
-                     resolution=my_resolution_leiden_wsg)
+                     resolution=my_resolution_leiden_spa)
         t1 = time.time()
         print("leiden with weighted spatial graph joined", give_time(elapsed_seconds=t1 - t0))
         plot_out_path = os.path.join(plot_folder,
-                                     f'{SAMPLE}-leiden_wsg.png')
+                                     f'{SAMPLE}-leiden_spa-{my_resolution_leiden_spa}.png')
         sq.pl.spatial_scatter(
             mydata, color=["leiden_w_spatial_gr"], img=False,
             title='All m/z (good quality): leiden with spatial graph',
