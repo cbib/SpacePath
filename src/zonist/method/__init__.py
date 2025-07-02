@@ -153,7 +153,7 @@ class ComputeMoleculesFamilies:
                                       metric=metric_linkage
                                       )
         clusters = fcluster(computed_dendrogram,
-                            t=cutoff_tree, criterion='ward')
+                            t=cutoff_tree, criterion='distance')
         myannots = molecules_ids_df.loc[molecules_ids_df["moleculeIds"].isin(
             mol_similarities_result['the_ids']),:]
         myannots = myannots.assign(molecules_cluster=clusters)

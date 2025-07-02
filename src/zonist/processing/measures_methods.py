@@ -11,6 +11,7 @@ from zonist.data import MetabolicPathways, MetabolomeAnnotations
 from typing import Tuple, List, Union
 import logging
 
+
 logger = logging.getLogger(__name__)
 logger = zh.reset_log_config(logger)
 
@@ -160,8 +161,7 @@ def tic_normalization(intensity_matrix: Union[csr_matrix, np.array],
 def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5):
     """note: to run Moran's I, through squidpy, the `spatial_connectivities`
      in `adata.obsp` are required, so spatial neighbors must be run first"""
-    logger.info("computing spatial neighbors")
-    logger.info('with n_neighs: %s', n_neighs)
+    logger.info('computing spatial neighbors, with n_neighs: %s', n_neighs)
     sq.gr.spatial_neighbors(adata, n_neighs=n_neighs)
     logger.info("Computing Moran's I")
     sq.gr.spatial_autocorr(adata, mode="moran", n_perms=n_perms, n_jobs=1, seed=0)
@@ -223,6 +223,9 @@ def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
              me_annots.fdr_column, me_annots.formula_col, "quality_msm_off_fdr"]], keycol='mz')
 
     copy_mz = adata_mz[:, mz_good_from_part_a].copy()   # only compute moran for the ok_part1 features
+    if not zh.is_log_transformed(copy_mz.X):
+        sc.pp.log1p(copy_mz)  # todo: in doc say the pertinence of log transform as data is very skewed. Furthermore: happily this 'copy object' is not returned by the function
+        print(copy_mz.X.min().min())
     try:
         if copy_mz.uns['moranI'].shape[0] != len(mz_good_from_part_a):
             del copy_mz.uns['moranI']
@@ -233,7 +236,9 @@ def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
         copy_mz = compute_moran_i(copy_mz, n_neighs=n_neighs, n_perms=n_perms)
     else:
         print(f"will use the existing .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
-        assert copy_mz.uns['moranI'].shape[0] == len(mz_good_from_part_a), "Fatal: existing moranI dimensions do not match with length of m/z list passing a) filters. Killed! (solution: delete .uns['moranI'] dataframe and try again)"
+        assert copy_mz.uns['moranI'].shape[0] == len(mz_good_from_part_a), (
+            "Fatal: existing moranI dimensions do not match with length of m/z list passing a) filters. "
+            "Killed! (solution: delete .uns['moranI'] dataframe and try again)")
     moran_mz_df = copy_mz.uns['moranI'].copy()
     moran_mz_df['mz'] = moran_mz_df.index.astype(str).tolist()
     all_quality_df = pd.merge(all_quality_df,
