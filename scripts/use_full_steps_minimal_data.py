@@ -15,11 +15,11 @@ import zonist.method as zm
 import zonist.processing.measures_methods as zmm
 from local_helpers.local_helpers import provide_annotation_dict
 from families_1_generate import differential_results_filter
+from compute_pathways_scores import run_pathway_scores_steps
 import pickle
 
 
-
-def hahaha(adata_mz, me_annots, me_refmap, pwtype) -> None:
+def save_clean_annots(adata_mz, me_annots, me_refmap, pwtype) -> None:
     if pwtype == "WIKI":
         me_annots.usable_id = "moleculeIds"
     elif pwtype == "KEGG":
@@ -42,10 +42,10 @@ def hahaha(adata_mz, me_annots, me_refmap, pwtype) -> None:
 
 
 def wrapper_clustering(adata_mz, k,
-                       moran_cutoff_features=0.2  # recommended and set by default
-                       ) -> pd.DataFrame:
+                       moran_cutoff_features=0,   # recommended and set by default
+                       col_features="mz") -> pd.DataFrame:
     top_moran_i = adata_mz.var.loc[
-        adata_mz.var['I'] >= moran_cutoff_features, "mz"].astype(
+        adata_mz.var['I'] >= moran_cutoff_features, col_features].astype(
         str).tolist()
     mydata = adata_mz[:,
              top_moran_i].copy()  # only do the clustering with this selection
@@ -58,6 +58,7 @@ def wrapper_clustering(adata_mz, k,
     del mydata
 
     return adata_mz
+
 
 def wrapper_differential(adata_mz, k):
     sc.pp.log1p(adata_mz)
@@ -106,7 +107,6 @@ def booboo(the_ids, molecules_ids_df):
     print("representing a total of mzs:", len(molecules_ids_df['mz'].unique()))
 
 
-
 def plot_families(molecules_ids_df, mol_similarities_result,
                   plot_folder, SAMPLE):
     tmp = molecules_ids_df.loc[molecules_ids_df['moleculeIds'].isin(
@@ -136,6 +136,60 @@ def plot_families(molecules_ids_df, mol_similarities_result,
     except:
         print("skipping clustermap (too heavy)")
 
+
+
+
+def save_scores(adata_mz, annots_dict,
+                pwtype, sets_args_dict, SAMPLE, data_dir,
+                not_for_families: list=None, only_mz_good_moran=True):
+    assert pwtype in ["KEGG", "WIKI", "FAMILIES"], "Error, type of sets not recognized"
+    annots_df = annots_dict["WIKI"] # valid also for families
+
+    if pwtype == "KEGG":
+        annots_df = annots_dict["KEGG"]
+
+    if only_mz_good_moran:
+        print("taking into account only the annotations of mz having I >= 0 !!")
+        okmoran = adata_mz.var.loc[adata_mz.var['I'] >= 0, 'mz'].astype(str).tolist()
+        annots_df = annots_df.loc[annots_df['mz'].astype(str).isin(okmoran),:].copy()
+
+    sets_obj = zd.MetabolicPathways(
+        data_dir=data_dir,
+        subfolder=sets_args_dict[pwtype]['subfolder'],
+        file=sets_args_dict[pwtype]['file']
+    )
+    sets_obj.molecule_id_type = sets_args_dict[pwtype]['id_type']
+
+    sets_obj.load()
+
+    if pwtype == "FAMILIES":
+        sets_obj.intersect_with_annotations(annots_df,
+                                            usable_id=sets_args_dict[pwtype]['id_type'],
+                                            mz_col='mz')
+        if not_for_families is not None:
+            sets_obj.eject_molecules(not_for_families, column="mz")
+
+    sets_obj, annots_df = zm.SyncPathwaysAndAnnots.run(
+        sets_obj.model_copy(),
+        annots_df,
+        usable_id=sets_args_dict[pwtype]['id_type'],
+        min_set_size=sets_args_dict[pwtype]['min_set_size'],
+        max_set_size=sets_args_dict[pwtype]['max_set_size'],
+        mode="mz_aware")
+
+    ofipw = os.path.join(mydata_dir, subfolder,
+                         f'{SAMPLE}-scores-{pwtype}.h5ad')
+
+    scores_adata = run_pathway_scores_steps(adata_mz.copy(),
+                                            sets_obj,
+                                            annots_df,
+                                            usable_id=sets_args_dict[pwtype]['id_type'])
+    scores_adata.write_h5ad(ofipw)
+    print("youpi, saved scores")
+    mapped_elements = scores_adata.uns['current_pathways_df']['mz'].unique(
+        ).tolist()
+
+    return mapped_elements
 #
 
 
@@ -179,7 +233,6 @@ if __name__ == "__main__":
         moran_padj_cutoff = row["Moran_padj_cutoff"]
         k = row['k_for_kmeans']
         cutoff_tree = row['cut_tree_mol_families']
-
 
         print("\nSample: ", SAMPLE)
 
@@ -246,26 +299,24 @@ if __name__ == "__main__":
         me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots,
                                                             adata_mz)
 
-
-        for pwtype in ["KEGG"]:  # TODO: add wiki latter  :::: , "WIKI"]:
-            hahaha(adata_mz, me_annots, me_refmap, pwtype)
+        for pwtype in ["KEGG", "WIKI"]:
+            save_clean_annots(adata_mz, me_annots, me_refmap, pwtype)
         del me_annots # will no longer be used because clean ones are in tsv now
-
 
         ##  3. Clustering step with the good quality mzs
 
-        adata_mz = wrapper_clustering(adata_mz, k=k)
+        adata_mz = wrapper_clustering(adata_mz, k=k)  # modified to make moran cutoff as zero :)
 
         adata_mz.obs[["obs", f"kmeans{k}"]].to_csv(os.path.join(mydata_dir, subfolder,
                              f'{SAMPLE}-clusters-k-{k}.txt'), index=False)
-        plot_out_path = os.path.join(plot_folder,
-                                     f'{SAMPLE}-.png')
-        sq.pl.spatial_scatter(
-            adata_mz, color=[f'kmeans{k}'], img=False,
-            title='All m/z (good quality)',
-            save=os.path.abspath(plot_out_path),
-            dpi=600)
-        plt.close()
+
+        plot_out_path = os.path.join(plot_folder, f'{SAMPLE}-.png')
+        # sq.pl.spatial_scatter(
+        #     adata_mz, color=[f'kmeans{k}'], img=False,
+        #     title='All m/z (good quality)',
+        #     save=os.path.abspath(plot_out_path),
+        #     dpi=600)
+        # plt.close()
 
 
         ##  4. Differential
@@ -275,7 +326,12 @@ if __name__ == "__main__":
                               title="pop up (verification)")
         plt.show()
 
-        differential_results_by_cluster = wrapper_differential(adata_mz, k)
+        ada4diff = adata_mz.copy()
+        k_for_diff = 12  # internally defined !
+
+        ada4diff = wrapper_clustering(ada4diff, k=k_for_diff)
+
+        differential_results_by_cluster = wrapper_differential(ada4diff, k_for_diff)
 
         ## 5. Families of molecules, dark (largest fraction) and no dark included
 
@@ -318,38 +374,75 @@ if __name__ == "__main__":
             plot_families(molecules_ids_df, mol_similarities_result,
                           plot_folder, SAMPLE)
 
-
         ## scores of pathways and families
-        for pwtype in ["KEGG", "WIKI", "FAMILIES"]:
-            pass
-            #do_scores(adata_mz, pwtype=pwtype)
+        sets_args_dict = {
+            "KEGG" : {'file': "KEGG_hsa_pathways_compounds_R110.gmt",
+                      'subfolder': "metabolites-mappings",
+                      'id_type': 'KEGG',
+                      'min_set_size': 2, 'max_set_size':200},
+            "WIKI" : {'file': "WIKIPATHWAYS_human_multi_id_redundant.mmt",
+                      'subfolder': "metabolites-mappings",
+                      'id_type': 'moleculeIds',
+                      'min_set_size': 2, 'max_set_size': 200
+                      },
+            "FAMILIES" : {'file': f"{SAMPLE}-molecules_families.mmt",
+                      'subfolder': SAMPLE,
+                      'id_type': 'moleculeIds',
+                      'min_set_size': 2, 'max_set_size': 200
+                      }
+        }
+        mapped_elems = {}
+        for pwtype in ["WIKI","KEGG"]:   # todo activate with the kegg
+            mapped_elems[pwtype] = save_scores(adata_mz, annots_dict, pwtype,
+                                       sets_args_dict, SAMPLE, mydata_dir)
+        # now families *without* the things that mapped in the wiki and kegg
+        set_mapped = set(mapped_elems['WIKI']).union(set(mapped_elems["KEGG"]))  # todo activate with the union
+        mapped_in_families = save_scores(adata_mz, annots_dict, "FAMILIES",
+                    sets_args_dict, SAMPLE, mydata_dir,
+                    not_for_families=list(set_mapped))
 
-
-        ## for selected clusters, do something with the scores: "nested clster" within the selected cluster
-        my_selected_clusters =  [2]
-
+        ##   Annotation step (new) (what to do???)
         # open the scores objects, take WIKI-scores and families-scores
         # combine them
         # on the selected cluster, do a nested clustering k=2 , make a test
         # plot
+        scores_families = ad.read_h5ad(filename=os.path.join(mydata_dir, subfolder,
+                         f'{SAMPLE}-scores-FAMILIES.h5ad'))
+        chosen_type_pathway = "KEGG" # or WIKI if desired
+        scores_pathways = ad.read_h5ad(filename=os.path.join(mydata_dir, subfolder,
+                         f'{SAMPLE}-scores-{chosen_type_pathway}.h5ad'))
+
+        scores_families.var['set_type'] = "families"
+        scores_pathways.var['set_type'] = "pathways"
+
+        scores_full  = ad.concat((scores_pathways, scores_families),
+                                 join='outer', axis=1)
+
+        # # todo : open kegg and families and run:
+        # ## for selected clusters, do something with the scores: "nested clster" within the selected cluster
+        # my_selected_clusters =  [2]
+        # i_clus = 2
+        # the_cluster_spots = adata_mz.obs.loc[adata_mz.obs[f'kmeans{k}'] == i_clus,'obs']
+        # i_data = adata_mz[the_cluster_spots,:].copy()
+        # i_scores = scores_full[the_cluster_spots,:].copy()
+        #
+        # innerk = 2
+        #
+        # #  sc.pp.log1p()    sc.tl.pca()   # no log  nor pca to be done as scores are already PCs
+        #
+        # kmeans = KMeans(n_clusters=innerk, random_state=0).fit(
+        #     i_scores.X.todense())
+        # the_labels_str_l = kmeans.labels_.astype(str)
+        # i_scores.obs[f'kmeans{innerk}'] = the_labels_str_l
+        #
+        # sq.pl.spatial_scatter(
+        #     i_scores, color=[f'kmeans{innerk}'], img=False,
+        #     title='???????',
+        #     frameon=False,
+        #     #save=os.path.abspath(plot_out_path), dpi=600
+        #     )
+        # #plt.close()
+        # plt.show()
+
+
         # print to a table the subclustering : say which pathways or families are "on" in which of the two clusters => PCA?
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

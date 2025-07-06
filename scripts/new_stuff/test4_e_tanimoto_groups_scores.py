@@ -42,7 +42,7 @@ if __name__ == "__main__":
     pathwaysObj = zd.MetabolicPathways(
             data_dir="../../user-pipeline",
             subfolder="scripts",
-            official_file=file_pseudopathways
+            file=file_pseudopathways
     )
     pathwaysObj.molecule_id_type = "moleculeIds"
     pathwaysObj.load()

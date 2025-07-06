@@ -39,7 +39,7 @@ if __name__ == "__main__":
         pathwaysObj = zd.MetabolicPathways(
             data_dir=mydata_dir,
             subfolder="metabolites-mappings",
-            official_file="WIKIPATHWAYS_human_multi_id_redundant.mmt"
+            file="WIKIPATHWAYS_human_multi_id_redundant.mmt"
         )
         pathwaysObj.molecule_id_type = "moleculeIds"
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         pathwaysObj = zd.MetabolicPathways(
             data_dir=mydata_dir,
             subfolder="metabolites-mappings",
-            official_file="KEGG_hsa_pathways_compounds_R110.gmt"
+            file="KEGG_hsa_pathways_compounds_R110.gmt"
         )
         pathwaysObj.molecule_id_type = "KEGG"
 

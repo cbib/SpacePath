@@ -45,7 +45,7 @@ if __name__ == "__main__":
         familiesObj = zd.MetabolicPathways(
             data_dir=mydata_dir,
             subfolder=subfolder,
-            official_file=f"{SAMPLE}-molecules_families.mmt"
+            file=f"{SAMPLE}-molecules_families.mmt"
         )
         familiesObj.molecule_id_type = "moleculeIds"
 

@@ -92,7 +92,7 @@ if __name__ == "__main__":
         pathwaysObj = zd.MetabolicPathways(
             data_dir=mydata_dir,
             subfolder="metabolites-mappings",
-            official_file="WIKIPATHWAYS_human_multi_id_redundant.mmt"
+            file="WIKIPATHWAYS_human_multi_id_redundant.mmt"
         )
         pathwaysObj.molecule_id_type = "moleculeIds"
 
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         pathwaysObj = zd.MetabolicPathways(
             data_dir=mydata_dir,
             subfolder="metabolites-mappings",
-            official_file="KEGG_hsa_pathways_compounds_R110.gmt"
+            file="KEGG_hsa_pathways_compounds_R110.gmt"
         )
         pathwaysObj.molecule_id_type = "KEGG"
 
@@ -162,7 +162,8 @@ if __name__ == "__main__":
         ofipw = os.path.join(mydata_dir, subfolder, f'{SAMPLE}-scores-{pwtype}.h5ad')
 
         if not os.path.exists(ofipw):
-            scores_adata = run_pathway_scores_steps(adata_mz.copy(), pws_obj_2, annots_2_df, usable_id)
+            scores_adata = run_pathway_scores_steps(adata_mz.copy(), pws_obj_2,
+                                                    annots_2_df, usable_id)
 
             scores_adata.write_h5ad(ofipw)
             print("saved scores")
