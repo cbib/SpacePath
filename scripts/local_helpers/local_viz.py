@@ -134,8 +134,8 @@ def plot_moran_results(adata_mz, plot_folder, SAMPLE):
 
 
 
-def custom_scatter_one_feat(df, feature: str, title_note:str,  the_ax, spot_size=2,
-                            marker="o"):
+def custom_scatter_one_feat(df, feature: str, title:str,  the_ax, spot_size=2,
+                            marker="o", rasterized=False):
 
     my_scatter = the_ax.scatter(df['x'], df['y'],
                                 c=df[feature], cmap='viridis',
@@ -143,11 +143,11 @@ def custom_scatter_one_feat(df, feature: str, title_note:str,  the_ax, spot_size
                                 vmax=df[feature].max(),
                                 s=spot_size,
                                 marker=marker,
-                                linewidth=0,
+                                linewidth=0, rasterized=rasterized
                                 )
     my_title = f'{feature}'
-    if title_note is not None:
-        my_title = f'{feature} ({title_note})'
+    if title is not None:
+        my_title = title
     the_ax.invert_yaxis()
     the_ax.set_title(my_title)
     cbar = plt.colorbar(
@@ -171,7 +171,7 @@ def plot_with_table(tmp, i_mz, title_note, sub_df, out_file_path, spot_size=2,
     fig.set_figheight(3)
     fig.set_figwidth(10)
 
-    ax1 = custom_scatter_one_feat(tmp, i_mz, title_note=title_note,the_ax=ax1,
+    ax1 = custom_scatter_one_feat(tmp, i_mz, title=title,the_ax=ax1,
                                   spot_size=spot_size, # this replaces  sq.pl.spatial_scatter(adata_mz, color=[str(i_mz)], img=False,  ax=ax1)
                                   marker=marker)
     ax2.set_axis_off()
