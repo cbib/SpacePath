@@ -149,8 +149,8 @@ class ComputeMoleculesFamilies:
         distance_matrix = 1 - mol_similarities_result['array']
         # squareform saves memory by representing the matrix with the upper right triangle
         computed_dendrogram = linkage(squareform(distance_matrix),
-                                      method=method_linkage,
-                                      metric=metric_linkage
+                                      method=method_linkage,  # it is 'ward' by default
+                                      metric=metric_linkage # it is cosine by default
                                       )
         clusters = fcluster(computed_dendrogram,
                             t=cutoff_tree, criterion='distance')
@@ -169,7 +169,7 @@ class ComputeMoleculesFamilies:
                 myannots['molecules_cluster'] == clu, "moleculeNames"].head(
                 1).item()
             molecs_families_dict[
-                f'tg_{clu}'] = [first_molecule_group] + mols_in_clus
+                f'MolFam_{clu}'] = [first_molecule_group] + mols_in_clus
 
         max_length = max(len(v) for v in molecs_families_dict.values())
 
@@ -219,11 +219,13 @@ class ClassifyMZProtocol:
             SAMPLE, plot_folder, config=ClassifyMZProtocolConfig()):
         logger.info("Running %s", config.description)
         logger.info(f">> Part a): Select m/z features with parameters: "
-          f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff, offSample_cutoff,fdr_cutoff)
+          f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff,
+                    offSample_cutoff,fdr_cutoff)
         me_annots, mz_good_from_part_a = zmm.part_a__mz_quality_mark(
             me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff)
 
-        logger.info(f"A total of %s m/z pass MSM, offSample and FDR cutoffs.", len(set(mz_good_from_part_a)))
+        logger.info(f"A total of %s m/z pass MSM, offSample and FDR cutoffs.",
+                    len(set(mz_good_from_part_a)))
         text_notice = f"valid $m/z$\n n = {len(mz_good_from_part_a)}"
         zviz.plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,
                                       plot_folder, msm_cutoff,
@@ -258,11 +260,12 @@ class ClassifyMZProtocol:
                                                     all_quality_df)
         n_good_mz = adata_mz.var.loc[
                 adata_mz.var['final_quality'] == "good", :].shape[0]
-        logger.info("a total of %s are good quality m/z features (check column 'final_quality' of adata_mz.var)", n_good_mz)
+        logger.info("a total of %s are good quality m/z features "
+                    "(check column 'final_quality' of adata_mz.var)", n_good_mz)
 
         return adata_mz
 
-
+# todo: consider changing 'Pathways' for something also applicable to Families: Ensembles ?  Sets ?
 class SyncPathwaysAndAnnots:
     #config: SyncPathwaysAndAnnotsConfig  TODO : use ?
     @staticmethod

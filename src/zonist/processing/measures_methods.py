@@ -223,16 +223,17 @@ def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
              me_annots.fdr_column, me_annots.formula_col, "quality_msm_off_fdr"]], keycol='mz')
 
     copy_mz = adata_mz[:, mz_good_from_part_a].copy()   # only compute moran for the ok_part1 features
-    if not zh.is_log_transformed(copy_mz.X):
-        sc.pp.log1p(copy_mz)  # todo: in doc say the pertinence of log transform as data is very skewed. Furthermore: happily this 'copy object' is not returned by the function
-        print(copy_mz.X.min().min())
     try:
         if copy_mz.uns['moranI'].shape[0] != len(mz_good_from_part_a):
             del copy_mz.uns['moranI']
+    except KeyError:
+        pass
     except Exception as e:
         pass
 
     if not "moranI" in list(copy_mz.uns.keys()) :
+        if not zh.is_log_transformed(copy_mz.X):
+            sc.pp.log1p(copy_mz)  # todo: in doc say the pertinence of log transform as data is very skewed. Furthermore: happily this 'copy object' is not returned by the function
         copy_mz = compute_moran_i(copy_mz, n_neighs=n_neighs, n_perms=n_perms)
     else:
         print(f"will use the existing .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")

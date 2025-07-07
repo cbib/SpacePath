@@ -1355,3 +1355,120 @@ HMDB0015699	Tofisopam
 HMDB0015702	Ticagrelor
 HMDB0015704	Tafluprost
 HMDB0015705	Ivacaftor
+HMDB0041886	Enalaprilat
+LMPK04000010	Erythromycin D
+LMPK04000012	Erythromycin B
+LMPK04000013	Azithromycin
+HMDB0001916	Azythromycin
+LMPK04000042	Troleandomycin
+HMDB0060663	Isoniazid alpha-ketoglutaric acid
+HMDB0006036	Mesterolone
+HMDB0000753	3-Hexanone
+HMDB0005842	2-Oxohexane
+HMDB0005846	Ethyl isopropyl ketone
+HMDB0061882	3-Methyl-1-penten-3-ol
+HMDB0062792	(2R,3S)-2-methyl-3-propyloxirane
+HMDB0001318	4-Methylpentanal
+LMFA05000115	2Z-Hexen-1-ol
+LMFA05000059	3Z-hexenol
+LMFA05000060	2E-hexenol
+LMFA05000464	3Z-Hexen-3-ol
+LMFA12000048	Hexan-2-one
+LMFA12000049	Hexan-3-one
+LMFA05000116	1-Hexen-1-ol
+LMFA05000113	3E-Hexen-1-ol
+LMFA05000538	1-methyl-cyclopentanol
+LMFA05000561	(E)-4-Hexen-1-ol
+LMFA06000109	Caproaldehyde
+LMFA12000027	3-Methylpentan-2-one
+LMFA12000033	4-Methylpentan-2-one
+HMDB0040191	(±)-2-Methylhexanal
+HMDB0041320	(2R,4Z)-4-Hepten-2-ol
+HMDB0061896	2-Methyl-3-hexanone
+HMDB0059693	1-Methylcyclohexanol
+HMDB0004814	4-Heptanone
+LMFA12000047	Heptan-3-one
+LMFA12000037	5-Methylhexan-2-one
+LMFA05000480	delta4-hepten-2-ol.
+LMFA05000571	(Z)-4-Hepten-1-ol
+LMFA12000085	4-Methylhexan-2-one
+LMFA12000088	5-Methylhexan-3-one
+LMFA12000118	Heptan-4-one
+LMFA12000083	3-Methylhexan-2-one
+LMFA05000468	4Z-Hepten-2R-ol
+LMFA05000550	(2R,4Z)-4-Hepten-2-ol
+LMFA06000001	Enanthaldehyde
+LMFA12000032	4-Methylhexan-3-one
+LMFA12000004	heptan-2-one
+LMFA05000471	4Z-Hepten-2S-ol
+HMDB0012326	L-Gulose
+HMDB0005015	Gabapentin
+HMDB0060286	3,4-Epoxynonanal
+HMDB0041376	exo,exo-1,8-Epoxy-p-menthane-2,6-diol
+HMDB0041545	(1R,2R,4R)-1,8-Epoxy-p-menthane-2,4-diol
+LMFA12000271	cis-6,7-epoxy-9Z-heptadecene
+LMFA12000284	9S,10R-Epoxy-6Z-octadecene
+LMFA12000288	3,4-Epoxy-6,9-octadecadiene
+LMFA12000287	6S,7R-Epoxy-3Z,9Z-octadecadiene
+LMFA12000292	6R,7S-Epoxy-9Z-nonadecene
+LMFA12000281	2-methyl-7R,8S-Epoxy-17-octadecene
+LMFA12000293	6S,7R-Epoxy-9Z-nonadecene
+LMFA12000291	9S,10R-Epoxy-6Z-nonadecene
+LMFA12000303	cis-9,10-Epoxynonadecane
+LMFA12000283	2-methyl-7S,8R-Epoxy-octadecane
+LMFA12000282	2-methyl-7R,8S-Epoxy-octadecane
+LMFA12000304	trans-9,10-Epoxynonadecane
+HMDB0062288	12(13)-epoxy-6Z,9Z-octadecadienoic acid
+LMFA02000322	12R,13S-epoxy-6Z,9Z-octadecadienoic acid
+LMFA02000321	12R,13S-epoxy-6E,9Z-octadecadienoic acid
+LMFA02000305	15R,16S-epoxy-9Z,12E-octadienoic acid
+LMFA01070028	9,10-Epoxy-12-octadecynoic acid
+LMFA02000306	9,10-epoxy-3E,12Z-Octadecadienoic acid
+HMDB0061650	9,10-epoxyoctadecanoic acid
+LMFA02000326	9,10-epoxystearic acid
+LMFA02000002	9R,10S-epoxy-stearic acid
+LMFA02000001	9S,10R-epoxy-stearic acid
+LMFA01070013	methyl 12,13-epoxy-9,15-octadecadienoate
+LMFA01150005	10,13-Epoxy-11-methyloctadeca-10,12-dienoic acid
+LMFA01070012	methyl 9,10-epoxy-12,15-octadecadienoate
+LMFA01070014	methyl 15,16-epoxy-9,12-octadecadienoate
+LMFA02000279	9,10-epoxy-13-oxo-11-octadecenoic acid
+LMFA02000019	9S-hydroxy-10S,11S-epoxy-12Z,15Z-octadecadienoic acid
+LMFA02000247	9-oxo-12,13-epoxy-10-octadecenoic acid
+LMFA02000158	9-hydroxy-12,13-epoxy-10-octadecenoic acid
+LMFA02000010	10S,11S-epoxy-9S-hydroxy-12Z-octadecenoic acid
+LMFA02000278	9,10-epoxy-13-hydroxy-11-octadecenoic acid
+LMFA02000277	9,10-epoxy-11-hydroxy-12-octadecenoic acid
+LMFA02000159	12,13-epoxy-11-hydroxy-9-octadecenoic acid
+LMFA02000013	12R,13S-epoxy-9S-hydroxy-10E-octadecenoic acid
+LMFA03060111	(5Z,8R,11Z,14Z)-8,9-epoxy-5,9,11,14-eicosatetraenoic acid
+LMFA01080007	11-methoxy-12,13-epoxy-9-octadecenoic acid
+HMDB0041376	exo,exo-1,8-Epoxy-p-menthane-2,6-diol
+LMFA01080007	11-methoxy-12,13-epoxy-9-octadecenoic acid
+LMFA02000105	9-hydroperoxy-12,13-epoxy-10-octadecenoic acid
+LMFA02000106	11-hydroperoxy-12,13-epoxy-9-octadecenoic acid
+LMFA02000295	Fulgidic acid
+LMFA12000329	cis-9,10-Epoxytricosane
+LMFA12000326	7-methyl-cis-8,9-Epoxy-tricosane
+LMST01010148	24,25-epoxy-cholesterol(d6)
+LMST01010012	24,25-epoxy-cholesterol
+LMST01010301	22,23-epoxycampesterol
+LMST01010249	5,6alpha-epoxy-cholest-7-en-3beta,9alpha-diol
+LMST01010255	5,6alpha-epoxy-cholest-8(14)-en-3beta,7alpha-diol
+LMST01010256	5,6alpha-epoxy-cholest-8(14)-en-3beta,7beta-diol
+LMST01010384	5alpha,6alpha-24S,25-diepoxy-cholesterol
+LMST01031082	22,23-epoxy-5beta-campestan-3beta-ol
+LMST01040176	22S,23S-epoxy-5alpha-stigmast-8(9),14(15)-dien-3beta-ol
+HMDB0001188	(S)-2,3-Epoxysqualene
+LMST01110017	(25R)-5alpha,6alpha-epoxy-24R,26R-dimethyl-26,27-cyclo-cholestan-3beta-ol
+LMST01031068	24-methylene-5beta,6beta-epoxy-cholest-5-en-3beta,19-diol
+LMST03020624	25-Hydroxy[26,27-methyl]vitamin D3 3beta-(1,2-epoxypropyl)ether
+HMDB0062435	9,10-12,13-diepoxy-octadecanoate
+HMDB0061106	6beta-hydroxybudesonide
+HMDB0000840	Salicyluric acid
+HMDB0060564	Carboxy-ibuprofen
+HMDB0060924	Suprofen S-oxide
+HMDB0060602	N-acetyl-5-aminosalicylic acid
+HMDB0001938	Lisinopril
+HMDB0060336	1,4'-Bipiperidine-1'-carboxylic acid
+HMDB0001938	Lisinopril

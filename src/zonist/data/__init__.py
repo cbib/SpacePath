@@ -306,8 +306,8 @@ class MetabolomeAnnotations(Dataset):
 class MetabolicPathways(BaseModel, extra='allow'):
     data_dir: str
     subfolder: str
-    official_file: str
-    custom_file: Optional[str] = ''
+    file: str
+    supplementary_file: Optional[str] = ''
     download: Union[str, None] = None   # "sspa-kegg" if download is desired
     undesired_substring: str = " - Homo sapiens (human)" # in names
     set_id_col: str = "pathway_id"
@@ -319,7 +319,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
 
     def preload_official(self):
         if not os.path.exists(os.path.join(
-                self.data_dir, self.subfolder, self.official_file)):
+                self.data_dir, self.subfolder, self.file)):
             if self.download == "sspa-kegg":
                 logger.info("writing sspa official gmt to data dir, wait ...")
                 sspa.process_pathways.process_kegg(
@@ -331,7 +331,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
         try:
             official_gmt = pd.read_csv(
                 os.path.join(self.data_dir, self.subfolder,
-                             self.official_file),
+                             self.file),
                 header=None, sep='\t', index_col=False, low_memory=False)
             official_gmt = official_gmt.dropna(axis=1,
                                                how="all")  # drop if entire column is NaN
@@ -355,12 +355,12 @@ class MetabolicPathways(BaseModel, extra='allow'):
         try:
             custom_gmt = pd.read_csv(
                 os.path.join(self.data_dir, self.subfolder,
-                             self.custom_file),
+                             self.supplementary_file),
                 header=None, sep='\t', index_col=False)
         except Exception as e:
             logger.error(e)
         first_row = custom_gmt.iloc[0, :]
-        cus_message = (f" The first line of your custom gmt file:\n"
+        cus_message = (f" The first line of your custom gmt or mmt file:\n"
                       f"  abbreviation: '{first_row.iloc[0]}'; "
                       f"  name : '{first_row.iloc[1]}';  metabolites"
                       f"  (first three) : '{first_row.iloc[2:5].tolist()}'.")
@@ -370,7 +370,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
     def load(self):
         self.preload_official()
         dfs_dict = {'official': self.official}
-        if self.custom_file != '':
+        if self.supplementary_file != '':
             self.preload_custom()
             dfs_dict['custom'] = self.custom
 
@@ -431,3 +431,17 @@ class MetabolicPathways(BaseModel, extra='allow'):
         self.sets_ids_df = self.sets_ids_df.loc[
             self.sets_ids_df[
                 self.set_id_col].isin(good_pathways_l), :]
+
+    def eject_molecules(self, ejection_list:List[str|float], column):
+        """
+        From sets object, delete specified mz, or molecules identifiers
+        :input column: str, one of "KEGG", "moleculeIds", "mz"
+        :input ejection_list: List of identifiers (list of strings)
+         or mz (list of floats) to be removed from the object
+        """
+        if not column in ["KEGG", "moleculeIds", "mz"]:
+            logger.error("column '%s' not supported", column)
+        self.piled = self.piled.loc[~self.piled[
+            column].isin(ejection_list), :]
+        self.sets_ids_df = self.sets_ids_df.loc[self.sets_ids_df[
+            self.set_id_col].isin(self.piled[self.set_id_col].unique()), :]
