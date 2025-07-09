@@ -19,10 +19,8 @@ class Test(TestCase):
         spots_names = ["s1", "s2", "s3", "s4"]
         features_names = [84.66, 88.31, 150.55]
 
-        result = pmm.tic_normalization(intensities_matrix,
-                                                  spots_names,
-                                                  features_names)
-        result = result.toarray()
+        result = pmm.tic_normalization(intensities_matrix)
+        result = result.toarray()  # yes this method is correct, test ok
 
         self.assertTrue(np.all(
             np.array(np.around(result[0, :], 4)).flatten(

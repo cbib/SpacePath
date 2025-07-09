@@ -204,11 +204,9 @@ class MetabolomeAnnotations(Dataset):
             excess_mz_bool: bool = helpers.identify_multi_mz_to_one_compound(
                 self.df, self.mz_col, self.usable_id)
             if excess_mz_bool:
-                # logger.warning("Please run keep_unique_mz_id_tuples(anndata_mz)")
-                # print(message_multimz)
                 message_multimz = (
                     "Identified 'multi m/z to one compound ID' cases!: Please run "
-                    "'<metabo_annotations>.keep_unique_mz_id_tuples(anndata_mz)'.")
+                    "'<metabo_annotations>.keep_best_mz_id_pairs(anndata_mz)'.")
                 logger.warning(message_multimz)
                 print(message_multimz)
         except Exception as e:
@@ -231,10 +229,10 @@ class MetabolomeAnnotations(Dataset):
         except Exception as e:
             logger.warning("Error: %s", e)
 
-    def keep_unique_mz_id_tuples(self, var_df: pd.DataFrame):
+    def keep_best_mz_id_pairs(self, var_df: pd.DataFrame):
         logger.info(
             'Resolving multiple m/z to one-compound-id (degenerate pairs):\n'
-            '    Keeps the best (m/z, id) unique pairs, by quality criteria.')
+            '  Keeps the 2 top better (m/z, id) pairs, by quality criteria.')
         basic_expected_cols = [self.mz_col, self.fdr_column,
                                self.offsample_column, self.msm_column]
         if not len(set(basic_expected_cols).intersection(
@@ -251,12 +249,9 @@ class MetabolomeAnnotations(Dataset):
         ) == len(self.df[
                      self.mz_col].unique()), "Error, no perfect match with var_df mz"
 
-        self.df = helpers.warrant__one_to_one_mz_id(self.df, var_df,
-                                                    self.mz_col,
-                                                    self.usable_id,
-                                                    self.msm_column,
-                                                    self.fdr_column,
-                                                    self.offsample_column)
+        self.df = helpers.best_mz_id_pairs_df(self.df, var_df,
+            self.mz_col, self.usable_id,  self.msm_column,
+            self.fdr_column, self.offsample_column)
 
     def remove_redundant_aliases(self):
         print("collapsing metabolites' identifiers aliases")

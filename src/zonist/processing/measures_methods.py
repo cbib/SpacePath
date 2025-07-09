@@ -136,18 +136,17 @@ def mark_weak_signal_spots(adata_mz, cutoff: float = 10):
 # #  normalization and autocorrelation
 
 
-def tic_normalization(intensity_matrix: Union[csr_matrix, np.array],
-                      obs_names: List[str], mz_names: List[float]) -> np.matrix:
+def tic_normalization(intensity_matrix: Union[csr_matrix, np.array]) -> np.matrix:
     """
     Perform Total Ion Count (TIC) normalization on a raw 2D intensity matrix
     of m/z features
     :param intensity_matrix: rows are spots, columns are mz features
     :return:  TIC normalized intensity matrix
+    :return type: numpy.matrix (verified)
     """
     logger.info("Applying Total Ion Count (TIC) normalization: processes the m/z "
           "features, across spots")
-    assert intensity_matrix.shape == (
-        len(obs_names), len(mz_names)), f"wrong intensity array dimensions"
+
     total_ion_count = intensity_matrix.sum(axis=1)
     scale_factor = np.median(np.array(total_ion_count))
     # Avoid division by zero

@@ -1,3 +1,4 @@
+import sys
 import os
 import logging
 import numpy as np
@@ -7,6 +8,7 @@ from typing import List, Dict, Literal, Optional, Set, Union
 import pandas as pd
 import anndata as ad
 import sspa as sspa
+import scanpy as sc
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra
@@ -40,18 +42,23 @@ def spots_groups_by_random_choice(spots_names: List[str],
     return groups_dict
 
 
-def compute_kpca(pw_as_df, adata, min_entity=2):
-    print("Computing Pathway Scores with kpca from sspa package")
+def compute_kpca(pw_as_df: pd.DataFrame,
+                 adata: ad.AnnData, min_entity: int=2)-> pd.DataFrame:
+    """
+    Computes kPCA on the compounds quantifications matrix
+     to yield scores per pathway (or set), per spot.
+    Credits of the sspa package: C Wieder et al., 2022
+
+    :param pw_as_df: pathways or sets df, each row is a set (see sspa)
+    :param adata: the data with the quantifications in its .X property
+    :parm min_entity: the minimal size of the set to do the computation
+
+    :returns: Computed scores as a dataframe
+    """
     kpca_model = sspa.sspa_kpca.sspa_KPCA(
         pw_as_df, min_entity=min_entity, random_state=0)
 
-    if is_log_transformed(adata.X):
-        df_log_transformed = adata.to_df()
-    else:
-        print("log transforming data (natural logarithm, as in sc.pp.log1p)")
-        df_log_transformed = np.log(adata.to_df() + 1) # as sc.pp.log1p does
-
-    kpca_scores = kpca_model.fit_transform(df_log_transformed)
+    kpca_scores = kpca_model.fit_transform(adata.to_df())
 
     return kpca_scores
 
@@ -67,10 +74,11 @@ def reshape_pathways_for_kpca(pathways_dict):
 
 def compute_kpca_on_spot_groups(pw_as_df, adata, groups_d: Dict[int, list],
                                 min_entity=2) -> Dict[int, dict]:
-    print(f"Computing Pathway Scores for {len(groups_d)} groups of spots...")
+    print(f"Computing Pathway Scores for {len(groups_d)} groups of spots")
     kpca_scores_d = dict()
     for k in groups_d.keys():
-        print("Group:", str(k + 1))
+        sys.stdout.write(".")
+        sys.stdout.flush()
         adata_here = adata[groups_d[k], :].copy()
         kpca_scores_d[k] = compute_kpca(pw_as_df, adata_here, min_entity)
 
@@ -79,7 +87,7 @@ def compute_kpca_on_spot_groups(pw_as_df, adata, groups_d: Dict[int, list],
 
 def gather_scores_dfs_dict(kpca_scores_d: Dict[int, pd.DataFrame],
                            ordered_spots_names: List[str]) -> pd.DataFrame:
-    """return the dataframe of computed scores"""
+    """return the dataframe of gathered computed scores"""
     def add_missing_cols(df, expected_cols: set):
         absent_expected_cols = list(
             set(expected_cols) - set(df.columns.tolist()))
@@ -110,6 +118,10 @@ def compute_pathways_scores(pathways_dict,
                             threshold_n_spots_is_high: int)-> pd.DataFrame:
     if method == "sspa_kpca":
         pw_as_df = reshape_pathways_for_kpca(pathways_dict)
+
+        if not is_log_transformed(adata.X):
+            sc.pp.log1p(adata)
+
         if adata.obs.shape[0] < threshold_n_spots_is_high:
             kpca_scores = compute_kpca(pw_as_df, adata, min_entity=min_entity)
         else:

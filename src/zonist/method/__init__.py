@@ -18,6 +18,7 @@ from rdkit import DataStructs
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
+from scipy.sparse import csr_matrix
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
 
@@ -47,10 +48,15 @@ class MethodConfig(BaseModel):
     class_type: str = "method"
 
 
+class NormalizeDataConfig(MethodConfig):
+    description: str = "normalization of m/z intensities"
+    method: str = "TotalIonCount"
+
+
 class ClassifyMZProtocolConfig(MethodConfig):
-    description: str = "phased protocol to filter m/z by the quality of molecular formulae annotations, and the spatial distributions"
+    description: str = "protocol to filter m/z by the quality of molecular formulae annotations, and the spatial distributions"
     n_neighs_for_graph: int = 20   # for neighbors graph computation before Moran's I
-    n_perms_moran_calc: Union[int, str] = "auto"   # for Moran's I
+    n_perms_moran_calc: Union[int, str] = 50   # for Moran's I
 
 
 class SyncPathwaysAndAnnotsConfig(MethodConfig): # todo: use this config ?
@@ -75,6 +81,8 @@ class ComputeMoleculesFamiliesConfig(MethodConfig):
     #method: str=""
 
 
+
+
 def compounds_and_smiles_ordered(smiles_df, molecules_ids_list):
     mycopy = smiles_df.copy()
     mycopy = mycopy.drop_duplicates(subset=['moleculeIds', 'SMILES'],
@@ -92,10 +100,13 @@ def compounds_and_smiles_ordered(smiles_df, molecules_ids_list):
 
     return mycopy['moleculeIds'].tolist(), mycopy['SMILES'].tolist()
 
+
 class ComputeMoleculesSimilarityMatrix:
     config = ComputeMoleculesSimilarityMatrixConfig
     @staticmethod
     def run(molecules_ids_list, threshold_similarity=None):
+        logger.info("making molecules identifiers a list of unique values")
+        molecules_ids_list = list(set(molecules_ids_list))
         smiles_dfs  = []
         for file_name in ["LipidMaps-SMILES_06-08-25.tsv",
                           "HMDB-SMILES_05-07-24.tsv"]:
@@ -127,7 +138,7 @@ class ComputeMoleculesSimilarityMatrix:
 
         np.fill_diagonal(arr, 1)
         if threshold_similarity is not None:
-            arr[arr < threshold_similarity] = 0  # todo: verify this with unittest
+            arr[arr < threshold_similarity] = 0
 
         mol_similarities_result = {"array": arr,
                                    "the_ids": the_identifiers_that_entered,
@@ -154,20 +165,20 @@ class ComputeMoleculesFamilies:
                                       )
         clusters = fcluster(computed_dendrogram,
                             t=cutoff_tree, criterion='distance')
-        myannots = molecules_ids_df.loc[molecules_ids_df["moleculeIds"].isin(
-            mol_similarities_result['the_ids']),:]
-        myannots = myannots.assign(molecules_cluster=clusters)
+
+        dedupl_df = pd.DataFrame({'moleculeIds': mol_similarities_result['the_ids'],
+                                  'molecules_cluster': clusters})
 
         logger.info("the clusters are: %s",
-              sorted(myannots['molecules_cluster'].unique().tolist()))
+              sorted(dedupl_df['molecules_cluster'].unique().tolist()))
 
         molecs_families_dict = {}  # initialize and save as mmt
-        for clu in sorted(myannots['molecules_cluster'].unique().tolist()):
-            mols_in_clus = myannots.loc[myannots[
+        for clu in sorted(dedupl_df['molecules_cluster'].unique().tolist()):
+            mols_in_clus = dedupl_df.loc[dedupl_df[
                                             'molecules_cluster'] == clu, "moleculeIds"].unique().tolist()
-            first_molecule_group = myannots.loc[
-                myannots['molecules_cluster'] == clu, "moleculeNames"].head(
-                1).item()
+
+            first_molecule_group = molecules_ids_df.loc[
+                molecules_ids_df['moleculeIds'] == mols_in_clus[0], "moleculeNames"]
             molecs_families_dict[
                 f'MolFam_{clu}'] = [first_molecule_group] + mols_in_clus
 
@@ -190,7 +201,6 @@ class ComputeMoleculesFamilies:
                 "cutoff_tree": cutoff_tree}
 
 
-
 class FakeMethodConfig(MethodConfig):
     description : str = "dummy test for config and method verification"
     dummy_cutoff: float = 0.5
@@ -210,6 +220,37 @@ class FakeMethod:  # no-inheritance avoids instantiation: more practical
 
         return pathways_methods.test_function(arr, config.dummy_scale,
                                               config.dummy_cutoff)
+
+class NormalizeData:
+    config: NormalizeDataConfig
+    @staticmethod
+    def run(adata_mz: ad.AnnData, config=NormalizeDataConfig()):
+        """
+        Updates the adata_mz object:
+         adata_mz.X with the normalized result
+         adata_mz.layers['raw_X'] with the raw data
+         adata_mz.uns['norm'] with the flag of the applied method
+        """
+        if config.method == "TotalIonCount":
+            adata_mz.uns['tmp_slot'] = 0  # guarantees `.uns` is accessible
+            try:
+                if not 'norm' in list(adata_mz.uns.keys()):
+                    logger.info("%s", config.description)
+                    adata_mz.layers['raw_X'] = adata_mz.X.copy()
+                    normalised_X = zmm.tic_normalization(adata_mz.X.copy())
+                    adata_mz.X = csr_matrix(normalised_X)
+                    adata_mz.uns['norm'] = config.method
+                else:
+                    logger.info("data seems normalised, check .uns['norm']")
+            except Exception as e:
+                logger.critical("Error %s \ncould not normalise", e)
+        else:
+            logger.error("%s is not supported", config.method)
+
+        del adata_mz.uns['tmp_slot']
+
+        return adata_mz
+
 
 class ClassifyMZProtocol:
     config: ClassifyMZProtocolConfig
@@ -265,12 +306,12 @@ class ClassifyMZProtocol:
 
         return adata_mz
 
-# todo: consider changing 'Pathways' for something also applicable to Families: Ensembles ?  Sets ?
+
 class SyncPathwaysAndAnnots:
     #config: SyncPathwaysAndAnnotsConfig  TODO : use ?
     @staticmethod
     def run(pathwaysObj: MetabolicPathways,
-            annots_df: pd.DataFrame,  # TODO make it to accept also TranscriptomeAnnotations and create such TranscriptomeAnnotations (should be easy)
+            annots_df: pd.DataFrame,
             usable_id: str="",
             mz_col: str="mz",
             min_set_size: int=2,
@@ -306,6 +347,8 @@ class ComputePathwaysScores:
             ) -> pd.DataFrame:
         logger.info(" Will compute spot-wise Pathways Scores "
                     "with the following config: %s", config)
+        if config.method == "sspa_kpca":
+            logger.info(" credits of sspa library: C Wieder et al., 2022")
         scores_df = pathways_methods.compute_pathways_scores(
             pathways_dict, adata, config.method, config.min_entity,
             config.n_groups_of_spots, config.threshold_n_spots_is_high)
