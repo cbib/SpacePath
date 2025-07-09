@@ -64,7 +64,7 @@ if __name__ == "__main__":
         min_pathway_size = row["min_pathway_size"]
         k = 8 # row["k_for_kmeans"]  # todo: correct this
 
-        moran_cutoff_features = 0.2
+        moran_cutoff_features = 0.2   # todo note: in the future analyses caution, this is too stringent and risks loosing small spatial patterns
 
         print("\nSample: ", SAMPLE)
         subfolder = SAMPLE

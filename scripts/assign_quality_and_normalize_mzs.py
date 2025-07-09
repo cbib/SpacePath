@@ -20,16 +20,24 @@ if __name__ == "__main__":
     """
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path = "../private-datasets-parameters.tsv"   #  small-test-parameters.tsv"
+    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  # "../../small_test.csv"
+    my_csv_table_path_2 = "../private-datasets-parameters.tsv"  # "../../small_test.csv"
+
+    df1 = pd.read_csv(my_csv_table_path_1, header=0,
+                      index_col=None, sep='\t')
+    df2 = pd.read_csv(my_csv_table_path_2, header=0,
+                      index_col=None, sep='\t')
+
+    datasets_parameters_df = pd.concat([df1, df2])
+    # todo:  relaunch wiht the samples ATTENTIOOOOOON
+    datasets_parameters_df = datasets_parameters_df.loc[
+        ~datasets_parameters_df['dataset_name'].isin(
+            ["TD-Lipido-635", "TD-Lipido-636",
+            "TD-Lipido-836", "TD-Lipido-827"        ])]
     plot_parent_folder = "../../figures/"
 
-    force_for_these = ["TD-Lipido-635"]    # keep empty if no sample to force   # e.g.  , "TD-635-1-A", "TD-635-1-B"   "TD-hemi-635-1-A", "TD-hemi-635-1-B"
-    #  "TD-Lipido-635", "TD-Lipido-636", "TD-Lipido-836", "TD-Lipido-827", "WW-breast-cancer-1"
+    force_for_these = ['UB-breast-cancer-3']    # keep empty if no sample to force   # e.g.  "TD-Lipido-635", "TD-Lipido-636", "TD-Lipido-836", "TD-Lipido-827", "WW-breast-cancer-1"
     # start
-
-
-    datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
-                      index_col=None, sep='\t')
 
     print("\nMarks bad quality m/z across specified datasets (.var property)")
 
@@ -57,10 +65,6 @@ if __name__ == "__main__":
         adata_mz = ad.read_h5ad(filename=os.path.join(
             mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
-        # todo: delete this temporary line below
-        if SAMPLE == "TD-Lipido-635":
-            del(adata_mz.uns['moranI'])
-
 
         print("Loaded object", adata_mz.uns["history"])
 
@@ -77,11 +81,7 @@ if __name__ == "__main__":
             me_annots.load()  # load annotations
             me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots,
                                                             adata_mz)
-            if (normalize_yes_no.lower() in ['y', 'yes']) and (
-                    not "is_X_TIC_normalized" in adata_mz.uns.keys()):
-                adata_mz.X = csr_matrix(zmm.tic_normalization(
-                    adata_mz.X.copy(), adata_mz.obs['obs'].tolist(),
-                    adata_mz.var['mz'].tolist()))
+            adata_mz = zm.NormalizeData.run(adata_mz)
 
             adata_mz = zm.ClassifyMZProtocol.run(adata_mz,
                 me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff,
@@ -103,3 +103,9 @@ if __name__ == "__main__":
                    mydata_dir, subfolder, f"{SAMPLE}.h5ad"))
                 print("saved object")
 
+##
+
+    # my_csv_table_path = "../private-datasets-parameters.tsv"   #  small-test-parameters.tsv"
+
+    # datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
+    #                   index_col=None, sep='\t')

@@ -9,16 +9,22 @@ import matplotlib.pyplot as plt
 import pickle
 import seaborn as sns
 
+from local_helpers.local_viz import customized_clustermap
 
 mydata_dir = "../../data"
 my_csv_table_path = "../small-test-parameters.tsv"
 plot_parent_folder = "../../figures/"
+
 
 cutoff_tree = 1.5
 
 SAMPLE = "LP-example0"
 subfolder = SAMPLE
 pwtype="WIKI"
+
+plot_folder = os.path.join(plot_parent_folder, SAMPLE)
+
+
 o_fi = os.path.join(mydata_dir,
                         subfolder, f'{SAMPLE}-{pwtype}-CleanAnnots.tsv')
 df = pd.read_csv(o_fi, sep='\t', header=0)
@@ -52,32 +58,26 @@ arr_df = pd.DataFrame(data=mol_similarities_result['array'],
 #clusters = hierarchy.fcluster(computed_dendrogram,
 #                    t=cutoff_tree, criterion='distance')
 
-## dendro = hierarchy.dendrogram(computed_dendrogram)
 
-# ordered_indices = hierarchy.leaves_list(computed_dendrogram)
 #
-# # To get the ordered labels:
-# ordered_labels = [trunc_names[i] for i in ordered_indices]
-# arr_df = arr_df.loc[ordered_labels, :]
-# arr_df = arr_df.loc[:, ordered_labels]
+# cg = sns.clustermap(arr_df,figsize=(12.5, 11),
+#                     row_linkage=computed_dendrogram,
+#                     col_linkage=computed_dendrogram,
+#                     cmap="Blues",
+#                     dendrogram_ratio=0.15,
+#                     cbar_pos=(0.07, 0.84, .015, .14),
+#                     xticklabels=False)
+# plt.text(-1.7,0.23, "similarity index", rotation=90)
+#
+# cg.ax_row_dendrogram.set_visible(False)
+# cg.ax_heatmap.set_ylabel("")
 
-print(arr_df.values.shape)
-
-
-
-cg = sns.clustermap(arr_df,
-                    figsize=(12.5, 11),
-               row_linkage=computed_dendrogram,
-               col_linkage=computed_dendrogram,
-               cmap="Blues",
-               dendrogram_ratio=0.15,
-               cbar_pos=(0.01, 0.82, .015, .15),
-xticklabels=False
-              )
-cg.ax_row_dendrogram.set_visible(False)
-cg.ax_heatmap.set_ylabel("")
-plt.savefig("tutut.png", dpi=400)
-
+dg = customized_clustermap(arr_df, computed_dendrogram)
+#plt.savefig("tutut.png", dpi=400)
+plt.savefig(
+    os.path.join(plot_folder, f"{SAMPLE}-hierarchy-molecules.png"),
+    dpi=400)
+plt.close()
 
 # did not work:
 

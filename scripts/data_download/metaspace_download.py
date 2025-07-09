@@ -9,7 +9,7 @@ download any dataset using info in a .csv table
 """
 
 # define here my files and dirs
-my_csv_table_path = "../../privateNEW-datasets-parameters.tsv"   #"../../small_test.csv"
+my_csv_table_path = "../../private-datasets-parameters.tsv"   #"../../small_test.csv"
 
 
 datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,

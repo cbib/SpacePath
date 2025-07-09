@@ -12,8 +12,6 @@ from local_helpers.local_helpers import provide_annotation_dict
 from local_helpers.local_viz import plot_spots
 
 
-
-
 def custom_out_tissue(adata_mz, mydata_dir, subfolder, SAMPLE):
     file_custom_list_good_spots = os.path.join(
         mydata_dir, subfolder, f'{SAMPLE}_out_tissue.json'
@@ -33,7 +31,7 @@ def custom_out_tissue(adata_mz, mydata_dir, subfolder, SAMPLE):
 if __name__ == "__main__":
     # define here my input
     mydata_dir = "../../data"
-    my_csv_table_path = "../small-test-parameters.tsv"
+    my_csv_table_path = "../private-datasets-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
     # start

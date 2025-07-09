@@ -1,7 +1,6 @@
 import os
 import pandas as pd
-import anndata as ad
-from scripts.families_1_generate import differential_results_filter
+from local_helpers.quantifs_methods import differential_results_filter
 
 mydata_dir = "../../../data"
 

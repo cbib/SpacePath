@@ -20,7 +20,7 @@ import zonist.processing.measures_methods as zmm
 if __name__ == "__main__":
     # define here my input
     mydata_dir = "../../../data"
-    my_csv_table_path = "../../privateNEW-datasets-parameters.tsv"
+    my_csv_table_path = "../../private-datasets-parameters.tsv"
     plot_parent_folder = "../../figures/"
 
     # start
@@ -47,9 +47,6 @@ if __name__ == "__main__":
         adata_mz = ad.read_h5ad(filename=os.path.join(
             mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
 
-        adata_mz.X = csr_matrix(zmm.tic_normalization(
-            adata_mz.X.copy(), adata_mz.obs['obs'].tolist(),
-            adata_mz.var['mz'].tolist()))
 
         sc.pp.highly_variable_genes(
             adata_mz, flavor="seurat_v3",
