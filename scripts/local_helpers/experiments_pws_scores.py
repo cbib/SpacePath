@@ -31,17 +31,6 @@ def compounds_counts_by_pathway(pathwaysObj):
     return uf
 
 
-def assemble_adata_from_scores_result(adatakegg, scores_df):  # TODO: see if it is practical or uselesss (not yet used)
-    adata_scores = ad.AnnData(
-            X=csr_matrix(scores_df),
-            var=pd.DataFrame(
-                {'pathway_id': scores_df.columns.tolist()},
-                index=scores_df.columns.tolist()),
-            obs=adatakegg.obs,
-            obsm=adatakegg.obsm,
-            uns=adatakegg.uns
-        )
-    return adata_scores
 
 
 def time_formatting(timeseconds):

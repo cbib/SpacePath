@@ -1,12 +1,9 @@
-import sys
 import os
-import numpy as np
 import pandas as pd
 import anndata as ad
 from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
-import seaborn as sns
 import scanpy as sc
 import squidpy as sq
 
@@ -14,8 +11,10 @@ import zonist.data as zd
 import zonist.method as zm
 import zonist.processing.measures_methods as zmm
 from local_helpers.local_helpers import provide_annotation_dict
-from families_1_generate import differential_results_filter
-from compute_pathways_scores import run_pathway_scores_steps
+from local_helpers.quantifs_methods import differential_results_filter
+from local_helpers.quantifs_methods import run_pathway_scores_steps
+from local_helpers.local_viz import customized_clustermap
+
 import pickle
 
 
@@ -30,7 +29,7 @@ def save_clean_annots(adata_mz, me_annots, me_refmap, pwtype) -> None:
     elif pwtype == "KEGG":
         me_annots.convert_ids_to_kegg(me_refmap.table)
 
-    me_annots.keep_unique_mz_id_tuples(adata_mz.var.copy())  #
+    #me_annots.keep_best_mz_id_pairs(adata_mz.var.copy())  #
 
     if pwtype == "WIKI":
         me_annots.remove_redundant_aliases()  # when using multitype 'moleculeIds' annotations
@@ -117,24 +116,17 @@ def plot_families(molecules_ids_df, mol_similarities_result,
 
     the_molecules_names = tmp.T['moleculeNames'].tolist()
 
-    trunc_names = [i[:16] for i in the_molecules_names]
+    trunc_names = [i[:30] for i in the_molecules_names]
 
     arr_df = pd.DataFrame(data=mol_similarities_result['array'],
                           columns=trunc_names,
                           index=trunc_names)
-    try:  # todo: the plot 'clustermap' slows a lot the computations, make it optional or seek if file to avoid rerun
-        sns.clustermap(arr_df, figsize=(13, 13),
-                       # row_linkage=computed_dendrogram,
-                       cmap="Blues",
-                       linewidths=0)
-        plt.title(f"the clustering of molecules")
-        plt.tight_layout()
-        plt.savefig(
-            os.path.join(plot_folder, f"{SAMPLE}-hierarchy-molecules.png"),
-            dpi=600
-        )
-    except:
-        print("skipping clustermap (too heavy)")
+    gc = customized_clustermap(arr_df, computed_dendrogram)
+    plt.savefig(
+        os.path.join(plot_folder, f"{SAMPLE}-hierarchy-molecules.png"),
+        dpi=400)
+    plt.close()
+
 
 
 
@@ -225,7 +217,6 @@ if __name__ == "__main__":
 
     for i, row in datasets_parameters_df.iterrows():
         SAMPLE = row["dataset_name"]
-        normalize_yes_no = row["TIC_normalization"]
         offSample_cutoff = row["offSample_cutoff"]
         msm_cutoff = row["msm_cutoff"]
         fdr_cutoff = row["fdr_cutoff"]
@@ -269,11 +260,8 @@ if __name__ == "__main__":
 
             me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots,
                                                             adata_mz)
-            if (normalize_yes_no.lower() in ['y', 'yes']) and (
-                    not "is_X_TIC_normalized" in adata_mz.uns.keys()):
-                adata_mz.X = csr_matrix(zmm.tic_normalization(
-                    adata_mz.X.copy(), adata_mz.obs['obs'].tolist(),
-                    adata_mz.var['mz'].tolist()))
+
+            adata_mz = zm.NormalizeIntensities.run(adata_mz)
 
             adata_mz = zm.ClassifyMZProtocol.run(adata_mz,
                 me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff,
@@ -369,7 +357,7 @@ if __name__ == "__main__":
 
         computed_dendrogram = computed_dict['computed_dendrogram']
 
-        doplotfam = False
+        doplotfam = True
         if doplotfam:
             plot_families(molecules_ids_df, mol_similarities_result,
                           plot_folder, SAMPLE)

@@ -32,19 +32,7 @@ adata_mz = adata_mz[:,
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                    "mz"].astype(str).tolist()]
 
-# ##  repeated chunk of stuff below
-# chosen_type_pathway = "KEGG" # or WIKI if desired
-#
-# o_fi = os.path.join(mydata_dir,
-#                     subfolder, f'{SAMPLE}-{chosen_type_pathway}-CleanAnnots.tsv')
-# anns = pd.read_csv(o_fi, sep='\t', header=0)
-#
-# scores_pathways = ad.read_h5ad(filename=os.path.join(mydata_dir, subfolder,
-#                                                      f'{SAMPLE}-scores-{chosen_type_pathway}.h5ad'))
-# chever1 = scores_pathways.var['pathway_name'].unique()
-# print(scores_pathways.var['pathway_name'].unique())
 
-##  stuff below
 
 chosen_type_pathway = "WIKI" # or WIKI if desired
 
@@ -248,3 +236,17 @@ for pw in superpathways[:2]:
 # sq.pl.spatial_scatter(famizoom, color=[f'kmeans{innerk}'], img=False, title="famizoom")
 # plt.show()
 # ##
+
+# ##  junk
+# chosen_type_pathway = "KEGG" # or WIKI if desired
+#
+# o_fi = os.path.join(mydata_dir,
+#                     subfolder, f'{SAMPLE}-{chosen_type_pathway}-CleanAnnots.tsv')
+# anns = pd.read_csv(o_fi, sep='\t', header=0)
+#
+# scores_pathways = ad.read_h5ad(filename=os.path.join(mydata_dir, subfolder,
+#                                                      f'{SAMPLE}-scores-{chosen_type_pathway}.h5ad'))
+# chever1 = scores_pathways.var['pathway_name'].unique()
+# print(scores_pathways.var['pathway_name'].unique())
+
+##  stuff below

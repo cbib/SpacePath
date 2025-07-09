@@ -7,11 +7,9 @@ import zonist.data as zd
 import zonist.processing.measures_methods as zmm
 
 
-from local_helpers.local_helpers import provide_annotation_dict
+from scripts.local_helpers.local_helpers import provide_annotation_dict
 
-from local_helpers.local_viz import plot_spots
-
-
+from scripts.local_helpers.local_viz import plot_spots
 
 
 def custom_out_tissue(adata_mz, mydata_dir, subfolder, SAMPLE):
@@ -32,15 +30,15 @@ def custom_out_tissue(adata_mz, mydata_dir, subfolder, SAMPLE):
 
 if __name__ == "__main__":
     # define here my input
-    mydata_dir = "../../data"
-    my_csv_table_path = "../small-test-parameters.tsv"
-    plot_parent_folder = "../../figures/"
+    mydata_dir = "../../../data"
+    my_csv_table_path = "../../private-datasets-parameters.tsv"
+    plot_parent_folder = "../../../figures/"
 
     # start
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                       index_col=None, sep='\t')
 
-    force_for_these = ["LP-example0"] # leave empty if no samples to force here   # e.g. ["TD-hemi-635-1-A", "TD-hemi-635-1-B"]    "TD-635-1-B"
+    force_for_these = [] # leave empty if no samples to force here
 
     print("\nRunning spots classification (with option to select or not) across specified datasets")
 
