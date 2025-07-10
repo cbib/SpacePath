@@ -271,20 +271,7 @@ if __name__ == "__main__":
 
         ##  4. Differential for best mz for computing families
 
-        # # todo: do i think it is justified ?: another  not user defined k
-        # # this is used to do a 'hidden' finer clustering coherent with tissue
-        # # heterogeneity, select mz with best differential result to go to families computation
-        # # internally defined  todo better explain this
-        # ada4diff4mz4fam = adata_mz.copy()
-        # k__kmeansndiff_best_mzs_togo_families = 10
-        # if adata_mz.uns['history']['spot_number_retained'] > 50000:
-        #     k__kmeansndiff_best_mzs_togo_families = 15
-        #
-        # ada4diff4mz4fam = wrapper_clustering(ada4diff4mz4fam, k=k__kmeansndiff_best_mzs_togo_families)
-        #
-        # differential_results_by_cluster = wrapper_differential(ada4diff4mz4fam, k__kmeansndiff_best_mzs_togo_families)
         differential_results_by_cluster = wrapper_differential(adata_mz, k=user_k)
-
 
         ## 5. Families of molecules, dark (largest fraction) and no dark included
 
@@ -344,57 +331,11 @@ if __name__ == "__main__":
                       }
         }
         mapped_elems = {}
-        for pwtype in ["WIKI","KEGG"]:   # todo activate with the kegg
+        for pwtype in ["WIKI","KEGG"]:
             mapped_elems[pwtype] = save_scores(adata_mz, annots_dict, pwtype,
                                        sets_args_dict, SAMPLE, mydata_dir)
         # now families *without* the things that mapped in the wiki and kegg
-        set_mapped = set(mapped_elems['WIKI']).union(set(mapped_elems["KEGG"]))  # todo activate with the union
+        set_mapped = set(mapped_elems['WIKI']).union(set(mapped_elems["KEGG"]))
         mapped_in_families = save_scores(adata_mz, annots_dict, "FAMILIES",
                     sets_args_dict, SAMPLE, mydata_dir,
                     not_for_families=list(set_mapped))
-
-        ##   Annotation step (new) (what to do???)
-        # open the scores objects, take WIKI-scores and families-scores
-        # combine them
-        # on the selected cluster, do a nested clustering k=2 , make a test
-        # plot
-        # scores_families = ad.read_h5ad(filename=os.path.join(mydata_dir, subfolder,
-        #                  f'{SAMPLE}-scores-FAMILIES.h5ad'))
-        # chosen_type_pathway = "KEGG" # or WIKI if desired
-        # scores_pathways = ad.read_h5ad(filename=os.path.join(mydata_dir, subfolder,
-        #                  f'{SAMPLE}-scores-{chosen_type_pathway}.h5ad'))
-        #
-        # scores_families.var['set_type'] = "families"
-        # scores_pathways.var['set_type'] = "pathways"
-        #
-        # scores_full  = ad.concat((scores_pathways, scores_families),
-        #                          join='outer', axis=1)
-
-        # # todo : open kegg and families and run:
-        # ## for selected clusters, do something with the scores: "nested clster" within the selected cluster
-        # my_selected_clusters =  [2]
-        # i_clus = 2
-        # the_cluster_spots = adata_mz.obs.loc[adata_mz.obs[f'kmeans{k}'] == i_clus,'obs']
-        # i_data = adata_mz[the_cluster_spots,:].copy()
-        # i_scores = scores_full[the_cluster_spots,:].copy()
-        #
-        # innerk = 2
-        #
-        # #  sc.pp.log1p()    sc.tl.pca()   # no log  nor pca to be done as scores are already PCs
-        #
-        # kmeans = KMeans(n_clusters=innerk, random_state=0).fit(
-        #     i_scores.X.todense())
-        # the_labels_str_l = kmeans.labels_.astype(str)
-        # i_scores.obs[f'kmeans{innerk}'] = the_labels_str_l
-        #
-        # sq.pl.spatial_scatter(
-        #     i_scores, color=[f'kmeans{innerk}'], img=False,
-        #     title='???????',
-        #     frameon=False,
-        #     #save=os.path.abspath(plot_out_path), dpi=600
-        #     )
-        # #plt.close()
-        # plt.show()
-
-
-        # print to a table the subclustering : say which pathways or families are "on" in which of the two clusters => PCA?

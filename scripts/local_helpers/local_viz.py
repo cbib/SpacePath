@@ -74,21 +74,21 @@ def plot_cosine_distances_random_spots(spots_cos_sim_df):
                     kde=True)
         plt.show()
 
-
-def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
-                           SAMPLEANDDETALS, plot_folder) -> None:
-    for m_id in biologically_chosen_pathways.keys():
-        try:
-            pw_name = biologically_chosen_pathways[m_id]
-            tmpstr = os.path.join(plot_folder,
-                                  f'{SAMPLEANDDETALS}-{pw_name}.png')  # TODO: improve destination folder
-            sq.pl.spatial_scatter(adata_scores, color=[m_id],
-                                  img=False, title=f"{m_id} {pw_name}",
-                                  save=os.path.abspath(tmpstr), dpi=600)
-            plt.close()
-        except Exception as e:
-            print("[plot_selected_pathways]Could NOT plot: {} {}".format(
-                m_id, pw_name))
+# never used for the moment:
+# def plot_selected_pathways(adata_scores, biologically_chosen_pathways,
+#                            SAMPLEANDDETALS, plot_folder) -> None:
+#     for m_id in biologically_chosen_pathways.keys():
+#         try:
+#             pw_name = biologically_chosen_pathways[m_id]
+#             tmpstr = os.path.join(plot_folder,
+#                                   f'{SAMPLEANDDETALS}-{pw_name}.png')
+#             sq.pl.spatial_scatter(adata_scores, color=[m_id],
+#                                   img=False, title=f"{m_id} {pw_name}",
+#                                   save=os.path.abspath(tmpstr), dpi=600)
+#             plt.close()
+#         except Exception as e:
+#             print("[plot_selected_pathways]Could NOT plot: {} {}".format(
+#                 m_id, pw_name))
 
 
 def only_for_subset_plot_moran(SAMPLE: str, adata_mz, mz_selection, plot_folder: str):
@@ -129,9 +129,6 @@ def plot_moran_results(adata_mz, plot_folder, SAMPLE):
     plot_that(positives, plot_folder, f"{SAMPLE}-MoranPos")
     plot_that(middle, plot_folder, f"{SAMPLE}-MoranMid")
     plot_that(negatives, plot_folder, f"{SAMPLE}-MoranNeg")
-
-
-
 
 
 def custom_scatter_one_feat(df, feature: str, title:str,  the_ax, spot_size=2,

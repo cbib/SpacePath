@@ -69,8 +69,8 @@ scores_full  = ad.concat((scores_pathways, scores_families),
                          join='outer', axis=1)
 scores_full.obsm['spatial'] = adata_mz.obsm['spatial']
 scores_full.uns['spatial'] = adata_mz.uns['spatial']
-# todo : open kegg and families and run:
-## for selected clusters, do something with the scores: "nested clster" within the selected cluster
+
+"""new part still not ok"""
 my_selected_clusters =  [1]
 i_clus = 1
 clusts_computed = pd.read_csv(os.path.join(mydata_dir, subfolder,

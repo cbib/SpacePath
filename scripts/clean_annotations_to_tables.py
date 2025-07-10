@@ -23,7 +23,6 @@ if __name__ == "__main__":
     df2 = pd.read_csv(my_csv_table_path_2, header=0,
                       index_col=None, sep='\t')
     datasets_parameters_df = pd.concat([df1, df2])
-    # todo:  just proving this selection, URGENT DECISION O TAKE !!!
     datasets_parameters_df = datasets_parameters_df.loc[
     datasets_parameters_df['dataset_name'].isin(["LP-gut", # pending mouse 5 !!
         "LP-brain-rat-2"])   # "TD-Lipido-635",

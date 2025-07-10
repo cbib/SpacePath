@@ -16,8 +16,8 @@ if __name__ == "__main__":
 
     # define here my files and dirs
     mydata_dir = "../../data"
-    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  #
-    my_csv_table_path_2 = "../small-test-parameters.tsv"  # ../private-datasets-parameters.tsv"  # "
+    my_csv_table_path_1 = "../datasets_parameters/public-datasets-parameters.tsv"  #
+    my_csv_table_path_2 = "../datasets_parameters/private-datasets-parameters.tsv"  #
 
     df1 = pd.read_csv(my_csv_table_path_1, header=0,
                       index_col=None, sep='\t')
@@ -29,7 +29,9 @@ if __name__ == "__main__":
 
     plot_parent_folder = "../../figures/"
 
-    force_for_these = ["LP-brain-rat-2"]    # keep empty if no sample to force   # e.g.  "TD-Lipido-635", "TD-Lipido-636", "TD-Lipido-836", "TD-Lipido-827", "WW-breast-cancer-1"
+    force_for_these = ['LP-kidney1', 'LP-kidney2', 'LP-heart', 'LP-brain-rat-1', 'LP-brain-mouse-2', 'LP-brain-rat-3', 'LP-eye', 'LP-cerebellum-rat', 'MALDI_248_T', 'MALDI_259_T', 'MALDI_260_T', 'MALDI_262_T', 'MALDI_269_T', 'MALDI_275_T', 'UBcalibr2']
+
+    # keep empty if no sample to force   # e.g.  "TD-Lipido-635", "TD-Lipido-636", "TD-Lipido-836", "TD-Lipido-827", "WW-breast-cancer-1"
     # start
 
     print("\nMarks bad quality m/z across specified datasets (.var property)")

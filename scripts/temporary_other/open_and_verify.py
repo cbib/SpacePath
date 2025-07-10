@@ -15,8 +15,8 @@ SAMPLE = "LP-brain-rat-2" #" #"TD-Lipido-635"    LP-brain-mouse-5
 
 
 mydata_dir = "../../../data"
-my_csv_table_path_1 = "../../public-datasets-parameters.tsv"  # "../../small_test.csv"
-my_csv_table_path_2 = "../../private-datasets-parameters.tsv"  # "../../small_test.csv"
+my_csv_table_path_1 = "../../datasets_parameters/public-datasets-parameters.tsv"  # "../../small_test.csv"
+my_csv_table_path_2 = "../../datasets_parameters/private-datasets-parameters.tsv"  # "../../small_test.csv"
 
 df1 = pd.read_csv(my_csv_table_path_1, header=0,
                   index_col=None, sep='\t')
@@ -32,23 +32,31 @@ me_refmap = zd.MetaboliteIdsMappings(
                    'CoreMetabolome': "CoreMetabolome-to-KEGG_05-07-24.tsv"})
 me_refmap.load()
 
-import sys
-sys.exit()
 
 
+haha = list()
 for i, r in datasets_parameters_df.iterrows():
     SAMPLE = r['dataset_name']
     subfolder = SAMPLE
     adata_mz = ad.read_h5ad(filename=os.path.join(
             mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
-    try:
-        print(adata_mz.uns['norm'])
-        print(adata_mz.uns['moranI'].head())
-    except Exception as e:
-        print(SAMPLE, "oh no here no raw, continue")
-        continue
+
+
+    if not 'padj class' in adata_mz.uns['moranI'].columns.tolist():
+        haha.append(SAMPLE)
+
+    # try:
+    #     print(adata_mz.uns['moranI'].head(2))
+    #     print(adata_mz.var.head(2))
+    # except Exception as e:
+    #     print(SAMPLE, "oh no !")
+    #
+    #     continue
     print("")
     #print(SAMPLE, adata_mz.uns['history']['spot_number_retained'])
+print(haha)
+
+
 
 import sys
 sys.exit()

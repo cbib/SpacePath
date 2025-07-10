@@ -380,11 +380,11 @@ if __name__ == "__main__":
                       }
         }
         mapped_elems = {}
-        for pwtype in ["WIKI","KEGG"]:   # todo activate with the kegg
+        for pwtype in ["WIKI","KEGG"]:
             mapped_elems[pwtype] = save_scores(adata_mz, annots_dict, pwtype,
                                        sets_args_dict, SAMPLE, mydata_dir)
         # now families *without* the things that mapped in the wiki and kegg
-        set_mapped = set(mapped_elems['WIKI']).union(set(mapped_elems["KEGG"]))  # todo activate with the union
+        set_mapped = set(mapped_elems['WIKI']).union(set(mapped_elems["KEGG"]))
         mapped_in_families = save_scores(adata_mz, annots_dict, "FAMILIES",
                     sets_args_dict, SAMPLE, mydata_dir,
                     not_for_families=list(set_mapped))
@@ -406,31 +406,3 @@ if __name__ == "__main__":
         scores_full  = ad.concat((scores_pathways, scores_families),
                                  join='outer', axis=1)
 
-        # # todo : open kegg and families and run:
-        # ## for selected clusters, do something with the scores: "nested clster" within the selected cluster
-        # my_selected_clusters =  [2]
-        # i_clus = 2
-        # the_cluster_spots = adata_mz.obs.loc[adata_mz.obs[f'kmeans{k}'] == i_clus,'obs']
-        # i_data = adata_mz[the_cluster_spots,:].copy()
-        # i_scores = scores_full[the_cluster_spots,:].copy()
-        #
-        # innerk = 2
-        #
-        # #  sc.pp.log1p()    sc.tl.pca()   # no log  nor pca to be done as scores are already PCs
-        #
-        # kmeans = KMeans(n_clusters=innerk, random_state=0).fit(
-        #     i_scores.X.todense())
-        # the_labels_str_l = kmeans.labels_.astype(str)
-        # i_scores.obs[f'kmeans{innerk}'] = the_labels_str_l
-        #
-        # sq.pl.spatial_scatter(
-        #     i_scores, color=[f'kmeans{innerk}'], img=False,
-        #     title='???????',
-        #     frameon=False,
-        #     #save=os.path.abspath(plot_out_path), dpi=600
-        #     )
-        # #plt.close()
-        # plt.show()
-
-
-        # print to a table the subclustering : say which pathways or families are "on" in which of the two clusters => PCA?

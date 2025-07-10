@@ -15,3 +15,4 @@ old-private-data*.tsv
 private*.tsv
 /scripts/logs/
 /scripts/data_download_prepare/logs/
+/scripts/*/logs

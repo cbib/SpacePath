@@ -83,7 +83,7 @@ if __name__ == "__main__":
         my_new_dict[SAMPLE] = counts_per_orig_db(me_annots.no_translated)
 
         me_annots.verify()
-        me_annots.keep_best_mz_id_pairs(adata_mz.var.copy())  # todo: check why this function is so slow with original identifiers
+        me_annots.keep_best_mz_id_pairs(adata_mz.var.copy())
 
         me_annots.remove_redundant_aliases()  # because using multitype 'moleculeIds' annotations
 
