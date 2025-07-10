@@ -15,7 +15,6 @@ class Test(TestCase):
              [200.2, 500.7, 800.5],
              [0., 0., 0.],
              [300.4, 600.1, 900.3]]))
-             # 3 features (m/z) x 4 spots (each spectrum is a row (spot))
         spots_names = ["s1", "s2", "s3", "s4"]
         features_names = [84.66, 88.31, 150.55]
 

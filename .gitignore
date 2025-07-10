@@ -8,6 +8,8 @@ notebooks/.ipynb_checkpoints/
 src/.ipynb_checkpoints/
 .idea
 .idea/
-log.log
+
 /resources/SMILES/HMDB-SMILES_05-07-24.tsv
 # note that HMDB SMILES tsv is too big. It is uploaded as zip, TODO: solve unzip
+*.log
+/logs/

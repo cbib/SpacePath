@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+from datetime import datetime
 from typing import List, Dict, Union
 import pandas as pd
 import numpy as np
@@ -13,13 +14,28 @@ from tqdm import tqdm
 from sklearn.utils import sparsefuncs
 
 
-def reset_log_config(logger):
+LOGFILE = datetime.now().strftime("%y-%m-%-d_%H-%M-%S-%f.log")  # global var makes sure one logfile per run is saved
+
+
+def setup_logger(logger):
     """parameters for the log file"""
-    out_log_file_name = "log.log"
+    if not os.path.exists(os.path.join(os.getcwd(), "logs")):
+        os.makedirs(os.path.join(os.getcwd(), "logs"))
     logging.basicConfig(encoding='utf-8', stream=sys.stdout)
-    file_handler = logging.FileHandler(out_log_file_name)
-    logger.addHandler(file_handler)
+    file_handler = logging.FileHandler(os.path.join("logs", LOGFILE))
+
     logger.setLevel(logging.DEBUG)
+    # make appear the time and module in the log file:
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    # make them appear in the terminal as well:
+    ch = logging.StreamHandler()
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+    logger.addHandler(file_handler)  # todo verify if this solves the different files where the logs are saved
+
     return logger
 
 

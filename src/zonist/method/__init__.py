@@ -30,7 +30,7 @@ import zonist.visualization.visualization as zviz
 
 
 logger = logging.getLogger(__name__)
-logger = helpers.reset_log_config(logger)
+logger = helpers.setup_logger(logger)
 
 module_path = Path(__file__).resolve()
 library_path = module_path.parent.parent.parent.parent
@@ -48,13 +48,13 @@ class MethodConfig(BaseModel):
     class_type: str = "method"
 
 
-class NormalizeDataConfig(MethodConfig):
-    description: str = "normalization of m/z intensities"
+class NormalizeIntensitiesConfig(MethodConfig):
+    description: str = "normalization of ions (m/z) intensities"
     method: str = "TotalIonCount"
 
 
 class ClassifyMZProtocolConfig(MethodConfig):
-    description: str = "protocol to filter m/z by the quality of molecular formulae annotations, and the spatial distributions"
+    description: str = "protocol to classify the ions (m/z) by the quality of molecular formulae annotations, and the spatial distributions"
     n_neighs_for_graph: int = 20   # for neighbors graph computation before Moran's I
     n_perms_moran_calc: Union[int, str] = 50   # for Moran's I
 
@@ -221,10 +221,10 @@ class FakeMethod:  # no-inheritance avoids instantiation: more practical
         return pathways_methods.test_function(arr, config.dummy_scale,
                                               config.dummy_cutoff)
 
-class NormalizeData:
-    config: NormalizeDataConfig
+class NormalizeIntensities:
+    config: NormalizeIntensitiesConfig
     @staticmethod
-    def run(adata_mz: ad.AnnData, config=NormalizeDataConfig()):
+    def run(adata_mz: ad.AnnData, config=NormalizeIntensitiesConfig()):
         """
         Updates the adata_mz object:
          adata_mz.X with the normalized result
@@ -241,7 +241,7 @@ class NormalizeData:
                     adata_mz.X = csr_matrix(normalised_X)
                     adata_mz.uns['norm'] = config.method
                 else:
-                    logger.info("data seems normalised, check .uns['norm']")
+                    logger.info("Intensities already normalised, check .uns['norm'] and .layers['raw_X']")
             except Exception as e:
                 logger.critical("Error %s \ncould not normalise", e)
         else:
@@ -259,19 +259,19 @@ class ClassifyMZProtocol:
             moran_I_cutoff, moran_padj_cutoff,
             SAMPLE, plot_folder, config=ClassifyMZProtocolConfig()):
         logger.info("Running %s", config.description)
-        logger.info(f">> Part a): Select m/z features with parameters: "
+        logger.info(f">> Part a: classifying the ions with thresholds: "
           f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff,
                     offSample_cutoff,fdr_cutoff)
         me_annots, mz_good_from_part_a = zmm.part_a__mz_quality_mark(
             me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff)
 
-        logger.info(f"A total of %s m/z pass MSM, offSample and FDR cutoffs.",
+        logger.info(f"  a total of %s ions pass MSM, offSample and FDR cutoffs.",
                     len(set(mz_good_from_part_a)))
         text_notice = f"valid $m/z$\n n = {len(mz_good_from_part_a)}"
         zviz.plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,
                                       plot_folder, msm_cutoff,
                                       offSample_cutoff, text_notice)
-        logger.info("saved plot (MSM, offSample, FDR) to %s", plot_folder)
+        logger.info("  saved plot (MSM, offSample, FDR) to %s", plot_folder)
         adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(
             mz_good_from_part_a)
 
@@ -280,9 +280,9 @@ class ClassifyMZProtocol:
             if adata_mz.obs.shape[0] > 100000:
                 config.n_perms_moran_calc = 3
 
-        logger.info(f">> Part b): Classifying m/z features, by :\n"
-              f"Moran's I value >= %s,  (BH) adjusted p-value <= %s", moran_I_cutoff, moran_padj_cutoff)
-        logger.info("Moran's metrics are only computed for the m/z that passed the a) filters)")
+        logger.info(f">> Part b: classifying ions based on Moran's I: "
+              f"thresholds: I >= %s,  (BH) adjusted p-value <= %s", moran_I_cutoff, moran_padj_cutoff)
+        logger.info("  metrics are only computed for the ions that passed the 'Part a'.")
         all_quality_df, mz_good_part_b, moran_mz_df = zmm.part_b__mz_quality_by_autocorr(
             adata_mz, mz_good_from_part_a, me_annots,
             moran_I_cutoff, moran_padj_cutoff, config.n_neighs_for_graph, config.n_perms_moran_calc)
@@ -291,7 +291,7 @@ class ClassifyMZProtocol:
         zviz.plot__moran_info(moran_mz_df, plot_folder,
                          SAMPLE,
                          text_notice, moran_I_cutoff, moran_padj_cutoff)
-        logger.info("saved plot (autocorrelation) to %s", plot_folder)
+        logger.info("  saved plot (autocorrelation) to %s", plot_folder)
 
         adata_mz.uns["history"]['features_n_after_mz_clean_2'] = len(
             mz_good_part_b)
@@ -301,7 +301,7 @@ class ClassifyMZProtocol:
                                                     all_quality_df)
         n_good_mz = adata_mz.var.loc[
                 adata_mz.var['final_quality'] == "good", :].shape[0]
-        logger.info("a total of %s are good quality m/z features "
+        logger.info("A total of %s ions exhibit good final quality "
                     "(check column 'final_quality' of adata_mz.var)", n_good_mz)
 
         return adata_mz

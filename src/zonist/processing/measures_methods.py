@@ -6,14 +6,14 @@ import squidpy as sq
 from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
 from sklearn.utils import sparsefuncs
-import zonist.helpers as zh
+import zonist.helpers as helpers
 from zonist.data import MetabolicPathways, MetabolomeAnnotations
 from typing import Tuple, List, Union
 import logging
 
 
 logger = logging.getLogger(__name__)
-logger = zh.reset_log_config(logger)
+logger = helpers.setup_logger(logger)
 
 
 # related to mz annotations (Metabolome Annotations) and quantifications (andata) object
@@ -231,13 +231,13 @@ def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
         pass
 
     if not "moranI" in list(copy_mz.uns.keys()) :
-        if not zh.is_log_transformed(copy_mz.X):
+        if not helpers.is_log_transformed(copy_mz.X):
             sc.pp.log1p(copy_mz)  # todo: in doc say the pertinence of log transform as data is very skewed. Furthermore: happily this 'copy object' is not returned by the function
         copy_mz = compute_moran_i(copy_mz, n_neighs=n_neighs, n_perms=n_perms)
     else:
-        print(f"will use the existing .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
+        print(f"using the available .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
         assert copy_mz.uns['moranI'].shape[0] == len(mz_good_from_part_a), (
-            "Fatal: existing moranI dimensions do not match with length of m/z list passing a) filters. "
+            "Fatal: moranI table dimensions do not match with length of ions list passing the 'Part a'."
             "Killed! (solution: delete .uns['moranI'] dataframe and try again)")
     moran_mz_df = copy_mz.uns['moranI'].copy()
     moran_mz_df['mz'] = moran_mz_df.index.astype(str).tolist()

@@ -25,7 +25,7 @@ from zonist.constants import (supported_mappings, supported_annotations,
                               mz_decimal_places)
 
 logger = logging.getLogger(__name__)
-logger = helpers.reset_log_config(logger)
+logger = helpers.setup_logger(logger)
 #logger.info("\nTime: {}".format(time.strftime('%Y%m%d-%H.%M.%S')))
 
 module_path = Path(__file__).resolve()
@@ -73,7 +73,7 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
 
             self.check_expectations_map2(df, map_key)
             #logger.info(" your loaded dataframe :\n {}".format(df.head(2)))
-            logger.info(" your loaded dataframe :\n %s", df.head(2))
+            logger.info(" %s", df.head(2))
             df = df.dropna()
             df = df.loc[df[self.style_desired] != "", :]
             df = df.loc[~df[self.style_desired].isin(["NA", "NaN"]), :]
@@ -125,15 +125,15 @@ class MetabolomeAnnotations(Dataset):
     discard_other_non_animal: bool = True
 
     def load(self):
-        logger.info("Loading annotations")
+        logger.info("Loading annotations for dataset: '%s'", self.name)
 
         self.check_expectations_1()
 
         dfs_dict = {}
         admitted_keys = list(set(supported_annotations).intersection(
             set(list(self.annotation_files.keys()))))
+        effectively_loaded = list()
         for anno_key in admitted_keys:
-            logger.info(f"  loading {anno_key}")
             try:
                 df = pd.read_csv(
                     os.path.join(
@@ -158,7 +158,7 @@ class MetabolomeAnnotations(Dataset):
             df = df.dropna(how="all")
             if anno_key == "custom_kegg":
                 anno_key = "KEGG"
-            elif anno_key == "LIPID_MAPS":  # assimilate
+            elif anno_key == "LIPID_MAPS":  # assimilate to LipidMaps
                 anno_key = "LipidMaps"
             df['database'] = anno_key
             dfs_dict[anno_key] = df
@@ -177,6 +177,7 @@ class MetabolomeAnnotations(Dataset):
             self.no_translated, self.discard_pharmaceuticals,
             self.discard_plant_compounds,  self.discard_other_non_animal,
             library_path=library_path)
+        logger.info(f" success, annotations loaded (attr `.no_translated`)")
 
     def pull_mz_quality_df(self):
         """Builds df, if quality columns exist"""
@@ -205,7 +206,7 @@ class MetabolomeAnnotations(Dataset):
                 self.df, self.mz_col, self.usable_id)
             if excess_mz_bool:
                 message_multimz = (
-                    "Identified 'multi m/z to one compound ID' cases!: Please run "
+                    "Identified cases where one compound ID maps to multiple m/z: Please run "
                     "'<metabo_annotations>.keep_best_mz_id_pairs(anndata_mz)'.")
                 logger.warning(message_multimz)
                 print(message_multimz)
@@ -231,8 +232,8 @@ class MetabolomeAnnotations(Dataset):
 
     def keep_best_mz_id_pairs(self, var_df: pd.DataFrame):
         logger.info(
-            'Resolving multiple m/z to one-compound-id (degenerate pairs):\n'
-            '  Keeps the 2 top better (m/z, id) pairs, by quality criteria.')
+            "Resolving 'multiple m/z' that map to 'one compound id':\n"
+            "  keeps the two top better (m/z, id) pairs by quality criteria.")
         basic_expected_cols = [self.mz_col, self.fdr_column,
                                self.offsample_column, self.msm_column]
         if not len(set(basic_expected_cols).intersection(
