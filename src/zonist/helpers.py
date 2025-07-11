@@ -34,7 +34,7 @@ def setup_logger(logger):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-    logger.addHandler(file_handler)  # todo verify if this solves the different files where the logs are saved
+    logger.addHandler(file_handler)
 
     return logger
 
@@ -175,7 +175,7 @@ def compute_compounds_n_per_mz(var_df, ann_df, mz_col, id_col):
     return var_df
 
 
-def get_unique_pairs_list(ann_df):
+def get_unique_pairs_list(ann_df, id_col, mz_col):
     """counts the occurrences of compound identifiers in the annotation,
     and finds the pairs of (mz, compoundID) that are unique"""
     count_df = ann_df.groupby(id_col, as_index=False).size()  # count ocurr
@@ -200,7 +200,7 @@ def get_approved_mz_id_pairs(ann_df: pd.DataFrame, var_df: pd.DataFrame,
     """
     ann_df = ann_df.loc[ann_df[mz_col].astype(float).isin(
         var_df[mz_col].astype(float)), :]
-    count_df, approved_mz_id_tuples = get_unique_pairs_list(ann_df)
+    count_df, approved_mz_id_tuples = get_unique_pairs_list(ann_df, id_col, mz_col)
 
     var_df = compute_compounds_n_per_mz(var_df, ann_df, mz_col, id_col)
     compounds_multiassigned = count_df.loc[count_df['size'] >= 2, id_col].unique()

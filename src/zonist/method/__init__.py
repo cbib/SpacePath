@@ -152,7 +152,7 @@ class ComputeMoleculesFamilies:
     @staticmethod
     def run(mol_similarities_result, molecules_ids_df,
             mydata_dir, subfolder, SAMPLE,
-            cutoff_tree=15, method_linkage="ward", metric_linkage="cosine") -> dict:
+            cutoff_tree=1, method_linkage="ward", metric_linkage="cosine") -> dict:
         print("now doing the hierarchical clustering of the computed matrix")
         # make the hierarchical clustering reproducible
         np.random.seed(42)
@@ -315,7 +315,7 @@ class SyncPathwaysAndAnnots:
             usable_id: str="",
             mz_col: str="mz",
             min_set_size: int=2,
-            max_set_size: int=500,
+            max_set_size: int=200,
             mode: str="mz_aware"  # or "default", but mz_aware is preferred
             )-> Tuple[MetabolicPathways, MetabolomeAnnotations]:
         if not usable_id == pathwaysObj.molecule_id_type:
