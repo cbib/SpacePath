@@ -285,27 +285,27 @@ def run_analysis_one_tissue(SAMPLE, annotations_dict, offSample_cutoff,
     if not os.path.exists(plot_folder):
             os.mkdir(plot_folder)
 
-    # annots_obj = zd.MetabolomeAnnotations(
-    #     name=SAMPLE, data_dir=data_centralized_folder,
-    #     subfolder=subfolder, annotation_files=annotations_dict)
-    # annots_obj.load()  # load annotations
-    #
-    # normalize_classify_and_save(SAMPLE, annots_obj, offSample_cutoff,
-    #     msm_cutoff, fdr_cutoff,  moran_I_cutoff, moran_padj_cutoff,
-    #     data_centralized_folder, subfolder, plot_folder)
-    #
-    # clean_annotations_and_save(SAMPLE, annots_obj, pathways_types,
-    #     data_centralized_folder, subfolder)
-    # del annots_obj   # no longer needed as the clean versions are now as .tsv
-    #
-    # compute_clustering_of_mzs(SAMPLE, pathways_types, clustering_parameters,
-    #     data_centralized_folder,  subfolder, plot_folder)
-    #
-    # compute_differential_analysis_of_mzs(SAMPLE, pathways_types,
-    #      clustering_parameters,  data_centralized_folder,  subfolder)
-    #
-    # compute_pathway_scores(SAMPLE, pathways_types, min_pathway_size,
-    #      data_centralized_folder,  subfolder)
+    annots_obj = zd.MetabolomeAnnotations(
+        name=SAMPLE, data_dir=data_centralized_folder,
+        subfolder=subfolder, annotation_files=annotations_dict)
+    annots_obj.load()  # load annotations
+
+    normalize_classify_and_save(SAMPLE, annots_obj, offSample_cutoff,
+        msm_cutoff, fdr_cutoff,  moran_I_cutoff, moran_padj_cutoff,
+        data_centralized_folder, subfolder, plot_folder)
+
+    clean_annotations_and_save(SAMPLE, annots_obj, pathways_types,
+        data_centralized_folder, subfolder)
+    del annots_obj   # no longer needed as the clean versions are now as .tsv
+
+    compute_clustering_of_mzs(SAMPLE, pathways_types, clustering_parameters,
+        data_centralized_folder,  subfolder, plot_folder)
+
+    compute_differential_analysis_of_mzs(SAMPLE, pathways_types,
+         clustering_parameters,  data_centralized_folder,  subfolder)
+
+    compute_pathway_scores(SAMPLE, pathways_types, min_pathway_size,
+         data_centralized_folder,  subfolder)
 
     compute_molecules_families(SAMPLE, pathways_types, cutoff_tree,
           data_centralized_folder,  subfolder, plot_folder)
