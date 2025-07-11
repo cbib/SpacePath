@@ -14,7 +14,7 @@ import json
 
 def outside_tissue_spots__to_json(
         spots_domains_df, out_tissue_domains: List[str],
-        mydata_dir, subfolder, SAMPLE)->None:
+        data_centralized_folder, subfolder, SAMPLE)->None:
     spots_domains_df['obs'] = spots_domains_df['obs'].astype(str).tolist()
     spots_out_list = spots_domains_df.loc[
         spots_domains_df['squidpy_domains'].isin(out_tissue_domains),
@@ -22,7 +22,7 @@ def outside_tissue_spots__to_json(
 
     output_d =  {'out_tissue_spots': list(spots_out_list)}
 
-    with open(os.path.join(mydata_dir, subfolder,
+    with open(os.path.join(data_centralized_folder, subfolder,
                            f'{SAMPLE}_out_tissue.json'), "w") as f:
         json.dump(output_d, f)
 
@@ -30,9 +30,9 @@ def outside_tissue_spots__to_json(
 
 if __name__ == "__main__":
     # define here my input
-    mydata_dir = "../../../data"
+    data_centralized_folder = "../../../data"
     my_csv_table_path = "../../private-datasets-parameters.tsv"
-    plot_parent_folder = "../../../figures/"
+    figures_centralized_folder = "../../../figures/"
 
     # start
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
@@ -59,14 +59,14 @@ if __name__ == "__main__":
         select_spots_yes_no = row["perform_spots_selection"]
         print("\nSample: ", SAMPLE)
         subfolder = SAMPLE
-        plot_folder = os.path.join(plot_parent_folder, SAMPLE)
+        plot_folder = os.path.join(figures_centralized_folder, SAMPLE)
         if not os.path.exists(plot_folder):
             os.mkdir(plot_folder)
 
-        if not os.path.exists(os.path.join(mydata_dir, subfolder,
+        if not os.path.exists(os.path.join(data_centralized_folder, subfolder,
                             f'{SAMPLE}_out_tissue.json')):
             adata_mz = ad.read_h5ad(filename=os.path.join(
-                mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
+                data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
             adata_mz = zm.NormalizeIntensities.run(adata_mz)
 
             # PCA
@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
             outside_tissue_spots__to_json(adata_mz.obs[["obs", "squidpy_domains"]],
                                           out_tissue_domains,
-                                          mydata_dir, subfolder, SAMPLE)
+                                          data_centralized_folder, subfolder, SAMPLE)
 
             print("Spots outside tissue saved to .JSON file")
         else:

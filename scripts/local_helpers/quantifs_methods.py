@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import anndata as ad
 import numpy as np
@@ -11,7 +11,7 @@ from sklearn.cluster import KMeans
 from sklearn.utils import sparsefuncs
 from zonist.data import MetabolicPathways, MetabolomeAnnotations
 import zonist.helpers as zh
-import zonist.methods as zm
+import zonist.method as zm
 
 
 

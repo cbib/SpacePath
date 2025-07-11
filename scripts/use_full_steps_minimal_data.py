@@ -18,26 +18,26 @@ from local_helpers.local_viz import customized_clustermap
 import pickle
 
 
-def save_clean_annots(adata_mz, me_annots, me_refmap, pwtype) -> None:
+def save_clean_annots(adata_mz, annots_obj, me_refmap, pwtype) -> None:
     if pwtype == "WIKI":
-        me_annots.usable_id = "moleculeIds"
+        annots_obj.usable_id = "moleculeIds"
     elif pwtype == "KEGG":
-        me_annots.usable_id = "KEGG"
+        annots_obj.usable_id = "KEGG"
 
     if pwtype == "WIKI":
-        me_annots.verify()
+        annots_obj.verify()
     elif pwtype == "KEGG":
-        me_annots.convert_ids_to_kegg(me_refmap.table)
+        annots_obj.convert_ids_to_kegg(me_refmap.table)
 
-    #me_annots.keep_best_mz_id_pairs(adata_mz.var.copy())  #
+    annots_obj.keep_best_mz_id_pairs(adata_mz.var.copy())
 
     if pwtype == "WIKI":
-        me_annots.remove_redundant_aliases()  # when using multitype 'moleculeIds' annotations
+        annots_obj.remove_redundant_aliases()  # when using multitype 'moleculeIds' annotations
 
-    o_fi = os.path.join(mydata_dir,
-                        subfolder, f'{SAMPLE}-{pwtype}-CleanAnnots.tsv')
+    o_fi = os.path.join(data_centralized_folder,
+                        subfolder, f'{SAMPLE}-{pwtype}-CleanAnnotations.tsv')
 
-    me_annots.df.to_csv(o_fi, sep='\t', header=True, index=False)
+    annots_obj.df.to_csv(o_fi, sep='\t', header=True, index=False)
 
 
 def wrapper_clustering(adata_mz, k,
@@ -79,8 +79,8 @@ def wrapper_differential(adata_mz, k):
 def open_clean_annots(SAMPLE, subfolder, pwtypes=["KEGG", "WIKI"]):
     annots_dict = {}
     for pwtype in pwtypes:
-        tmpfi = os.path.join(mydata_dir,
-                         subfolder, f'{SAMPLE}-{pwtype}-CleanAnnots.tsv')
+        tmpfi = os.path.join(data_centralized_folder,
+                         subfolder, f'{SAMPLE}-{pwtype}-CleanAnnotations.tsv')
         annots_dict[pwtype] = pd.read_csv(tmpfi,
                              sep='\t', header=0, index_col=None)
     return annots_dict
@@ -169,7 +169,7 @@ def save_scores(adata_mz, annots_dict,
         max_set_size=sets_args_dict[pwtype]['max_set_size'],
         mode="mz_aware")
 
-    ofipw = os.path.join(mydata_dir, subfolder,
+    ofipw = os.path.join(data_centralized_folder, subfolder,
                          f'{SAMPLE}-scores-{pwtype}.h5ad')
 
     scores_adata = run_pathway_scores_steps(adata_mz.copy(),
@@ -190,9 +190,9 @@ if __name__ == "__main__":
     bad or good quality of m/z features
     """
     # define here my files and dirs
-    mydata_dir = "../../data"
-    my_csv_table_path = "../small-test-parameters.tsv"
-    plot_parent_folder = "../../figures/"
+    data_centralized_folder = "../../data"
+    my_csv_table_path = "../example-dataset-parameters.tsv"
+    figures_centralized_folder = "../../figures/"
 
     force_for_these = []   # fill if need of re-computing Moran's I  # e.g. "LP-example0"
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     ]
 
     me_refmap = zd.MetaboliteIdsMappings(
-        data_dir=mydata_dir,
+        data_dir=data_centralized_folder,
         subfolder="metabolites-mappings",
         mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
                        'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv",
@@ -229,20 +229,20 @@ if __name__ == "__main__":
 
         subfolder = SAMPLE
 
-        plot_folder = os.path.join(plot_parent_folder, SAMPLE)
+        plot_folder = os.path.join(figures_centralized_folder, SAMPLE)
         if not os.path.exists(plot_folder):
             os.mkdir(plot_folder)
 
         annotations_to_use = row["annotations_to_use"].split(" ")
-        anno_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
-        me_annots = zd.MetabolomeAnnotations(
-            name=SAMPLE, data_dir=mydata_dir,
-            subfolder=subfolder, annotation_files=anno_dict)
-        me_annots.load()  # load annotations
+        annotations_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
+        annots_obj = zd.MetabolomeAnnotations(
+            name=SAMPLE, data_dir=data_centralized_folder,
+            subfolder=subfolder, annotation_files=annotations_dict)
+        annots_obj.load()  # load annotations
 
         adata_mz = ad.read_h5ad(filename=os.path.join(
-            mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
-        print("Loaded object", adata_mz.uns["history"])
+            data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
+        print("Loaded object", adata_mz)
 
 
         ##  1. classify mzs as good or bad quality
@@ -258,13 +258,13 @@ if __name__ == "__main__":
             except KeyError:
                 pass
 
-            me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots,
+            annots_obj, adata_mz = zmm.match_adata_mz_and_annots(annots_obj,
                                                             adata_mz)
 
             adata_mz = zm.NormalizeIntensities.run(adata_mz)
 
             adata_mz = zm.ClassifyMZProtocol.run(adata_mz,
-                me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff,
+                annots_obj, msm_cutoff, offSample_cutoff, fdr_cutoff,
                 moran_I_cutoff, moran_padj_cutoff,
                 SAMPLE, plot_folder
             )
@@ -272,7 +272,7 @@ if __name__ == "__main__":
             print(adata_mz.uns['history'])
 
             adata_mz.write_h5ad(filename=os.path.join(
-                mydata_dir, subfolder, f"{SAMPLE}.h5ad"))
+                data_centralized_folder, subfolder, f"{SAMPLE}.h5ad"))
 
         ## 2. Clean annotations that will be used:
 
@@ -284,18 +284,18 @@ if __name__ == "__main__":
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                    "mz"].astype(str).tolist()]
 
-        me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots,
+        annots_obj, adata_mz = zmm.match_adata_mz_and_annots(annots_obj,
                                                             adata_mz)
 
         for pwtype in ["KEGG", "WIKI"]:
-            save_clean_annots(adata_mz, me_annots, me_refmap, pwtype)
-        del me_annots # will no longer be used because clean ones are in tsv now
+            save_clean_annots(adata_mz, annots_obj, me_refmap, pwtype)
+        del annots_obj # will no longer be used because clean versions are in tsv now
 
         ##  3. Clustering step with the good quality mzs
 
         adata_mz = wrapper_clustering(adata_mz, k=k)  # modified to make moran cutoff as zero :)
 
-        adata_mz.obs[["obs", f"kmeans{k}"]].to_csv(os.path.join(mydata_dir, subfolder,
+        adata_mz.obs[["obs", f"kmeans{k}"]].to_csv(os.path.join(data_centralized_folder, subfolder,
                              f'{SAMPLE}-clusters-k-{k}.txt'), index=False)
 
         plot_out_path = os.path.join(plot_folder, f'{SAMPLE}-.png')
@@ -333,7 +333,7 @@ if __name__ == "__main__":
         mol_similarities_result = zm.ComputeMoleculesSimilarityMatrix.run(
             molecules_ids_list=molecules_ids_df["moleculeIds"] )
 
-        with open(os.path.join(mydata_dir, subfolder,
+        with open(os.path.join(data_centralized_folder, subfolder,
                                f"{SAMPLE}-mol-similarities-matrix.pkl"),"wb") as f:
             pickle.dump(mol_similarities_result, f)
 
@@ -347,11 +347,11 @@ if __name__ == "__main__":
 
         computed_dict = zm.ComputeMoleculesFamilies.run(
             mol_similarities_result,
-            molecules_ids_df, mydata_dir, subfolder, SAMPLE,
+            molecules_ids_df, data_centralized_folder, subfolder, SAMPLE,
             cutoff_tree=cutoff_tree)
 
         with open(os.path.join(
-                mydata_dir, subfolder, f"{SAMPLE}-mol-fam-dict.pkl"),
+                data_centralized_folder, subfolder, f"{SAMPLE}-mol-fam-dict.pkl"),
                 "wb") as f:
             pickle.dump(computed_dict, f)
 
@@ -382,11 +382,11 @@ if __name__ == "__main__":
         mapped_elems = {}
         for pwtype in ["WIKI","KEGG"]:
             mapped_elems[pwtype] = save_scores(adata_mz, annots_dict, pwtype,
-                                       sets_args_dict, SAMPLE, mydata_dir)
+                                       sets_args_dict, SAMPLE, data_centralized_folder)
         # now families *without* the things that mapped in the wiki and kegg
         set_mapped = set(mapped_elems['WIKI']).union(set(mapped_elems["KEGG"]))
         mapped_in_families = save_scores(adata_mz, annots_dict, "FAMILIES",
-                    sets_args_dict, SAMPLE, mydata_dir,
+                    sets_args_dict, SAMPLE, data_centralized_folder,
                     not_for_families=list(set_mapped))
 
         ##   Annotation step (new) (what to do???)
@@ -394,10 +394,10 @@ if __name__ == "__main__":
         # combine them
         # on the selected cluster, do a nested clustering k=2 , make a test
         # plot
-        scores_families = ad.read_h5ad(filename=os.path.join(mydata_dir, subfolder,
+        scores_families = ad.read_h5ad(filename=os.path.join(data_centralized_folder, subfolder,
                          f'{SAMPLE}-scores-FAMILIES.h5ad'))
         chosen_type_pathway = "KEGG" # or WIKI if desired
-        scores_pathways = ad.read_h5ad(filename=os.path.join(mydata_dir, subfolder,
+        scores_pathways = ad.read_h5ad(filename=os.path.join(data_centralized_folder, subfolder,
                          f'{SAMPLE}-scores-{chosen_type_pathway}.h5ad'))
 
         scores_families.var['set_type'] = "families"

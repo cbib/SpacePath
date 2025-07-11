@@ -37,7 +37,7 @@ def format_properly_df(df):
 
 def open_coords_file(sample):
     mycoords1 = pd.read_csv(
-        os.path.join(mydata_dir, "heiland-msi", "ancient",
+        os.path.join(data_centralized_folder, "heiland-msi", "ancient",
                      f"coords_{sample}.tsv"),
         sep="\t", comment="#", header=0, index_col=0)
 
@@ -88,17 +88,17 @@ samples = [
     "248_T", "259_T", "260_T", "262_T", "269_T", "275_T"
 ]
 
-mydata_dir = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
+data_centralized_folder = "/home/johanna/spatial_thesis/spatial_metabolomics/data"
 # "/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
-anno_dict = {'HMDB': "Metaspace_annotations_943peaks.csv"}
+annotations_dict = {'HMDB': "Metaspace_annotations_943peaks.csv"}
 
-me_annots = zd.MetabolomeAnnotations(name="heiland",
-                                     data_dir=mydata_dir,
+annots_obj = zd.MetabolomeAnnotations(name="heiland",
+                                     data_dir=data_centralized_folder,
                                      subfolder="heiland-msi",
-                                     annotation_files=anno_dict)
-me_annots.load()
+                                     annotation_files=annotations_dict)
+annots_obj.load()
 
-cool = me_annots.no_translated[["mz",
+cool = annots_obj.no_translated[["mz",
                              "moleculeIds"]].drop_duplicates()  # in HMDB, mz and moleculeIds are 1:1
 hmdb_mz_dict = dict()
 for i, r in cool.iterrows():
@@ -110,7 +110,7 @@ print("finding the min value of all the matrices")
 min_value = 999  # arbitrary initial value 999
 for k in samples:
     df = pd.read_csv(
-        os.path.join(mydata_dir, "heiland-msi",
+        os.path.join(data_centralized_folder, "heiland-msi",
                      "ancient",
                      f'MALDI_{k}.tsv'),
         sep="\t", comment="#", header=0, index_col=0)
@@ -124,7 +124,7 @@ for k in samples:
 
 
 shift_all_matrices_to_right_and_save(dict_of_dfs, dict_of_mz_arrs, min_value,
-                                    out_dir=mydata_dir)
+                                    out_dir=data_centralized_folder)
 
 print("done")
 

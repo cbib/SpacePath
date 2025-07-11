@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
    # define here my files and dirs
 
-    mydata_dir = "../../data"
+    data_centralized_folder = "../../data"
 
 
     my_csv_table_path_1 = "../public-datasets-parameters.tsv"  # "../../small_test.csv"
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
 # start
     me_refmap = zd.MetaboliteIdsMappings(
-        data_dir=mydata_dir,
+        data_dir=data_centralized_folder,
         subfolder="metabolites-mappings",
         mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
                        'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv",
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
         if pwtype == "WIKI":
             pathwaysObj = zd.MetabolicPathways(
-                data_dir=mydata_dir,
+                data_dir=data_centralized_folder,
                 subfolder="metabolites-mappings",
                 file="WIKIPATHWAYS_human_multi_id_redundant.mmt"
             )
@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
         elif pwtype == "KEGG":
             pathwaysObj = zd.MetabolicPathways(
-                data_dir=mydata_dir,
+                data_dir=data_centralized_folder,
                 subfolder="metabolites-mappings",
                 file="KEGG_hsa_pathways_compounds_R110.gmt"
             )
@@ -66,26 +66,26 @@ if __name__ == "__main__":
             subfolder = SAMPLE
 
             annotations_to_use = row["annotations_to_use"].split(" ")
-            anno_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
+            annotations_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
 
-            me_annots = zd.MetabolomeAnnotations(
-                name=SAMPLE, data_dir=mydata_dir, subfolder=subfolder,
-                annotation_files=anno_dict)
+            annots_obj = zd.MetabolomeAnnotations(
+                name=SAMPLE, data_dir=data_centralized_folder, subfolder=subfolder,
+                annotation_files=annotations_dict)
 
-            o_fi = os.path.join(mydata_dir,
-                                 subfolder, f'{SAMPLE}-{pwtype}-CleanAnnots.tsv')
+            o_fi = os.path.join(data_centralized_folder,
+                                 subfolder, f'{SAMPLE}-{pwtype}-CleanAnnotations.tsv')
             #ok= True
             if not os.path.exists(o_fi):
 
                 if pwtype == "WIKI":
-                    me_annots.usable_id = "moleculeIds"
+                    annots_obj.usable_id = "moleculeIds"
                 elif pwtype == "KEGG":
-                    me_annots.usable_id = "KEGG"
+                    annots_obj.usable_id = "KEGG"
 
-                me_annots.load()
+                annots_obj.load()
 
                 adata_mz = ad.read_h5ad(filename=os.path.join(
-                    mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
+                    data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
 
                 print(adata_mz.uns["history"])
                 print("MANDATORY: take away bad quality m/z")  # todo: how to make an alert ?
@@ -93,19 +93,19 @@ if __name__ == "__main__":
                            adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                            "mz"].astype(str).tolist()]
                 allgoodmz = adata_mz.var['mz'].astype(float).to_numpy()
-                me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots, adata_mz)
+                annots_obj, adata_mz = zmm.match_adata_mz_and_annots(annots_obj, adata_mz)
 
                 if pwtype == "WIKI":
-                    me_annots.verify()
+                    annots_obj.verify()
                 elif pwtype == "KEGG":
-                    me_annots.convert_ids_to_kegg(me_refmap.table)
+                    annots_obj.convert_ids_to_kegg(me_refmap.table)
 
-                me_annots.keep_best_mz_id_pairs(adata_mz.var.copy())
+                annots_obj.keep_best_mz_id_pairs(adata_mz.var.copy())
 
                 if pwtype == "WIKI":
-                    me_annots.remove_redundant_aliases()  # when using multitype 'moleculeIds' annotations
+                    annots_obj.remove_redundant_aliases()  # when using multitype 'moleculeIds' annotations
 
-                me_annots.df.to_csv(o_fi, sep='\t', header=True, index=False)
+                annots_obj.df.to_csv(o_fi, sep='\t', header=True, index=False)
                 print("saved ", o_fi)
 
             else:

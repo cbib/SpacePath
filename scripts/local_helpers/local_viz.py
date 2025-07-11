@@ -42,13 +42,13 @@ def plot_standard_computs(adata,
         plt.show()
 
 
-def plot_selected_kegg_compound_ids(adata, me_annots,
+def plot_selected_kegg_compound_ids(adata, annots_obj,
                                     metabolites_kegg_ids: List[str], sample, plot_folder)-> None:
 
     for item in metabolites_kegg_ids:
-        item_name = me_annots.df.loc[
-            me_annots.df["KEGG"] == item, "moleculeNames"].item()
-        mz_here = me_annots.df.loc[me_annots.df["KEGG"] == item, "mz"].item()
+        item_name = annots_obj.df.loc[
+            annots_obj.df["KEGG"] == item, "moleculeNames"].item()
+        mz_here = annots_obj.df.loc[annots_obj.df["KEGG"] == item, "mz"].item()
         tmpstr = os.path.join(plot_folder,
                               f'{sample}-{item_name}.png')
         sq.pl.spatial_scatter(adata, color=[item],

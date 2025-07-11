@@ -27,8 +27,8 @@ if __name__ == "__main__":
 
     # define here my files and dirs
 
-    mydata_dir = "../../data"
-    plot_parent_folder = "../../figures/"
+    data_centralized_folder = "../../data"
+    figures_centralized_folder = "../../figures/"
 
     my_csv_table_path_1 = "../public-datasets-parameters.tsv"  # "../../small_test.csv"
     my_csv_table_path_2 = "../private-datasets-parameters.tsv"  # "../../small_test.csv"
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     print("doing with new version of 'aliases collapse' that is done before the pathways mapping")
 
     pathwaysObj = zd.MetabolicPathways(
-        data_dir=mydata_dir,
+        data_dir=data_centralized_folder,
         subfolder="metabolites-mappings",
         file="WIKIPATHWAYS_human_multi_id_redundant.mmt"
     )
@@ -57,20 +57,20 @@ if __name__ == "__main__":
         min_pathway_size = row["min_pathway_size"]
         print("\nSample: ", SAMPLE)
         subfolder = SAMPLE
-        plot_folder = os.path.join(plot_parent_folder, SAMPLE)
+        plot_folder = os.path.join(figures_centralized_folder, SAMPLE)
         annotations_to_use = row["annotations_to_use"].split(" ")
-        anno_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
+        annotations_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
 
-        me_annots = zd.MetabolomeAnnotations(
-            name=SAMPLE, data_dir=mydata_dir, subfolder=subfolder,
-            annotation_files=anno_dict)
+        annots_obj = zd.MetabolomeAnnotations(
+            name=SAMPLE, data_dir=data_centralized_folder, subfolder=subfolder,
+            annotation_files=annotations_dict)
 
-        me_annots.usable_id = "moleculeIds"
+        annots_obj.usable_id = "moleculeIds"
 
-        me_annots.load()
+        annots_obj.load()
 
         adata_mz = ad.read_h5ad(filename=os.path.join(
-            mydata_dir, subfolder, f'{SAMPLE}.h5ad'))
+            data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
 
         print(adata_mz.uns["history"])
         print("MANDATORY: take away bad quality m/z")  # todo: how to make an alert ?
@@ -78,20 +78,20 @@ if __name__ == "__main__":
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                    "mz"].astype(str).tolist()]
 
-        me_annots, adata_mz = zmm.match_adata_mz_and_annots(me_annots, adata_mz)
+        annots_obj, adata_mz = zmm.match_adata_mz_and_annots(annots_obj, adata_mz)
 
-        my_new_dict[SAMPLE] = counts_per_orig_db(me_annots.no_translated)
+        my_new_dict[SAMPLE] = counts_per_orig_db(annots_obj.no_translated)
 
-        me_annots.verify()
-        me_annots.keep_best_mz_id_pairs(adata_mz.var.copy())
+        annots_obj.verify()
+        annots_obj.keep_best_mz_id_pairs(adata_mz.var.copy())
 
-        me_annots.remove_redundant_aliases()  # because using multitype 'moleculeIds' annotations
+        annots_obj.remove_redundant_aliases()  # because using multitype 'moleculeIds' annotations
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
         pw1, ann1_df = zm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
-            me_annots.df.copy(),
+            annots_obj.df.copy(),
             usable_id="moleculeIds",
             min_set_size=pwsizeONE,
             max_set_size=200 )
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
         pws_obj_2, annots_2_df = zm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
-            me_annots.df.copy(),
+            annots_obj.df.copy(),
             usable_id="moleculeIds",
             min_set_size=min_pathway_size,
             max_set_size=200,
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
         name_sample.append(SAMPLE)
         mz_ok = annots_2_df['mz'].unique()
-        theIDok = annots_2_df[me_annots.usable_id].unique()
+        theIDok = annots_2_df[annots_obj.usable_id].unique()
         mz_mapped_to_pathways.append(len(mz_ok))
         try:
             compound_ids_to_mz_ratio_after_pathway_mapped.append(
