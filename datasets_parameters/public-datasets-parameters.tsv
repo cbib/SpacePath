@@ -20,7 +20,7 @@ LP-brain-rat-1	2025-04-11_12h18m07s	HMDB LipidMaps	1.3	YES	0.2	0.5	0.5	0.02	0.05
 LP-brain-mouse-2	2025-04-10_14h45m11s	HMDB LipidMaps CoreMetabolome	0.1	YES	0.2	0.2	0.5	0.02	0.05	Kmeans:5	KEGG WIKI	2	1	4	
 LP-brain-rat-3	2025-04-10_15h11m23s	HMDB LipidMaps	2	YES	0.2	0.15	0.5	0.02	0.05	Kmeans:5	KEGG WIKI	2	1	4	
 LP-eye	2018-03-20_11h02m36s	HMDB LIPID_MAPS	1	YES	0.3	0.1	0.5	0.02	0.05	Kmeans:5	KEGG WIKI	2	1	4	
-LP-cerebellum-rat	2025-04-10_14h53m38s	HMDB LipidMaps	0.1	NO	0.55	0.1	0.5	0.02	0.05	Kmeans:5	KEGG WIKI	2	1	4	
+LP-cerebellum-rat	2025-04-10_14h53m38s	HMDB LipidMaps	0.1	NO	0.3	0.4	0.5	0.02	0.05	Kmeans:5	KEGG WIKI	2	1	4	
 MALDI_248_T	not provided	HMDB	1	NO	0.2	0.1	0.5	0.02	0.05	Kmeans:5	KEGG WIKI	2	1	4	
 MALDI_259_T	not provided	HMDB	1	NO	0.2	0.1	0.5	0.02	0.05	Kmeans:5	KEGG WIKI	2	1	4	
 MALDI_260_T	not provided	HMDB	1	NO	0.2	0.1	0.5	0.02	0.05	Kmeans:5	KEGG WIKI	2	1	4	

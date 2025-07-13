@@ -5,6 +5,8 @@ import anndata as ad
 import zonist.data as zd
 import zonist.method as zm
 import zonist.processing.measures_methods as zmm
+from scipy.sparse import csr_matrix
+
 from local_helpers.local_helpers import provide_annotation_dict
 from local_helpers.quantifs_methods import differential_results_filter
 from local_helpers.quantifs_methods import run_pathway_scores_steps
@@ -35,21 +37,95 @@ def do_the_next():
     print("ok")
     return 0
 
-def compute_molecules_families(SAMPLE, pathways_types, cutoff_tree,
+def compute_differential_families_and_pathways(SAMPLE,   pathways_types,
+        clustering_parameters, data_centralized_folder,subfolder):
+    str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
+    clusters_df = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
+                                           f'{SAMPLE}-clusters-{str_out}.txt'),
+                              header=0)
+    pathways_types += ["FAMILIES"]
+    list_of_scores_objects =  list()
+    for u in pathways_types:
+        adata_scores = ad.read_h5ad(filename=os.path.join(data_centralized_folder, subfolder,
+                         f'{SAMPLE}-scores-{u}.h5ad'))
+        adata_scores.var['set_type'] = u
+        list_of_scores_objects.append(adata_scores)
+        del adata_scores
+    joined = ad.concat(adatas=list_of_scores_objects,
+              join='outer', axis=1)
+    joined.obs[str_out] = pd.Categorical(clusters_df[str_out].tolist(),
+                                   categories=clusters_df[
+                                       str_out].unique())
+    joined.X = csr_matrix(joined.X.todense() + abs(joined.X.min().min()) ) #  shift to avoid negative values
+    print("\n========\n", joined, "\n========\n")
+    top_differential = differential_routine(joined, group_str=str_out)
+    all_l = top_differential.names.unique()
+    all_fam = [k for k in all_l if k.startswith("MolFam")]
+    wiki_p = [k for k in all_l if k.startswith("WP")]
+    kegg_p = [k for k in all_l if k.startswith("hsa")]
+
+
+    print("differential_stuff:", SAMPLE  )
+    print("   families:", len(all_fam)  )
+    print("   kegg:", len(kegg_p)  )
+    print("   wikipw:", len(wiki_p)  )
+
+
+
+
+
+
+def compute_families_scores(SAMPLE,  min_family_size,
+          data_centralized_folder,  subfolder):
+
+    families_obj = zd.MetabolicPathways(
+        data_dir=data_centralized_folder,
+        subfolder=subfolder,
+        file=f"{SAMPLE}-molecules_families.mmt"
+    )
+    families_obj.molecule_id_type = 'moleculeIds'
+    families_obj.load()
+
+    adata_mz = safe_load_processed_data(SAMPLE, subfolder,
+                                        data_centralized_folder)
+
+    clean_annots_nokegg_ids = pd.read_csv(
+        os.path.join(data_centralized_folder, subfolder,
+                     f'{SAMPLE}-WIKI-CleanAnnotations.tsv'),
+        sep='\t', header=0, index_col=None)
+
+    # families_obj.intersect_with_annotations(clean_annots_nokegg_ids,
+    #                                     usable_id='moleculeIds',
+    #                                     mz_col='mz')
+    families_obj, annots_df = zm.SyncPathwaysAndAnnots.run(
+        families_obj.model_copy(),
+        clean_annots_nokegg_ids,
+        usable_id='moleculeIds',
+        min_set_size=min_family_size)
+
+    scores_adata = run_pathway_scores_steps(adata_mz.copy(),
+                                            families_obj,
+                                            annots_df,
+                                            usable_id='moleculeIds')
+    
+    out_file = os.path.join(data_centralized_folder, subfolder,
+                         f'{SAMPLE}-scores-FAMILIES.h5ad')
+    scores_adata.write_h5ad(out_file)
+
+
+def compute_molecules_families(SAMPLE,  cutoff_tree,
           data_centralized_folder,  subfolder, plot_folder):
     top_differential = pd.read_csv(
         os.path.join(data_centralized_folder, subfolder,
-            f'{SAMPLE}-top-differential-mzs.tsv'), sep='\t', header=0)
+                     f'{SAMPLE}-top-differential-mzs.tsv'), sep='\t', header=0)
 
-    # adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
-    #     SAMPLE, pathways_types, subfolder, data_centralized_folder,
-    #     other_adequate_mzs= top_differential['names'].astype(str).unique().tolist()
-    # )
-    clean_annots_dict = read_clean_annotations(
-        SAMPLE, pathways_types, subfolder,data_centralized_folder
-    )
+    clean_annots_nokegg_ids = pd.read_csv(
+        os.path.join(data_centralized_folder, subfolder,
+                     f'{SAMPLE}-WIKI-CleanAnnotations.tsv'),
+        sep='\t', header=0, index_col=None)
+
     molecules_ids_df = prepare_mols_df(top_differential,
-                                       clean_ann_df=clean_annots_dict["WIKI"])
+                                       clean_ann_df=clean_annots_nokegg_ids)
 
     mol_similarities_result = zm.ComputeMoleculesSimilarityMatrix.run(
         molecules_ids_list=molecules_ids_df["moleculeIds"])
@@ -76,10 +152,8 @@ def compute_molecules_families(SAMPLE, pathways_types, cutoff_tree,
 
     computed_dendrogram = computed_dict['computed_dendrogram']
 
-    doplotfam = True
-    if doplotfam:
-        plot_families(molecules_ids_df, mol_similarities_result,
-                      computed_dendrogram, plot_folder, SAMPLE)
+    plot_families(molecules_ids_df, mol_similarities_result,
+                  computed_dendrogram, plot_folder, SAMPLE)
 
 
 def compute_pathway_scores(SAMPLE, pathways_types, min_pathway_size,
@@ -110,11 +184,12 @@ def compute_pathway_scores(SAMPLE, pathways_types, min_pathway_size,
 
         scores_adata = run_pathway_scores_steps(adata_mz.copy(), pathways_obj,
             annots_df,  usable_id=sets_args_dict[pwtype]['id_type'])
+        print(scores_adata.var.shape)
         scores_adata.write_h5ad(out_file)
         print("youpi, saved scores")
+        print("")
         #mapped_elements += scores_adata.uns['current_pathways_df']['mz'].unique(
         #).tolist()
-
 
 
 def compute_differential_analysis_of_mzs(SAMPLE, pathways_types,
@@ -128,24 +203,10 @@ def compute_differential_analysis_of_mzs(SAMPLE, pathways_types,
         f'{SAMPLE}-clusters-{str_out}.txt'), header=0)
     adata_mz.obs[str_out] = pd.Categorical(clusters_df[str_out].tolist(),
                                            categories=clusters_df[str_out].unique())
-
     sc.pp.log1p(adata_mz)
     print(
         "computing the differential abundances of all the m/z features, cluster to cluster, for all clusters")
-    sc.tl.rank_genes_groups(adata_mz, groupby=str_out,
-                            groups='all',
-                            reference='rest',
-                            method='wilcoxon',
-                            key_added="top_feats_by_cluster",
-                            corr_method='benjamini-hochberg')
-
-    differential_results_by_cluster = sc.get.rank_genes_groups_df(
-        adata_mz, key="top_feats_by_cluster",
-        group=None)  # returns all groups
-
-    top_differential = differential_results_filter(
-        differential_results_by_cluster)
-
+    top_differential = differential_routine(adata_mz, group_str=str_out)
     top_differential.to_csv(os.path.join(data_centralized_folder, subfolder,
             f'{SAMPLE}-top-differential-mzs.tsv'),
                               sep='\t', header=True, index=False)
@@ -187,7 +248,7 @@ def compute_leiden__weighted_by_spatial_graph(
     return datacopy, the_labels_str_l
 
 
-def compute_clustering_of_mzs(SAMPLE, pathways_types, clustering_parameters,
+def compute_clustering_of_spots(SAMPLE, pathways_types, clustering_parameters,
        data_centralized_folder,  subfolder, plot_folder ):
     # subset to agree with the clean annotations
     adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
@@ -298,7 +359,7 @@ def run_analysis_one_tissue(SAMPLE, annotations_dict, offSample_cutoff,
         data_centralized_folder, subfolder)
     del annots_obj   # no longer needed as the clean versions are now as .tsv
 
-    compute_clustering_of_mzs(SAMPLE, pathways_types, clustering_parameters,
+    compute_clustering_of_spots(SAMPLE, pathways_types, clustering_parameters,
         data_centralized_folder,  subfolder, plot_folder)
 
     compute_differential_analysis_of_mzs(SAMPLE, pathways_types,
@@ -307,14 +368,16 @@ def run_analysis_one_tissue(SAMPLE, annotations_dict, offSample_cutoff,
     compute_pathway_scores(SAMPLE, pathways_types, min_pathway_size,
          data_centralized_folder,  subfolder)
 
-    compute_molecules_families(SAMPLE, pathways_types, cutoff_tree,
-          data_centralized_folder,  subfolder, plot_folder)
+    compute_molecules_families(SAMPLE,  cutoff_tree,
+           data_centralized_folder,  subfolder, plot_folder)
 
-    # compute_families_scores(SAMPLE, pathways_types , min_family_size,
-     #      data_centralized_folder,  subfolder)
+    compute_families_scores(SAMPLE,  min_family_size,
+          data_centralized_folder,  subfolder)
 
-    # compute_differential_families_and_pathways(SAMPLE,   pathways_types,
-    # clustering_parameters,
-     #      data_centralized_folder,subfolder)
+    compute_differential_families_and_pathways(SAMPLE,   pathways_types,
+        clustering_parameters, data_centralized_folder,subfolder)
+
+    # todo for documentation: explain the structure of data/ folder,
+    #  give the data/ folder with minimal data and with the folder metabolites-mappings !!!!
 
     # EL FIN !!! 

@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import anndata as ad
+import scanpy as sc
 import zonist.data as zd
 import zonist.method as zm
 import zonist.processing.measures_methods as zmm
@@ -10,6 +11,25 @@ from local_helpers.quantifs_methods import run_pathway_scores_steps
 from local_helpers.local_viz import customized_clustermap
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+
+def differential_routine(adata, group_str):
+    sc.tl.rank_genes_groups(adata, groupby=group_str,
+                            groups='all',
+                            reference='rest',
+                            method='wilcoxon',
+                            key_added="top_feats_by_cluster",
+                            corr_method='benjamini-hochberg')
+
+    differential_results_by_cluster = sc.get.rank_genes_groups_df(
+        adata, key="top_feats_by_cluster",
+        group=None)  # returns all groups
+
+    top_differential = differential_results_filter(
+        differential_results_by_cluster)
+
+    return top_differential
+
 
 def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder):
 
@@ -23,6 +43,7 @@ def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder):
 
     return adata_mz
 
+
 def read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_folder):
     annots_dict = {}
     for pwtype in pathways_types:
@@ -31,6 +52,7 @@ def read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_f
                              f'{SAMPLE}-{pwtype}-CleanAnnotations.tsv')
         annots_dict[pwtype] = pd.read_csv(tmpfi,
                                           sep='\t', header=0, index_col=None)
+
     return annots_dict
 
 def safe_load_data_and_clean_annotations(SAMPLE,
@@ -39,12 +61,12 @@ def safe_load_data_and_clean_annotations(SAMPLE,
 
     adata_mz = safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder)
     annots_dict = read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_folder)
-    adequate_mz = set()
 
+    adequate_mz = set()
     for pwtype in pathways_types:
         adequate_mz = adequate_mz.union(set(annots_dict[pwtype]['mz'].astype(str).unique()))
-    #
-    # adata_mz = adata_mz[:, list(adequate_mz)].copy()
+
+    adata_mz = adata_mz[:, list(adequate_mz)].copy()
     # if other_adequate_mzs is not None:
     #     adata_mz = adata_mz[: other_adequate_mzs].copy()
 
@@ -89,7 +111,7 @@ def message_ids_how_many_mz(the_ids, molecules_ids_df):
     molecules_ids_df = molecules_ids_df.loc[
         molecules_ids_df['moleculeIds'].isin(the_ids)
     ]
-    print("representing a total of mzs:", len(molecules_ids_df['mz'].unique()))
+    return f"representing a total of mzs: {len(molecules_ids_df['mz'].unique())}"
 
 
 def plot_families(molecules_ids_df, mol_similarities_result, computed_dendrogram,
@@ -101,7 +123,7 @@ def plot_families(molecules_ids_df, mol_similarities_result, computed_dendrogram
     tmp = tmp.drop_duplicates(subset="moleculeIds")
     tmp.index = tmp['moleculeIds']
     tmp = tmp.loc[mol_similarities_result['the_ids'],:].copy()
-    print(tmp.shape)
+    print("shape of computed simils:::::", tmp.shape)
     the_molecules_names = tmp['moleculeNames'].tolist()
     print(len(list(mol_similarities_result['the_ids'])))
     print(len(the_molecules_names))
@@ -117,7 +139,7 @@ def plot_families(molecules_ids_df, mol_similarities_result, computed_dendrogram
     plt.close()
 
 
-
+# todo: deprecated ?
 def save_scores(adata_mz, annots_dict,
                 pwtype, sets_args_dict, SAMPLE, data_dir,
                 not_for_families: list=None, only_mz_good_moran=True):
