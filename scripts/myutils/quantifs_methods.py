@@ -15,8 +15,6 @@ import zonist.method as zm
 
 
 
-
-
 def get_top_n(group, *args):
     ntop_per_cluster = args[0]
     sorted_group = group.sort_values(
@@ -38,12 +36,13 @@ def differential_results_filter(differential_results, lfc: float=0.8,
 
     tmp = tmp.assign(abslfc=abs(tmp['logfoldchanges']),
                      cluster=tmp['group'].astype(str))
-
+    tmp = tmp.sort_values(by=['group', 'pvals_adj'], ascending=[True, False])
     tmp = tmp.groupby('cluster', group_keys=False, as_index=False
                       ).apply(get_top_n, ntop_per_cluster,
                               include_groups=False  # avoid DeprecationWarning
                               ).reset_index(drop=True)
     return tmp
+
 
 
 
@@ -96,7 +95,7 @@ def compute_metabolites_probs_df(adata_mz: ad.AnnData, annots_df,
         for kid in the_ids_here:
             registered_prob = 0.0
             if kid in preX_probs.keys(): # if already registered from another mz, as it can happen, checked
-                registered_prob = preX_probs[kid][0]  
+                registered_prob = preX_probs[kid][0]
             compound_probability = max(registered_prob, 1 / n)  # attribute the best probability between registered (if any) and current
             res = i_arr * np.repeat(compound_probability, len(i_arr))
             preX_probs[kid] = np.array(res, dtype=np.float32)
@@ -118,7 +117,6 @@ def build_identifiers_adata(adata_mz,  X_metabolites_probs_df,
         sub_adata = adata_mz[:,mz_one_or_more ].copy()
         mz_arr = np.array(sub_adata.X.todense().T).flatten()
         if len(mz_one_or_more) > 1:
-            #print(f"i warn you, I will sum for {u_id} ID: \n the intensities of the mzs: {mz_one_or_more}")
             tmp = mz_arr.sum(axis=0)
             mz_arr = tmp
 
@@ -149,111 +147,3 @@ def run_pathway_scores_steps(adata_mz, pws_obj, annots_df, usable_id):
                    pws_obj.piled)
 
     return scores_adata
-
-def coordinates_as_df(adata):
-    df = pd.DataFrame(data=adata.obsm['spatial'],
-                 columns=['x', 'y'],
-                 index=adata.obs.index.tolist())
-    return df
-
-
-def mold_data_for_plot__task1(pw_id, scores_adata, adata):
-    """
-        First phase of prep for plot with table.
-    :param pw_id: the current pathway identifier
-    :param scores_adata: the pathways identifiers and scores object
-    :param adata: the KEGG compound identifiers and quantities object
-    :return: df with KEGG id, metabolite name and mz for the current pw_id
-    """
-    df_mz_metabolites__curr_pw  = scores_adata.uns['current_pathways_df'].loc[
-        scores_adata.uns['current_pathways_df']['pathway_id'] == pw_id,
-        ["mz", "KEGG"]
-    ]
-    df_mz_metabolites__curr_pw = df_mz_metabolites__curr_pw.drop_duplicates()
-    df2 = adata.var[["ID", "moleculeNames"]].copy()
-    df2.columns = ["KEGG", "metabolite name"]
-    df_mz_metabolites__curr_pw = df_mz_metabolites__curr_pw.join(
-        df2, how="left", on="KEGG", lsuffix="_x", rsuffix="_y"
-    )
-    df_mz_metabolites__curr_pw = df_mz_metabolites__curr_pw.drop(
-        columns=["KEGG_x", "KEGG_y"]
-    )
-    return df_mz_metabolites__curr_pw
-
-
-def mold_data_for_plot__task2(df_mz_metabolites__curr_pw, i_mz, coords_mz_df, adata_mz):
-    """
-        Second phase of prep for plot with table.
-
-    :param df_mz_metabolites__curr_pw:
-    :param i_mz:
-    :param adata_mz:
-    :return:
-    """
-    sub_df = df_mz_metabolites__curr_pw.loc[
-             df_mz_metabolites__curr_pw['mz'] == i_mz, :]
-    sub_df = sub_df.drop(columns=["mz"])
-    sub_df = sub_df.drop_duplicates()
-    sub_df['metabolite name'] = sub_df['metabolite name'].str.slice(0, 25)
-    tmp = coords_mz_df.copy()
-    tmp[i_mz] = np.array(adata_mz[:, str(i_mz)].X.todense()).flatten()
-
-    return sub_df, tmp
-
-
-def DEPRECATED_build_ids_adata(adata_mz, X_metabolites_probs_df, annots_df, usable_id):
-    """
-    Given the adata_mz and the annots_df, returns a new adata object
-    """
-    tmp_X = dict()
-    for a_mz in adata_mz.var['mz'].to_numpy():
-        the_kegg_here = annots_df.loc[
-            annots_df['mz'] == a_mz, usable_id].tolist()
-        sub_adata = adata_mz[:, str(a_mz)].copy()
-        i_mz_arr = np.array(sub_adata.X.todense().T).flatten()
-        for a_kg in the_kegg_here:
-            try:
-                if X_metabolites_probs_df[a_kg].to_numpy().shape[1] >= 2:
-                    print("OH NO THIS IS A BIG BIG PROBLEM !!!!!!!!!!!!!!!!")
-            except:
-                pass
-            curr_prod_arr = \
-                X_metabolites_probs_df[a_kg].to_numpy() * i_mz_arr
-            tmp_X[a_kg] = np.array(curr_prod_arr, dtype=np.float32)
-    # end for
-    identifiers_list = list(tmp_X.keys())
-    tmp_X = np.array(pd.DataFrame(tmp_X), dtype=np.float32)
-    adataIds = ad.AnnData(X=csr_matrix(tmp_X),
-                       obs=adata_mz.obs,
-                       var=pd.DataFrame({"ID": identifiers_list},
-                                        index=identifiers_list),
-                       obsm=adata_mz.obsm)
-
-    #adata.layers["X_probabilities"] = X_metabolites_probs_df
-    return adataIds
-
-def DEPRECATED_attach_annots_to_adata(adata, annots_df):
-    """"""
-    annots_df = annots_df.drop_duplicates()
-    assert len(set(adata.var['ID'].tolist()).intersection(
-        set(annots_df['KEGG'].tolist()))) == len(
-        set(annots_df['KEGG'].tolist())), ("Error, adata.var ID column must "
-                                           "match KEGG column of annotations")
-    annots_df.index = annots_df['KEGG'].tolist()
-    df_ok = annots_df.loc[adata.var['ID'], :]  # rows in same order than in adata.var
-    expected_index = adata.var.index.tolist()
-    adata.var = pd.merge(adata.var, df_ok,  how='left' , left_on='ID', right_on='KEGG')
-    #adata.var.index = adata.var['ID'].tolist()
-    adata.var.set_index('ID',
-                        drop=False, # whether to drop the ID column
-                        inplace=True)
-    assert np.all(np.array(expected_index) == np.array(
-        adata.var.index.tolist())), ("all messed up "
-                                     "when attaching annots to adata")
-
-    return adata
-
-
-
-#if __name__ == "__main__":
-

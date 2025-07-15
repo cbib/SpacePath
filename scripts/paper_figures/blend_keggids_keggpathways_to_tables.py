@@ -2,14 +2,14 @@ import sys
 import os
 
 import anndata as ad
-
+import pandas as pd
 import zonist.data as zd
 import zonist.method as zm
 
 import zonist.processing.measures_methods as zmm
-from local_helpers.local_helpers import provide_annotation_dict
+from analysis_helpers import provide_annotation_dict
 
-from local_helpers.local_viz import *
+from myutils.local_viz import *
 
 
 
@@ -37,8 +37,8 @@ if __name__ == "__main__":
     data_centralized_folder = "../../data"
     figures_centralized_folder = "../../figures/"
 
-    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  # "../../small_test.csv"
-    my_csv_table_path_2 = "../private-datasets-parameters.tsv"  # "../../small_test.csv"
+    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  #
+    my_csv_table_path_2 = "../private-datasets-parameters.tsv"  #
 
     df1 = pd.read_csv(my_csv_table_path_1, header=0,
                       index_col=None, sep='\t')

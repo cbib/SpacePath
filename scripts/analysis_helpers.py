@@ -2,18 +2,12 @@ import os
 import pandas as pd
 import anndata as ad
 import scanpy as sc
-import zonist.data as zd
-import zonist.method as zm
-import zonist.processing.measures_methods as zmm
-from local_helpers.local_helpers import provide_annotation_dict
-from local_helpers.quantifs_methods import differential_results_filter
-from local_helpers.quantifs_methods import run_pathway_scores_steps
-from local_helpers.local_viz import customized_clustermap
+from myutils.quantifs_methods import differential_results_filter
+from myutils.local_viz import customized_clustermap
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 
-def differential_routine(adata, group_str):
+def differential_routine(adata, group_str, ntop_per_cluster):
     sc.tl.rank_genes_groups(adata, groupby=group_str,
                             groups='all',
                             reference='rest',
@@ -26,7 +20,7 @@ def differential_routine(adata, group_str):
         group=None)  # returns all groups
 
     top_differential = differential_results_filter(
-        differential_results_by_cluster)
+        differential_results_by_cluster, ntop_per_cluster=ntop_per_cluster)
 
     return top_differential
 
@@ -38,7 +32,6 @@ def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder):
     adata_mz = adata_mz[:,
                adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                "mz"].astype(str).tolist()]
-    print(adata_mz.uns["history"])
 
 
     return adata_mz
@@ -54,6 +47,7 @@ def read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_f
                                           sep='\t', header=0, index_col=None)
 
     return annots_dict
+
 
 def safe_load_data_and_clean_annotations(SAMPLE,
                                          pathways_types,
@@ -101,8 +95,9 @@ def prepare_mols_df(top_differential, clean_ann_df):
     molecules_ids_df = molecules_ids_df[
         #['moleculeIds', 'moleculeNames']].copy()
         ['moleculeIds', 'mz', 'moleculeNames']].copy()
-
     molecules_ids_df.drop_duplicates(inplace=True)
+    molecules_ids_df.reset_index(inplace=True)
+    molecules_ids_df['moleculeNames'] = molecules_ids_df['moleculeNames'].astype(str).tolist()
 
     return molecules_ids_df
 
@@ -123,10 +118,7 @@ def plot_families(molecules_ids_df, mol_similarities_result, computed_dendrogram
     tmp = tmp.drop_duplicates(subset="moleculeIds")
     tmp.index = tmp['moleculeIds']
     tmp = tmp.loc[mol_similarities_result['the_ids'],:].copy()
-    print("shape of computed simils:::::", tmp.shape)
     the_molecules_names = tmp['moleculeNames'].tolist()
-    print(len(list(mol_similarities_result['the_ids'])))
-    print(len(the_molecules_names))
     trunc_names = [i[:30] for i in the_molecules_names]
 
     arr_df = pd.DataFrame(data=mol_similarities_result['array'],
@@ -138,67 +130,6 @@ def plot_families(molecules_ids_df, mol_similarities_result, computed_dendrogram
         dpi=400)
     plt.close()
 
-
-# todo: deprecated ?
-def save_scores(adata_mz, annots_dict,
-                pwtype, sets_args_dict, SAMPLE, data_dir,
-                not_for_families: list=None, only_mz_good_moran=True):
-    assert pwtype in ["KEGG", "WIKI", "FAMILIES"], "Error, type of sets not recognized"
-    annots_df = annots_dict["WIKI"] # valid also for families
-
-    if pwtype == "KEGG":
-        annots_df = annots_dict["KEGG"]
-
-    if only_mz_good_moran:
-        print("taking into account only the annotations of mz having I >= 0 !!")
-        okmoran = adata_mz.var.loc[adata_mz.var['I'] >= 0, 'mz'].astype(str).tolist()
-        annots_df = annots_df.loc[annots_df['mz'].astype(str).isin(okmoran),:].copy()
-
-    sets_obj = zd.MetabolicPathways(
-        data_dir=data_dir,
-        subfolder=sets_args_dict[pwtype]['subfolder'],
-        file=sets_args_dict[pwtype]['file']
-    )
-    sets_obj.molecule_id_type = sets_args_dict[pwtype]['id_type']
-
-    sets_obj.load()
-
-    if pwtype == "FAMILIES":
-        sets_obj.intersect_with_annotations(annots_df,
-                                            usable_id=sets_args_dict[pwtype]['id_type'],
-                                            mz_col='mz')
-        if not_for_families is not None:
-            sets_obj.eject_molecules(not_for_families, column="mz")
-
-    sets_obj, annots_df = zm.SyncPathwaysAndAnnots.run(
-        sets_obj.model_copy(),
-        annots_df,
-        usable_id=sets_args_dict[pwtype]['id_type'],
-        min_set_size=sets_args_dict[pwtype]['min_set_size'],
-        mode="mz_aware")
-
-    ofipw = os.path.join(data_centralized_folder, subfolder,
-                         f'{SAMPLE}-scores-{pwtype}.h5ad')
-
-    scores_adata = run_pathway_scores_steps(adata_mz.copy(),
-                                            sets_obj,
-                                            annots_df,
-                                            usable_id=sets_args_dict[pwtype]['id_type'])
-    scores_adata.write_h5ad(ofipw)
-    print("youpi, saved scores")
-    mapped_elements = scores_adata.uns['current_pathways_df']['mz'].unique(
-        ).tolist()
-
-    return mapped_elements
-
-# def reference_noKEGG_KEGG_identifiers():
-#     # stored in the same centralized data folder (same level of the tissues' folders)
-#     subfolder="metabolites-mappings",
-#     mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
-#                    'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv",
-#                    'CoreMetabolome': "CoreMetabolome-to-KEGG_05-07-24.tsv"})
-#
-#     return subfolder, mapping_files
 
 def files_of_pathways_defaults():
     # stored in the same centralized data folder (same level of the tissues' folders)
@@ -244,3 +175,14 @@ def extract_params_per_dataset(row):
             moran_padj_cutoff, clustering_parameters,
             pathways_types, min_pathway_size, cutoff_tree,
             min_family_size)
+
+
+
+# def reference_noKEGG_KEGG_identifiers():
+#     # stored in the same centralized data folder (same level of the tissues' folders)
+#     subfolder="metabolites-mappings",
+#     mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
+#                    'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv",
+#                    'CoreMetabolome': "CoreMetabolome-to-KEGG_05-07-24.tsv"})
+#
+#     return subfolder, mapping_files

@@ -30,9 +30,8 @@ if __name__ == "__main__":
     data_centralized_folder = "../../data"
     figures_centralized_folder = "../../figures/"
 
-    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  # "../../small_test.csv"
-    my_csv_table_path_2 = "../private-datasets-parameters.tsv"  # "../../small_test.csv"
-
+    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  #
+    my_csv_table_path_2 = "../private-datasets-parameters.tsv"  #
     df1 = pd.read_csv(my_csv_table_path_1, header=0,
                       index_col=None, sep='\t')
     df2 = pd.read_csv(my_csv_table_path_2, header=0,
@@ -40,7 +39,6 @@ if __name__ == "__main__":
     datasets_parameters_df = pd.concat([df1, df2])
     datasets_parameters_df.reset_index(inplace=True)
     # start
-    print("doing with new version of 'aliases collapse' that is done before the pathways mapping")
 
     pathwaysObj = zd.MetabolicPathways(
         data_dir=data_centralized_folder,
@@ -72,7 +70,6 @@ if __name__ == "__main__":
         adata_mz = ad.read_h5ad(filename=os.path.join(
             data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
 
-        print(adata_mz.uns["history"])
         print("MANDATORY: take away bad quality m/z")  # todo: how to make an alert ?
         adata_mz = adata_mz[:,
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
@@ -112,7 +109,6 @@ if __name__ == "__main__":
                 myratio = len(annots_2_df['mz'].unique()) / len(pws_obj_2.piled['pathway_id'].unique())
         except:
             pass
-        print("ratio mzs/pathwayNumber : ", myratio)
 
         name_sample.append(SAMPLE)
         mz_ok = annots_2_df['mz'].unique()

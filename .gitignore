@@ -15,5 +15,5 @@ legacy_wikipathways_aliases_treatment/
 old-private-data*.tsv
 private*.tsv
 /scripts/logs/
-/scripts/data_download_prepare/logs/
+/scripts/data_download_prep_spots/logs/
 /scripts/*/logs
