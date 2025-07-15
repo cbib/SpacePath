@@ -74,7 +74,6 @@ def reshape_pathways_for_kpca(pathways_dict):
 
 def compute_kpca_on_spot_groups(pw_as_df, adata, groups_d: Dict[int, list],
                                 min_entity=2) -> Dict[int, dict]:
-    print(f"Computing Pathway Scores for {len(groups_d)} groups of spots")
     kpca_scores_d = dict()
     for k in groups_d.keys():
         sys.stdout.write(".")

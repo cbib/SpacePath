@@ -200,10 +200,10 @@ def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
             df1[col] = df2[col]
         return df1
     except KeyError:
-        print("fatal (no match), custom_join_left impossible!")
+        logger.error("fatal (no match), custom_join_left impossible!")
         return None
     except Exception as e:
-        print(e, "fatal (no match), custom_join_left impossible!")
+        logger.error( "fatal (no match), custom_join_left impossible! %s", e)
         return None
 
 
@@ -235,7 +235,7 @@ def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
             sc.pp.log1p(copy_mz)  # todo: in doc say the pertinence of log transform as data is very skewed. Furthermore: happily this 'copy object' is not returned by the function
         copy_mz = compute_moran_i(copy_mz, n_neighs=n_neighs, n_perms=n_perms)
     else:
-        print(f"using the available .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
+        logger.info(f"using the available .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
         assert copy_mz.uns['moranI'].shape[0] == len(mz_good_from_part_a), (
             "Fatal: moranI table dimensions do not match with length of ions list passing the 'Part a'."
             "Killed! (solution: delete .uns['moranI'] dataframe and try again)")

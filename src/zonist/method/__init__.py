@@ -153,7 +153,7 @@ class ComputeMoleculesFamilies:
     def run(mol_similarities_result, molecules_ids_df,
             mydata_dir, subfolder, SAMPLE,
             cutoff_tree=1, method_linkage="ward", metric_linkage="cosine") -> dict:
-        print("now doing the hierarchical clustering of the computed matrix")
+        logger.info("running hierarchical clustering of the computed matrix")
         # make the hierarchical clustering reproducible
         np.random.seed(42)
 
@@ -176,11 +176,11 @@ class ComputeMoleculesFamilies:
         for clu in sorted(dedupl_df['molecules_cluster'].unique().tolist()):
             mols_in_clus = dedupl_df.loc[dedupl_df[
                                             'molecules_cluster'] == clu, "moleculeIds"].unique().tolist()
+            first_molecule_of_group = molecules_ids_df.loc[
+                    molecules_ids_df['moleculeIds'] == mols_in_clus[0], "moleculeNames"].values[0]  # works better than .item()
 
-            first_molecule_group = molecules_ids_df.loc[
-                molecules_ids_df['moleculeIds'] == mols_in_clus[0], "moleculeNames"]
             molecs_families_dict[
-                f'MolFam_{clu}'] = [first_molecule_group] + mols_in_clus
+                f'MolFam_{clu}'] = [first_molecule_of_group] + mols_in_clus
 
         max_length = max(len(v) for v in molecs_families_dict.values())
 
@@ -191,10 +191,10 @@ class ComputeMoleculesFamilies:
 
         molecs_families_mmt_df = pd.DataFrame(molecs_families_dict)
         molecs_families_mmt_df = molecs_families_mmt_df.T
+        out_file = f"{SAMPLE}-molecules_families.mmt"
         molecs_families_mmt_df.to_csv(os.path.join(
-            mydata_dir, subfolder, f"{SAMPLE}-molecules_families.mmt"),
-            sep='\t', header=False)
-        logger.info("saved .mmt file")
+            mydata_dir, subfolder, out_file), sep='\t', header=False)
+        logger.info("saved %s file to %s", out_file, mydata_dir)
 
         return {"computed_dendrogram" : computed_dendrogram,
                 "molecules_families": molecs_families_dict,
@@ -361,8 +361,3 @@ if __name__ == "__main__":
     # Call the static method
     updated_config = FakeMethodConfig(dummy_scale=3) # instantiate the config object, if any new config to apply
     result = FakeMethod.run(myarr, config=updated_config)
-    print("Original array:", myarr)
-    print("Processed array:", result)
-    result = FakeMethod.run(myarr)  # using defaults of config
-    print("Original array:", myarr)
-    print("Processed array:", result)

@@ -25,11 +25,13 @@ import sys
 from scipy.sparse import csr_matrix
 from zonist.constants import mz_decimal_places
 import gc
+import logging
+logging.basicConfig(level=logging.INFO)
 
 
 def open_spectra(imzml_fn, ibd_fn):
     """"credits: pyimzml by Alexandrov team"""
-    print("Reading imzML + ibd files with pyimzML package.")
+    logging.info("Reading imzML + ibd files with pyimzML package.")
     spectra_obj = imzmlp.ImzMLParser(filename=imzml_fn,
             parse_lib=None,
             ibd_file=open(ibd_fn, "rb"),
@@ -48,8 +50,8 @@ def files2blocks(spectra_obj):
     unwarped_data_message = ("ERROR: unaligned features (please perform data "
                              "correction and warping before using this tool)")
 
-    print("Assembling intensities arrays into 2D array. Parsing",
-          len(spectra_obj.coordinates), "pixels")
+    logging.info("Assembling intensities arrays into 2D array. Parsing %s pixels",
+          len(spectra_obj.coordinates))
     for i in tqdm(range(0, len(spectra_obj.coordinates) )):  #
         mzs, intensities = spectra_obj.getspectrum(i)
 
@@ -92,7 +94,7 @@ def load_run(data_dir, base_filename, output_dir):
     coordinates_arr, features, intensities_df = files2blocks(
         spectra
     )
-    print(intensities_df.head(3))
+
     del spectra
     gc.collect()
 
@@ -116,17 +118,14 @@ def load_run(data_dir, base_filename, output_dir):
 
     outfile = os.path.join(output_dir, f'{base_filename}.h5ad')
     adata.write(outfile, compression=None, compression_opts=None)
-    print(f"End: file saved to '{outfile}'")
+    logging.info("done")
 
 
 if __name__ == "__main__":
-    print("Converts imz+ibd files into anndata object, and saves it to file")
-    print("   important: requires aligned and recalibrated spectra (otherwise, use 'matrix_from_metaspace')")
-    print(" data_dir:", sys.argv[1], '\n',
-          "base_filename:", sys.argv[2], '\n',
-          "output_dir:", sys.argv[3])
+    logging.info("Converts imz+ibd files into anndata object, and saves it to file")
+
 
     load_run(data_dir=sys.argv[1], base_filename=sys.argv[2],
               output_dir=sys.argv[3])
 
-    #load_run("data/imzML","Ctrl_NEDC_NEG", "output/objects")
+    #load_run("rawdata/MYSAMPLE", "MYSAMPLE", "data/MYSAMPLE")

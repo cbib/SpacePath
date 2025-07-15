@@ -170,8 +170,7 @@ class Test(TestCase):
                                        discard_plant_compounds=True,
                                        discard_other_non_animal=True,
                                        library_path=library_path)
-        #print(df.values[0])
-        #print(type(df.values))
+
         self.assertEqual(df.shape, (1, 2))
         self.assertTrue(np.all(df.values[0] == np.array(
             ['LMFA01010018', 'Stearate'])))

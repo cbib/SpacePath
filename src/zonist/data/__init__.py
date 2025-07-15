@@ -181,6 +181,7 @@ class MetabolomeAnnotations(Dataset):
 
     def pull_mz_quality_df(self):
         """Builds df, if quality columns exist"""
+        logger.info("gets quality of the annotations (per ion and formula)")
         try:
             self.mz_quality = helpers.pick_mz_quality_infos(
                 self.preloaded, self.mz_col, self.offsample_column,
@@ -209,7 +210,6 @@ class MetabolomeAnnotations(Dataset):
                     "Identified cases where one compound ID maps to multiple m/z: Please run "
                     "'<metabo_annotations>.keep_best_mz_id_pairs(anndata_mz)'.")
                 logger.warning(message_multimz)
-                print(message_multimz)
         except Exception as e:
             logger.warning("Error: %s", e)
 
@@ -255,7 +255,7 @@ class MetabolomeAnnotations(Dataset):
             self.fdr_column, self.offsample_column)
 
     def remove_redundant_aliases(self):
-        print("collapsing metabolites' identifiers aliases")
+        logger.info("collapsing metabolites' identifiers aliases")
         assert self.usable_id != "KEGG", "bad .usable_id"
 
         aliases_df = pd.read_csv(os.path.join(library_path,
@@ -377,7 +377,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
         self.sets_ids_df = id_name_pathways_df
         self.piled = pws_piled
 
-        logger.info("success, attributes : piled, pathways_ids")
+        logger.info("success, attributes : piled, sets_ids_df")
 
     def get_name(self, a_pathway_id):
         pathway_name = self.sets_ids_df.loc[

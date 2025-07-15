@@ -1,6 +1,6 @@
 # johaGL
-# Get the aligned & recalibrated matrix of all pixels spectra from Metaspace
-# (preferred if the given raw imzML+ibd are unaligned & not-recalibrated)
+# Get the aligned & recalibrated annotated data from Metaspace Server directly
+#    which is preferred if the given raw imzML is unaligned & not-recalibrated
 import os
 from typing import List, Tuple
 
@@ -15,6 +15,10 @@ from scipy.sparse import csr_matrix
 import zonist.helpers as helpers
 from zonist.constants import mz_decimal_places
 import gc
+import logging
+
+logger = logging.getLogger(__name__)
+logger = helpers.setup_logger(logger)
 
 
 def build_coord_names(df) -> List[str]:
@@ -24,8 +28,8 @@ def build_coord_names(df) -> List[str]:
     return list(pixels_names_l)
 
 
-def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr) -> (
-        set, List[pd.DataFrame]):
+def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr
+)->(set, List[pd.DataFrame]):
     matrices_dfs_list = []
     annotations_dfs_dict = {}
     all_mz_with_multiplets = list()
@@ -63,7 +67,7 @@ def homogenize_rows_order_mx_dfs(mx_dfs) -> List[pd.DataFrame]:
     return matrices_dfs_list
 
 
-def yield_matrix_dataframe_united(
+def yield_matrix_from_read_adatas(
         ordered_unique_mzs, matrices_dfs_list) -> pd.DataFrame:
     """yields matrix-dataframe with shape: coordinates x features"""
     united_mx_dict = {}
@@ -98,7 +102,7 @@ def yield_matrix_dataframe_united(
 def steps_get_united_df(metaspace_registry: str, api_versions: dict,
          api_fdr: float) -> Tuple[pd.DataFrame, dict]:
     """returns a df with shape: coordinates (rows) x features (columns)"""
-    print("fetching data with metaspace-converter (T Alexandrov lab package)")
+    logger.info("fetching data with metaspace-converter (T Alexandrov lab package)")
 
     unique_mzs, matrices_dfs_list, annotations_dfs_dict = adatas_to_matrices_list(
         metaspace_registry, api_versions, api_fdr)
@@ -106,14 +110,13 @@ def steps_get_united_df(metaspace_registry: str, api_versions: dict,
     matrices_dfs_list = homogenize_rows_order_mx_dfs(matrices_dfs_list)
     ordered_unique_mzs = sorted(list(unique_mzs))
 
-    outdf = yield_matrix_dataframe_united(ordered_unique_mzs,
+    outdf = yield_matrix_from_read_adatas(ordered_unique_mzs,
                                           matrices_dfs_list)
     return outdf, annotations_dfs_dict
 
 
 def save_quantifications_anndata(outdf, outfile) -> None:
-    print(f"saving to anndata file, with .X sparse matrix of shape: "
-          f"({outdf.shape[0]} rows x {outdf.shape[1]} columns)")
+
     coordinates_arr = helpers.generate_coordinates_arr(list(outdf.index))
     out_obj = ad.AnnData(X=csr_matrix(outdf),
                          obs=pd.DataFrame({"obs":outdf.index.tolist()},
@@ -134,7 +137,7 @@ def save_quantifications_anndata(outdf, outfile) -> None:
     gc.collect()
     outfile = outfile + ".h5ad"
     out_obj.write(outfile, compression=None, compression_opts=None)
-    print(f"End: file saved to '{outfile}'")
+    logger.info("done")
 
 
 if __name__ == "__main__":
@@ -142,8 +145,8 @@ if __name__ == "__main__":
     api_versions = {'HMDB': ("HMDB", "v4"),
                    'LipidMaps': ("LipidMaps", "2017-12-12")}
     api_fdr = 0.5
-    out_dir = "~/"
-    filename = "publictest" # no extension
+    out_dir = "../../../data"
+    filename = "basictest" # no extension
 
     out_file = os.path.join(os.path.expanduser(out_dir),
                             filename)
