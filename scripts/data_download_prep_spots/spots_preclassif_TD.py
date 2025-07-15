@@ -11,10 +11,11 @@ from typing import List
 import zonist.method as zm
 import json
 
+from spots_purge_final import show_message
 
 def outside_tissue_spots__to_json(
         spots_domains_df, out_tissue_domains: List[str],
-        data_centralized_folder, subfolder, SAMPLE)->None:
+        data_centralized_folder, subfolder, SAMPLE)-> None:
     spots_domains_df['obs'] = spots_domains_df['obs'].astype(str).tolist()
     spots_out_list = spots_domains_df.loc[
         spots_domains_df['squidpy_domains'].isin(out_tissue_domains),
@@ -28,36 +29,16 @@ def outside_tissue_spots__to_json(
 
 
 
-if __name__ == "__main__":
-    # define here my input
-    data_centralized_folder = "../../../data"
-    my_csv_table_path = "../../private-datasets-parameters.tsv"
-    figures_centralized_folder = "../../../figures/"
-
-    # start
-    datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
-                      index_col=None, sep='\t')
-
-    datasets_parameters_df = datasets_parameters_df.loc[
-        datasets_parameters_df['dataset_name'].isin(
-            [ "TD-Lipido-635", "TD-Lipido-636"  , "TD-Lipido-836", "TD-Lipido-827"]), :]  #
-
-    weights_spatial_graph = {
-        "TD-Lipido-635" : 0.5,
-        "TD-Lipido-636" : 0.5,
-        "TD-Lipido-836" : 0.7,  # had to use this to force the internal areas not to fall in same cluster of external areas
-        "TD-Lipido-827" : 0.6   # same as for line above
-    }
-
-    print("\nRunning custom spot classification as being OUTSIDE the tissue,"
-          "this script does not changes the AnnData object")
+def run_custom_spot_qual(datasets_parameters_df,
+                         data_centralized_folder,
+                         figures_centralized_folder):
+    show_message("\nRunning custom spot classification as being OUTSIDE the tissue,"
+          "this script does not changes the AnnData object, but saves .json with bad spots")
 
     for i, row in datasets_parameters_df.iterrows():
 
         SAMPLE = row["dataset_name"]
-        allowed_in_out_ratio = row["in/out intensities for spot class"]
-        select_spots_yes_no = row["perform_spots_selection"]
-        print("\nSample: ", SAMPLE)
+        show_message(f"\nSample: {SAMPLE}")
         subfolder = SAMPLE
         plot_folder = os.path.join(figures_centralized_folder, SAMPLE)
         if not os.path.exists(plot_folder):
@@ -69,13 +50,9 @@ if __name__ == "__main__":
                 data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
             adata_mz = zm.NormalizeIntensities.run(adata_mz)
 
-            # PCA
-            print("PCA")
             sc.tl.pca(adata_mz, svd_solver="arpack")
-            print("nearest neighbor graph")
             sc.pp.neighbors(adata_mz)
             nn_graph_genes = adata_mz.obsp["connectivities"]
-            print("spatial proximity graph")
             sq.gr.spatial_neighbors(adata_mz)
             nn_graph_space = adata_mz.obsp["spatial_connectivities"]
 
@@ -96,9 +73,9 @@ if __name__ == "__main__":
                 adata_mz, color=["squidpy_domains"], img=False,
                 title="check spots ", save=os.path.abspath(plot_out_path), dpi=600)
             plt.close()
-            print(f"plot saved to: {plot_out_path}, revise it")
+            show_message(f"plot saved to: {plot_out_path}, revise it")
 
-            print(adata_mz.obs[['obs', 'squidpy_domains']].head())
+            show_message(adata_mz.obs[['obs', 'squidpy_domains']].head())
 
             answer = input(
                 "enter the BAD (outside tissue) domains numbers (example: 8,6,7)"
@@ -109,6 +86,35 @@ if __name__ == "__main__":
                                           out_tissue_domains,
                                           data_centralized_folder, subfolder, SAMPLE)
 
-            print("Spots outside tissue saved to .JSON file")
+            show_message("Spots outside tissue saved to .JSON file")
         else:
-            print("nothing to do")
+            show_message("nothing to do")
+
+
+if __name__ == "__main__":
+    # inputs must be immutable, custom procedure of this script
+    data_centralized_folder = "../../../data"
+    my_csv_table_path = "../../datasets_parameters/private-datasets-parameters.tsv"
+    figures_centralized_folder = "../../../figures/"
+
+    # start
+    datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
+                      index_col=None, sep='\t')
+
+    datasets_parameters_df = datasets_parameters_df.loc[
+        datasets_parameters_df['dataset_name'].isin(
+            [ "TD-Lipido-635", "TD-Lipido-636"  , "TD-Lipido-836", "TD-Lipido-827"]), :]  #
+
+    weights_spatial_graph = {
+        "TD-Lipido-635" : 0.5,
+        "TD-Lipido-636" : 0.5,
+        "TD-Lipido-836" : 0.7,  # had to use this to force the internal areas not to fall in same cluster of external areas
+        "TD-Lipido-827" : 0.6   # same as for line above
+    }
+    answer = input("continue? y/n")
+    if answer in ["y", "yes"]:
+        run_custom_spot_qual(datasets_parameters_df,
+                             data_centralized_folder,
+                             figures_centralized_folder )
+
+
