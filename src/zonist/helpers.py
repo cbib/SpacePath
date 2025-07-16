@@ -21,19 +21,14 @@ def setup_logger(logger):
     """parameters for the log file"""
     if not os.path.exists(os.path.join(os.getcwd(), "logs")):
         os.makedirs(os.path.join(os.getcwd(), "logs"))
-    logging.basicConfig(encoding='utf-8', stream=sys.stdout)
-    file_handler = logging.FileHandler(os.path.join("logs", LOGFILE))
 
+    logging.basicConfig(encoding='utf-8', stream=sys.stdout)
+
+    file_handler = logging.FileHandler(os.path.join("logs", LOGFILE))
     logger.setLevel(logging.DEBUG)
-    # make appear the time and module in the log file:
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
-    # make them appear in the terminal as well:
-    ch = logging.StreamHandler()
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
     logger.addHandler(file_handler)
 
     return logger
@@ -428,4 +423,3 @@ def aliases_handler(aliases_df, anno_df, usable_id):
     accepted_ids = yield_clean_noalias_ids(annots_aliases)
 
     return accepted_ids
-

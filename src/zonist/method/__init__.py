@@ -7,6 +7,7 @@ from typing import List, Dict, Literal, Optional, Set, Tuple, Union
 
 import pandas as pd
 import anndata as ad
+from mypy.types import AnyType
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
@@ -21,7 +22,7 @@ from rdkit.Chem import AllChem
 from scipy.sparse import csr_matrix
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
-
+import yaml
 import zonist.helpers as helpers
 from zonist.data import MetabolicPathways, MetabolomeAnnotations
 import zonist.processing.measures_methods as zmm
@@ -36,14 +37,14 @@ module_path = Path(__file__).resolve()
 library_path = module_path.parent.parent.parent.parent
 
 
-
 class BaseModel(PydanticBaseModel):
     # class Config:  # deprecated since pydantic v2
     #     arbitrary_types_allowed = True
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-# 1 methods configs
+# 1) classes of the configurations
+
 class MethodConfig(BaseModel):
     class_type: str = "method"
 
@@ -66,50 +67,43 @@ class SyncPathwaysAndAnnotsConfig(MethodConfig): # todo: use this config ?
 class ComputePathwaysScoresConfig(MethodConfig):
     description: str = "parameters to compute the pathways scores"
     method: str = "sspa_kpca"
+    type_abbr: str = ""  # WIKI, KEGG or FAMILIES are to date supported
     min_entity: int = 2
     n_groups_of_spots: int = 30
-    threshold_n_spots_is_high: int = 15000   # todo : in the stable version use 20K
+    threshold_n_spots_is_high: int = 15000
 
 
 class ComputeMoleculesSimilarityMatrixConfig(MethodConfig):
-    description : str = "...."
-    #method: str=""
+    description : str = "compute similarity matrix of compounds"
+    method: str = "TanimotoSimilarity"
+    smiles_files: Dict[str, str] = {
+        'HMDB': "HMDB-SMILES_05-07-24.tsv",
+        'LipidMaps': "LipidMaps-SMILES_06-08-25.tsv"}  # internal in library
+    threshold_similarity: float|None = None
 
 
 class ComputeMoleculesFamiliesConfig(MethodConfig):
-    description : str = "...."
-    #method: str=""
+    description : str = "compute and save families file, from a distance-transformed similarity matrix"
+    method: str = "HierarchicalClustering"
+    cutoff_tree: float = 1
+    method_linkage: str = "ward"
+    metric_linkage:str = "cosine"
 
 
-
-
-def compounds_and_smiles_ordered(smiles_df, molecules_ids_list):
-    mycopy = smiles_df.copy()
-    mycopy = mycopy.drop_duplicates(subset=['moleculeIds', 'SMILES'],
-                                    keep='first')
-    the_identifiers_allowed = list(
-        set(mycopy['moleculeIds'].unique().tolist()).intersection(
-            set(molecules_ids_list))
-    )
-    mycopy = mycopy[['moleculeIds', 'SMILES']].copy()
-    mycopy.index = mycopy['moleculeIds'].tolist()
-    mycopy = mycopy.T
-    mycopy = mycopy[list(set(the_identifiers_allowed))]
-    mycopy = mycopy.T
-    mycopy = mycopy.drop_duplicates()
-
-    return mycopy['moleculeIds'].tolist(), mycopy['SMILES'].tolist()
+# 2) the methods using the configs above
 
 
 class ComputeMoleculesSimilarityMatrix:
-    config = ComputeMoleculesSimilarityMatrixConfig
+    config: ComputeMoleculesSimilarityMatrixConfig
     @staticmethod
-    def run(molecules_ids_list, threshold_similarity=None):
-        logger.info("making molecules identifiers a list of unique values")
+    def run(molecules_ids_list: List[str],
+            config=ComputeMoleculesSimilarityMatrixConfig()
+    )-> Dict[str, np.array|List[str]|List[str]]:
+        logger.info("computing similarity matrix with config %s", yaml.dump(config.dict()))
         molecules_ids_list = list(set(molecules_ids_list))
         smiles_dfs  = []
-        for file_name in ["LipidMaps-SMILES_06-08-25.tsv",
-                          "HMDB-SMILES_05-07-24.tsv"]:
+        pathways_methods.unzip_if_not_tsv(library_path, config.smiles_files)
+        for file_name in config.smiles_files.values():
             df = pd.read_csv(
                 os.path.join(library_path, "resources", "SMILES", file_name),
              sep='\t', header=0)
@@ -118,108 +112,86 @@ class ComputeMoleculesSimilarityMatrix:
         smiles_df = pd.concat(smiles_dfs)
         smiles_df = smiles_df.loc[~smiles_df['SMILES'].isnull(), :].copy()
 
-        the_identifiers_that_entered, these_smiles_entered = compounds_and_smiles_ordered(
+        (these_identifiers_entered, these_smiles_entered
+         ) = pathways_methods.compounds_and_smiles_ordered(
             smiles_df, molecules_ids_list)
 
         fpgen = AllChem.GetRDKitFPGenerator()
-        the_ms = [Chem.MolFromSmiles(k) for k in these_smiles_entered]
-        fps = [fpgen.GetFingerprint(x) for x in the_ms]
+        chem_molecules = [Chem.MolFromSmiles(k) for k in these_smiles_entered]
+        fps = [fpgen.GetFingerprint(x) for x in chem_molecules]
 
-        arr = np.zeros(shape=(len(the_identifiers_that_entered),
-                              len(the_identifiers_that_entered)))
+        arr = np.zeros(shape=(len(these_identifiers_entered),
+                              len(these_identifiers_entered)))
 
         logger.info("filling array with Tanimoto similarities, computed for all pairs of SMILES")
-        for u in range(len(the_identifiers_that_entered)):
-            for v in range(u + 1, len(the_identifiers_that_entered)):
+        for u in range(len(these_identifiers_entered)):
+            for v in range(u + 1, len(these_identifiers_entered)):
                 tanimoto_similarity = DataStructs.TanimotoSimilarity(
                     fps[u],  fps[v])
                 arr[u, v] = tanimoto_similarity
                 arr[v, u] = tanimoto_similarity
 
         np.fill_diagonal(arr, 1)
-        if threshold_similarity is not None:
-            arr[arr < threshold_similarity] = 0
+        if config.threshold_similarity is not None:
+            arr[arr < config.threshold_similarity] = 0
 
         mol_similarities_result = {"array": arr,
-                                   "the_ids": the_identifiers_that_entered,
-                                   "the_smiles": these_smiles_entered}
+                                   "identifiers": these_identifiers_entered,
+                                   "smiles": these_smiles_entered}
 
         return mol_similarities_result
 
 
 class ComputeMoleculesFamilies:
-    config = ComputeMoleculesFamiliesConfig
+    config: ComputeMoleculesFamiliesConfig
     @staticmethod
-    def run(mol_similarities_result, molecules_ids_df,
-            mydata_dir, subfolder, SAMPLE,
-            cutoff_tree=1, method_linkage="ward", metric_linkage="cosine") -> dict:
-        logger.info("running hierarchical clustering of the computed matrix")
+    def run(mol_similarities_result: Dict[str, np.array|List[str]|List[str]],
+            molecules_ids_df: pd.DataFrame,
+            SAMPLE: str, subfolder: str, mydata_dir: str, plot_folder: str,
+            config=ComputeMoleculesFamiliesConfig()
+        ) -> Dict[str, np.ndarray|pd.DataFrame|float]:
+        logger.info("computing families of molecules, with config %s", yaml.dump(config.dict()))
         # make the hierarchical clustering reproducible
         np.random.seed(42)
 
         distance_matrix = 1 - mol_similarities_result['array']
         # squareform saves memory by representing the matrix with the upper right triangle
         computed_dendrogram = linkage(squareform(distance_matrix),
-                                      method=method_linkage,  # it is 'ward' by default
-                                      metric=metric_linkage # it is cosine by default
+                                      method=config.method_linkage,  # it is 'ward' by default
+                                      metric=config.metric_linkage # it is cosine by default
                                       )
         clusters = fcluster(computed_dendrogram,
-                            t=cutoff_tree, criterion='distance')
+                            t=config.cutoff_tree, criterion='distance')
 
-        dedupl_df = pd.DataFrame({'moleculeIds': mol_similarities_result['the_ids'],
-                                  'molecules_cluster': clusters})
+        id_to_cluster = pd.DataFrame(
+            {'moleculeIds': mol_similarities_result['identifiers'],
+             'molecules_cluster': clusters})
+
+        unique_mz_nb = unique_mz_n = len(molecules_ids_df.loc[
+            molecules_ids_df['moleculeIds'].isin(mol_similarities_result['identifiers']), 'mz'].unique())
 
         logger.info("the clusters are: %s",
-              sorted(dedupl_df['molecules_cluster'].unique().tolist()))
+              sorted(id_to_cluster['molecules_cluster'].unique().tolist()))
+        logger.info("number of used compound identifiers: %s",
+              len(mol_similarities_result['identifiers']))
+        logger.info("representing distinct mzs: %s", unique_mz_nb)
 
-        molecs_families_dict = {}  # initialize and save as mmt
-        for clu in sorted(dedupl_df['molecules_cluster'].unique().tolist()):
-            mols_in_clus = dedupl_df.loc[dedupl_df[
-                                            'molecules_cluster'] == clu, "moleculeIds"].unique().tolist()
-            first_molecule_of_group = molecules_ids_df.loc[
-                    molecules_ids_df['moleculeIds'] == mols_in_clus[0], "moleculeNames"].values[0]  # works better than .item()
+        molecs_families_dict = pathways_methods.save_families_as_mmt_file(
+             id_to_cluster, molecules_ids_df, SAMPLE, subfolder, mydata_dir
+        )
+        logger.info("saved .mmt file to %s %s", mydata_dir, subfolder)
 
-            molecs_families_dict[
-                f'MolFam_{clu}'] = [first_molecule_of_group] + mols_in_clus
-
-        max_length = max(len(v) for v in molecs_families_dict.values())
-
-        for key in molecs_families_dict:
-            if len(molecs_families_dict[key]) < max_length:
-                molecs_families_dict[key] += [np.nan] * (
-                            max_length - len(molecs_families_dict[key]))
-
-        molecs_families_mmt_df = pd.DataFrame(molecs_families_dict)
-        molecs_families_mmt_df = molecs_families_mmt_df.T
-        out_file = f"{SAMPLE}-molecules_families.mmt"
-        molecs_families_mmt_df.to_csv(os.path.join(
-            mydata_dir, subfolder, out_file), sep='\t', header=False)
-        logger.info("saved %s file to %s", out_file, mydata_dir)
+        fig_obj = zviz.plot_families(molecules_ids_df, mol_similarities_result,
+                      computed_dendrogram)
+        zviz.save_families_plot(fig_obj, SAMPLE, plot_folder)
+        logger.info("saved figure to %s", plot_folder)
 
         return {"computed_dendrogram" : computed_dendrogram,
-                "molecules_families": molecs_families_dict,
-                "cutoff_tree": cutoff_tree}
+                "id_to_cluster_df": id_to_cluster,
+                "cutoff_tree": config.cutoff_tree}
 
 
-class FakeMethodConfig(MethodConfig):
-    description : str = "dummy test for config and method verification"
-    dummy_cutoff: float = 0.5
-    dummy_scale: float = 1
-
-
-# 2 the methods using above configs
-class FakeMethod:  # no-inheritance avoids instantiation: more practical
-    config: FakeMethodConfig
-    @staticmethod
-    def run(arr: np.ndarray, config=FakeMethodConfig()) -> np.ndarray:
-        """
-        example of how to declare the method
-        """
-        logger.info("Will run FakeMethod "
-                            "with the following config: %s", config)
-
-        return pathways_methods.test_function(arr, config.dummy_scale,
-                                              config.dummy_cutoff)
+# 2) the methods using the configurations
 
 class NormalizeIntensities:
     config: NormalizeIntensitiesConfig
@@ -346,18 +318,15 @@ class ComputePathwaysScores:
             config=ComputePathwaysScoresConfig()
             ) -> pd.DataFrame:
         logger.info(" Will compute spot-wise Pathways Scores "
-                    "with the following config: %s", config)
+                    "with the following config: %s", yaml.dump(config.dict()))
         if config.method == "sspa_kpca":
-            logger.info(" credits of sspa library: C Wieder et al., 2022")
+            logger.info(" using sspa library, credits: Wieder C et al., 2022")
         scores_df = pathways_methods.compute_pathways_scores(
             pathways_dict, adata, config.method, config.min_entity,
             config.n_groups_of_spots, config.threshold_n_spots_is_high)
+        
+        logger.info("successfully computed scores for the specified sets"
+                    " (abbr type): %s", config.type_abbr)
 
         return scores_df
 
-
-if __name__ == "__main__":
-    myarr = np.array([0.1, 0.5, 0.7, 0.9])
-    # Call the static method
-    updated_config = FakeMethodConfig(dummy_scale=3) # instantiate the config object, if any new config to apply
-    result = FakeMethod.run(myarr, config=updated_config)

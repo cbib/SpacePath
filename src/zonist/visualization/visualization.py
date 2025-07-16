@@ -94,3 +94,47 @@ def plot__moran_info(df, plot_folder, SAMPLE, text_notice,
     fileoutplotstr = os.path.join(plot_folder, f"{SAMPLE}-moran_scores.pdf")
     plt.savefig(fileoutplotstr)
     plt.close()
+
+
+def save_families_plot(fig_obj:sns.matrix.ClusterGrid, SAMPLE, plot_folder)-> None:
+    fig_obj
+    plt.savefig(
+            os.path.join(plot_folder, f"{SAMPLE}-hierarchy-molecules.png"),
+            dpi=400)
+    plt.close()
+
+
+def plot_families(molecules_ids_df, mol_similarities_result, computed_dendrogram
+                )-> sns.matrix.ClusterGrid:
+    tmp = molecules_ids_df.loc[molecules_ids_df['moleculeIds'].isin(
+        mol_similarities_result['identifiers']
+    ), ["moleculeIds", "moleculeNames"]].copy()
+    tmp.reset_index(inplace=True)
+    tmp = tmp.drop_duplicates(subset="moleculeIds")
+    tmp.index = tmp['moleculeIds']
+    tmp = tmp.loc[mol_similarities_result['identifiers'],:].copy()
+    the_molecules_names = tmp['moleculeNames'].tolist()
+    trunc_names = [i[:30] for i in the_molecules_names]
+
+    arr_df = pd.DataFrame(data=mol_similarities_result['array'],
+                          columns=trunc_names,
+                          index=trunc_names)
+    fig_obj = customized_sns_clustermap(arr_df, computed_dendrogram)
+
+    return fig_obj
+
+
+def customized_sns_clustermap(arr_df, computed_dendrogram) -> sns.matrix.ClusterGrid  :
+    fig_obj = sns.clustermap(arr_df, figsize=(12.5, 11),
+                        row_linkage=computed_dendrogram,
+                        col_linkage=computed_dendrogram,
+                        cmap="Blues",
+                        dendrogram_ratio=0.15,
+                        cbar_pos=(0.07, 0.84, .015, .14),
+                        xticklabels=False)
+    plt.text(-1.7, 0.23, "similarity index", rotation=90)
+
+    fig_obj.ax_row_dendrogram.set_visible(False)
+    fig_obj.ax_heatmap.set_ylabel("")
+
+    return fig_obj

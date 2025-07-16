@@ -15,9 +15,9 @@ import logging
 logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
 
-
-# related to mz annotations (Metabolome Annotations) and quantifications (andata) object
-
+""""
+Functions related to mz intensities and their annotations
+"""
 
 # matchers
 
@@ -207,7 +207,7 @@ def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
         return None
 
 
-def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
+def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData, mz_good_from_part_a, me_annots,
                                    moran_I_cutoff, moran_padj_cutoff,
                                    n_neighs, n_perms
 ) -> (pd.DataFrame, List[str], pd.DataFrame):
@@ -232,7 +232,7 @@ def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
 
     if not "moranI" in list(copy_mz.uns.keys()) :
         if not helpers.is_log_transformed(copy_mz.X):
-            sc.pp.log1p(copy_mz)  # todo: in doc say the pertinence of log transform as data is very skewed. Furthermore: happily this 'copy object' is not returned by the function
+            sc.pp.log1p(copy_mz)  # it is pertinent to log-transform, as data is strongly skewed. Furthermore: happily this 'copy object' is not returned by the function
         copy_mz = compute_moran_i(copy_mz, n_neighs=n_neighs, n_perms=n_perms)
     else:
         logger.info(f"using the available .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
@@ -256,7 +256,7 @@ def part_b__mz_quality_by_autocorr(adata_mz, mz_good_from_part_a, me_annots,
     return all_quality_df, mz_to_keep_part2, moran_mz_df
 
 
-def adata_mz_insert_full_quality(adata_mz, moran_mz_df,
+def adata_mz_insert_full_quality(adata_mz: ad.AnnData, moran_mz_df,
                                  all_quality_df):
     adata_mz.uns['moranI'] = moran_mz_df
 
@@ -278,9 +278,4 @@ def adata_mz_insert_full_quality(adata_mz, moran_mz_df,
             "Fatal: could not assembly final object. Aborted.")
 
     return adata_mz
-
-
-
-
-
 

@@ -99,8 +99,8 @@ def yield_matrix_from_read_adatas(
     return out_df.T
 
 
-def steps_get_united_df(metaspace_registry: str, api_versions: dict,
-         api_fdr: float) -> Tuple[pd.DataFrame, dict]:
+def get_unified_intensities_df(metaspace_registry: str, api_versions: dict,
+                               api_fdr: float) -> Tuple[pd.DataFrame, dict]:
     """returns a df with shape: coordinates (rows) x features (columns)"""
     logger.info("fetching data with metaspace-converter (T Alexandrov lab package)")
 
@@ -150,5 +150,5 @@ if __name__ == "__main__":
 
     out_file = os.path.join(os.path.expanduser(out_dir),
                             filename)
-    out_df, annotations_dfs_dict = steps_get_united_df(
+    out_df, annotations_dfs_dict = get_unified_intensities_df(
         metaspace_registry, api_versions, api_fdr)

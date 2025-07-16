@@ -1,6 +1,5 @@
 import sys
 import os
-import logging
 import numpy as np
 
 from typing import List, Dict, Literal, Optional, Set, Union
@@ -12,16 +11,74 @@ import scanpy as sc
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra
+import zipfile
 from zonist.helpers import is_log_transformed
 
 
-def test_function(arr, scale_val, threshold):
-    scaled_array = arr * scale_val
-    return np.where(scaled_array > threshold, 1, 0)
+
+def save_families_as_mmt_file(dedupl_df, molecules_ids_df,
+                               SAMPLE, subfolder, mydata_dir) -> dict:
+    molecs_families_dict = {}  # initialize and save as mmt
+    for cluster in sorted(dedupl_df['molecules_cluster'].unique().tolist()):
+        mols_in_cluster = dedupl_df.loc[
+            dedupl_df['molecules_cluster'] == cluster,
+            "moleculeIds"].unique().tolist()
+        first_molecule_of_group = molecules_ids_df.loc[
+            molecules_ids_df['moleculeIds'] == mols_in_cluster[
+                0], "moleculeNames"].values[0]  # works better than .item()
+
+        molecs_families_dict[
+            f'MolFam_{cluster}'] = [first_molecule_of_group] + mols_in_cluster
+
+    max_length = max(len(v) for v in molecs_families_dict.values())
+
+    for key in molecs_families_dict:
+        if len(molecs_families_dict[key]) < max_length:
+            molecs_families_dict[key] += [np.nan] * (
+                    max_length - len(molecs_families_dict[key]))
+
+    molecs_families_mmt_df = pd.DataFrame(molecs_families_dict)
+    molecs_families_mmt_df = molecs_families_mmt_df.T
+    out_file = f"{SAMPLE}-molecules_families.mmt"
+    molecs_families_mmt_df.to_csv(os.path.join(
+        mydata_dir, subfolder, out_file), sep='\t', header=False)
+
+    return molecs_families_dict
+
+def compounds_and_smiles_ordered(smiles_df, molecules_ids_list):
+    mycopy = smiles_df.copy()
+    mycopy = mycopy.drop_duplicates(subset=['moleculeIds', 'SMILES'],
+                                    keep='first')
+    the_identifiers_allowed = list(
+        set(mycopy['moleculeIds'].unique().tolist()).intersection(
+            set(molecules_ids_list))
+    )
+    mycopy = mycopy[['moleculeIds', 'SMILES']].copy()
+    mycopy.index = mycopy['moleculeIds'].tolist()
+    mycopy = mycopy.T
+    mycopy = mycopy[list(set(the_identifiers_allowed))]
+    mycopy = mycopy.T
+    mycopy = mycopy.drop_duplicates()
+
+    return mycopy['moleculeIds'].tolist(), mycopy['SMILES'].tolist()
+
+
+def unzip_if_not_tsv(library_path, smiles_files)-> None:
+    smiles_folder = os.path.join(library_path, "resources", "SMILES")
+    for type_smile_file in smiles_files.keys():
+        smile_file = smiles_files[type_smile_file]
+        f_basename, f_ext = os.path.splitext(smile_file)
+        assert f_ext == ".tsv", "Error, smiles must be .tsv files"
+        tsv_file_path = os.path.join(smiles_folder, f'{f_basename}{f_ext}')
+        zip_file_path = os.path.join(smiles_folder, f'{f_basename}.zip')
+        if not os.path.exists(tsv_file_path):
+            with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+                zip_ref.extractall(smiles_folder)
 
 
 def spots_groups_by_random_choice(spots_names: List[str],
                                   n_groups: int=4) -> Dict[int, List[str]]:
+    np.random.seed(0)
     seen_list = []
     n_spots_by_group = int(len(spots_names) / n_groups)
     residual_n = len(spots_names) % n_groups
@@ -122,18 +179,18 @@ def compute_pathways_scores(pathways_dict,
             sc.pp.log1p(adata)
 
         if adata.obs.shape[0] < threshold_n_spots_is_high:
-            kpca_scores = compute_kpca(pw_as_df, adata, min_entity=min_entity)
+            scores_res = compute_kpca(pw_as_df, adata, min_entity=min_entity)
         else:
-            groups_d = spots_groups_by_random_choice(
+            groups_dict = spots_groups_by_random_choice(
                 adata.obs['obs'].tolist(), n_groups=n_groups_of_spots)
-            kpca_scores_d = compute_kpca_on_spot_groups(
-                pw_as_df, adata, groups_d, min_entity=min_entity)
-            kpca_scores = gather_scores_dfs_dict(
-                kpca_scores_d, ordered_spots_names=adata.obs['obs'].tolist())
+            scores__dict = compute_kpca_on_spot_groups(
+                pw_as_df, adata, groups_dict, min_entity=min_entity)
+            scores_res = gather_scores_dfs_dict(
+                scores__dict, ordered_spots_names=adata.obs['obs'].tolist())
     else:
         raise NotImplementedError
 
-    return kpca_scores
+    return scores_res
 
 
 def find_metabolites_to_exclude(good_pathways: List[str], pathways_dict):
@@ -153,7 +210,7 @@ def find_metabolites_to_exclude(good_pathways: List[str], pathways_dict):
 
 def yield_compliant_pathways(pathways_dict,
                              min_pathway_size=2,
-                             max_pathway_size=500) -> List[str]:
+                             max_pathway_size=200) -> List[str]:
     """TODO doc"""
     pathways_sizes = {k: len(pathways_dict[k]) for k in pathways_dict.keys()}
     if min_pathway_size != max_pathway_size:

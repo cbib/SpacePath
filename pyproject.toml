@@ -16,3 +16,13 @@ pydantic = "2.9.2"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:sspa.*",
+    "ignore::DeprecationWarning:pkg_resources.*"  ,
+    "ignore::FutureWarning:squidpy.*",
+    "ignore::FutureWarning:anndata.*",
+    "ignore::FutureWarning:dask.*"
+]
+

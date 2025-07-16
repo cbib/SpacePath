@@ -24,9 +24,9 @@ from zonist.constants import (supported_mappings, supported_annotations,
                               not_metabolic_reactions_pathways,
                               mz_decimal_places)
 
+
 logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
-#logger.info("\nTime: {}".format(time.strftime('%Y%m%d-%H.%M.%S')))
 
 module_path = Path(__file__).resolve()
 library_path = module_path.parent.parent.parent.parent
@@ -40,8 +40,8 @@ class BaseModel(PydanticBaseModel):
 
 class Dataset(BaseModel, extra='allow'):
     name : str
-    data_dir: str  # /main/dir/of/spatial/data
-    subfolder: str    # e.g. projectName/
+    data_dir: str   # data/ is recommended
+    subfolder: str    # e.g. Dataset01/
 
 
 class MetaboliteIdsMappings(BaseModel, extra='allow'):
@@ -244,11 +244,11 @@ class MetabolomeAnnotations(Dataset):
         if "I" in var_df.columns:
             logger.info("    Moran's 'I' in var_df will be also used.")
         assert is_numeric_dtype(var_df[
-                                    self.mz_col]), "the 'mz' column in adata.var must be of type float"
+            self.mz_col]), "the 'mz' column in adata.var must be of type float"
         assert len(set(var_df[self.mz_col].tolist()).intersection(
             set(self.df[self.mz_col].unique()))
         ) == len(self.df[
-                     self.mz_col].unique()), "Error, no perfect match with var_df mz"
+            self.mz_col].unique()), "Error, no perfect match with var_df mz"
 
         self.df = helpers.best_mz_id_pairs_df(self.df, var_df,
             self.mz_col, self.usable_id,  self.msm_column,
@@ -256,7 +256,7 @@ class MetabolomeAnnotations(Dataset):
 
     def remove_redundant_aliases(self):
         logger.info("collapsing metabolites' identifiers aliases")
-        assert self.usable_id != "KEGG", "bad .usable_id"
+        assert self.usable_id != "KEGG", "bad `.usable_id` attribute"
 
         aliases_df = pd.read_csv(os.path.join(library_path,
             "resources", "aliases-HMDB-05-07-24-LipidMaps-04-30-25.tsv"),
@@ -300,6 +300,7 @@ class MetabolomeAnnotations(Dataset):
 
 
 class MetabolicPathways(BaseModel, extra='allow'):
+    """Class for any type of metabolites set, whether pathways, or families"""
     data_dir: str
     subfolder: str
     file: str
@@ -434,6 +435,9 @@ class MetabolicPathways(BaseModel, extra='allow'):
         :input column: str, one of "KEGG", "moleculeIds", "mz"
         :input ejection_list: List of identifiers (list of strings)
          or mz (list of floats) to be removed from the object
+
+        Note: this can be useful if willing to exclude identifiers that were 'mapped-to-pathways',
+        from the families sets object, but that is facultative
         """
         if not column in ["KEGG", "moleculeIds", "mz"]:
             logger.error("column '%s' not supported", column)
