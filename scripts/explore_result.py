@@ -2,14 +2,8 @@
 
 import numpy as np
 
-from scipy.sparse import csr_matrix
-
-
-
-from sklearn.cluster import KMeans
 import squidpy as sq
 
-import pickle
 from analysis_helpers import *
 """
 All this workflow relies on the library XXXX

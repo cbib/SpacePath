@@ -3,11 +3,18 @@ import os
 import pandas as pd
 import anndata as ad
 import json
-import squidpy as sq
 import zonist.data as zd
 import zonist.processing.measures_methods as zmm
 import matplotlib.pyplot as plt
 
+import logging
+
+import warnings
+warnings.simplefilter('ignore',category=FutureWarning)
+import squidpy as sq
+
+
+logging.getLogger().setLevel(logging.INFO)
 
 
 def provide_annotation_dict(SAMPLE, annotation_types_list):
@@ -29,8 +36,8 @@ def plot_spots(adata_mz, plot_out_path, title='my title'):
     return adata_mz
 
 
-def show_message(message):
-    print(message)
+def show_message(message)-> None:
+    logging.info(message)
 
 
 def custom_out_tissue(adata_mz, data_centralized_folder, subfolder, SAMPLE):
@@ -73,7 +80,8 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
                 'features_n_initial': adata_mz.var.shape[0]}
 
         if (
-                SAMPLE in force_for_these) or "spot_quality" not in adata_mz.obs.columns.tolist():
+                SAMPLE in force_for_these) or (
+                "spot_quality" not in adata_mz.obs.columns.tolist()):
             annotations_to_use = row["annotations_to_use"].split(" ")
             annotations_dict = provide_annotation_dict(SAMPLE,
                                                        annotations_to_use)
@@ -105,10 +113,10 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
 
                 plot_out_path = os.path.join(plot_folder,
                                              f'{SAMPLE}-spotsBefore.png')
-
-                plot_spots(adata_mz, plot_out_path,
-                           title="Before spots selection")
-                show_message(f"plot of initial spots saved to: {plot_out_path}")
+                if not os.path.exists(plot_out_path):
+                    plot_spots(adata_mz, plot_out_path,
+                               title="Before spots selection")
+                    show_message(f"plot of initial spots saved to: {plot_out_path}")
 
                 if select_spots_yes_no.lower() in ["yes", "y"]:
                     adata_mz = adata_mz[
@@ -117,6 +125,8 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
                                                  f'{SAMPLE}-spotsAfter.png')
                     plot_spots(adata_mz, plot_out_path,
                                title="After spots selection")
+                    show_message(
+                        "Discarded spots of bad quality, will overwrite new .h5ad")
                 else:
                     show_message(
                         "Spot quality added to object, but original spots preserved")
@@ -126,6 +136,7 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
                 adata_mz.write_h5ad(
                     os.path.join(data_centralized_folder, subfolder,
                                  f'{SAMPLE}.h5ad'))
+                show_message("saved object to .h5ad file")
 
             else:
                 show_message(

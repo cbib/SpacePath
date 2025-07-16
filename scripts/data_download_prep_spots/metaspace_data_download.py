@@ -1,15 +1,14 @@
 import sys
 import os
-from operator import index
 import pandas as pd
-
+from spots_purge import show_message
 import zonist.aux.matrix_from_metaspace as mfm
-
+import warnings
 """"
 download any dataset using info in a .csv table
 """
 
-
+warnings.simplefilter('ignore', category=FutureWarning)
 
 # constants
 def get_whole_api_versions():
@@ -31,7 +30,7 @@ def run_data_download(datasets_parameters_df, out_dir)-> None:
         annotations_to_use = r["annotations_to_use"].split(" ")
         subfolder = SAMPLE
 
-        print("\n", SAMPLE)
+        show_message(f"\n {SAMPLE}")
 
         path_out = os.path.join(out_dir, subfolder)
         expected_out_file = os.path.join(path_out, f'{SAMPLE}.h5ad')
@@ -49,16 +48,16 @@ def run_data_download(datasets_parameters_df, out_dir)-> None:
 
             api_versions = {k: whole_api_versions[k] for k in annotations_to_use}
 
-            out_df, annotations_dfs_dict = mfm.steps_get_united_df(
+            out_df, annotations_dfs_dict = mfm.get_unified_intensities_df(
                 metaspace_registry, api_versions, api_fdr)
             del annotations_dfs_dict
             mfm.save_quantifications_anndata(
                 out_df, os.path.join(path_out, SAMPLE))  # adds automatically .h5ad extension
 
-            print(f"Saved: {expected_out_file}")
+            show_message(f"Saved: {expected_out_file}")
             del out_df
         else:
-            print(f"{expected_out_file} exists, nothing to do")
+            show_message(f"{expected_out_file} exists, nothing to do")
 
 
 if __name__ == "__main__":

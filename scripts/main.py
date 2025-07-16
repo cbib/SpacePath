@@ -31,10 +31,10 @@ for i, row in datasets_parameters_df.iterrows():
       min_family_size
      ) = extract_params_per_dataset(row)
 
-    run_analysis_one_tissue(SAMPLE, annotations_dict, offSample_cutoff,
+    run_analysis_one_tissue(annotations_dict, offSample_cutoff,
                             msm_cutoff, fdr_cutoff,
                             moran_I_cutoff, moran_padj_cutoff,
                             clustering_parameters,
                             pathways_types, min_pathway_size, cutoff_tree,
-                            min_family_size,
+                            min_family_size, SAMPLE,
                             data_centralized_folder, figures_centralized_folder)

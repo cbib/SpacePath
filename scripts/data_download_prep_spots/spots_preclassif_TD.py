@@ -1,17 +1,17 @@
 import os
-import numpy as np
 import pandas as pd
 import anndata as ad
 import scanpy as sc
-import squidpy as sq
-from tqdm import tqdm
 import matplotlib.pyplot as plt
-from scipy.sparse import csr_matrix
 from typing import List
 import zonist.method as zm
 import json
 
-from spots_purge_final import show_message
+import warnings
+warnings.simplefilter('ignore',category=FutureWarning)
+import squidpy as sq
+
+from spots_purge import show_message
 
 def outside_tissue_spots__to_json(
         spots_domains_df, out_tissue_domains: List[str],
@@ -33,7 +33,7 @@ def run_custom_spot_qual(datasets_parameters_df,
                          data_centralized_folder,
                          figures_centralized_folder):
     show_message("\nRunning custom spot classification as being OUTSIDE the tissue,"
-          "this script does not changes the AnnData object, but saves .json with bad spots")
+          "this script does not changes the AnnData object, but only saves .json file with the list of bad spots")
 
     for i, row in datasets_parameters_df.iterrows():
 
@@ -48,7 +48,7 @@ def run_custom_spot_qual(datasets_parameters_df,
                             f'{SAMPLE}_out_tissue.json')):
             adata_mz = ad.read_h5ad(filename=os.path.join(
                 data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
-            adata_mz = zm.NormalizeIntensities.run(adata_mz)
+            adata_mz = zm.NormalizeIntensities.run(adata_mz)  # just for computations, but not saved
 
             sc.tl.pca(adata_mz, svd_solver="arpack")
             sc.pp.neighbors(adata_mz)

@@ -3,7 +3,6 @@ import pandas as pd
 import anndata as ad
 import scanpy as sc
 from myutils.quantifs_methods import differential_results_filter
-from myutils.local_viz import customized_clustermap
 import matplotlib.pyplot as plt
 
 
@@ -101,34 +100,6 @@ def prepare_mols_df(top_differential, clean_ann_df):
 
     return molecules_ids_df
 
-
-def message_ids_how_many_mz(the_ids, molecules_ids_df):
-    molecules_ids_df = molecules_ids_df.loc[
-        molecules_ids_df['moleculeIds'].isin(the_ids)
-    ]
-    return f"representing a total of mzs: {len(molecules_ids_df['mz'].unique())}"
-
-
-def plot_families(molecules_ids_df, mol_similarities_result, computed_dendrogram,
-                  plot_folder, SAMPLE):
-    tmp = molecules_ids_df.loc[molecules_ids_df['moleculeIds'].isin(
-        mol_similarities_result['the_ids']
-    ), ["moleculeIds", "moleculeNames"]].copy()
-    tmp.reset_index(inplace=True)
-    tmp = tmp.drop_duplicates(subset="moleculeIds")
-    tmp.index = tmp['moleculeIds']
-    tmp = tmp.loc[mol_similarities_result['the_ids'],:].copy()
-    the_molecules_names = tmp['moleculeNames'].tolist()
-    trunc_names = [i[:30] for i in the_molecules_names]
-
-    arr_df = pd.DataFrame(data=mol_similarities_result['array'],
-                          columns=trunc_names,
-                          index=trunc_names)
-    gc = customized_clustermap(arr_df, computed_dendrogram)
-    plt.savefig(
-        os.path.join(plot_folder, f"{SAMPLE}-hierarchy-molecules.png"),
-        dpi=400)
-    plt.close()
 
 
 def files_of_pathways_defaults():

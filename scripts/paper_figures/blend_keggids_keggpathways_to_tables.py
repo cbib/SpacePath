@@ -9,8 +9,6 @@ import zonist.method as zm
 import zonist.processing.measures_methods as zmm
 from analysis_helpers import provide_annotation_dict
 
-from myutils.local_viz import *
-
 
 
 def counts_per_orig_db(annotsdf):
