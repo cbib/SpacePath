@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import anndata as ad
 from scipy.sparse import csr_matrix
-import src.zonist.helpers as helpers
-import src.zonist.processing.measures_methods as pmm
+import src.smpath.helpers as helpers
+import src.smpath.processing.measures_methods as pmm
 
 
 class Test(TestCase):

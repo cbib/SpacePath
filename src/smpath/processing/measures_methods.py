@@ -6,8 +6,8 @@ import squidpy as sq
 from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
 from sklearn.utils import sparsefuncs
-import zonist.helpers as helpers
-from zonist.data import MetabolicPathways, MetabolomeAnnotations
+import smpath.helpers as helpers
+from smpath.data import MetabolicPathways, MetabolomeAnnotations
 from typing import Tuple, List, Union
 import logging
 
