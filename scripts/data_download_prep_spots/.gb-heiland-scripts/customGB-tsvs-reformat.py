@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import anndata as ad
-import zonist.data as zd
+import smpath.data as spd
 from scipy.sparse import csr_matrix
 
 """
@@ -92,7 +92,7 @@ data_centralized_folder = "/home/johanna/spatial_thesis/spatial_metabolomics/dat
 # "/mnt/cbib/thesis_gbm/spatial_thesis/spatial_metabolomics/data"
 annotations_dict = {'HMDB': "Metaspace_annotations_943peaks.csv"}
 
-annots_obj = zd.MetabolomeAnnotations(name="heiland",
+annots_obj = spd.MetabolomeAnnotations(name="heiland",
                                      data_dir=data_centralized_folder,
                                      subfolder="heiland-msi",
                                      annotation_files=annotations_dict)

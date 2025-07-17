@@ -3,9 +3,9 @@ import os
 import pandas as pd
 import anndata as ad
 
-import zonist.data as zd
-import zonist.method as zm
-import zonist.processing.measures_methods as zmm
+import smpath.data as spd
+import smpath.method as spm
+import smpath.processing.measures_methods as measures_methods
 
 from local_helpers.local_helpers import provide_annotation_dict
 
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     datasets_parameters_df.reset_index(inplace=True)
     # start
 
-    pathwaysObj = zd.MetabolicPathways(
+    pathwaysObj = spd.MetabolicPathways(
         data_dir=data_centralized_folder,
         subfolder="metabolites-mappings",
         file="WIKIPATHWAYS_human_multi_id_redundant.mmt"
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         annotations_to_use = row["annotations_to_use"].split(" ")
         annotations_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
 
-        annots_obj = zd.MetabolomeAnnotations(
+        annots_obj = spd.MetabolomeAnnotations(
             name=SAMPLE, data_dir=data_centralized_folder, subfolder=subfolder,
             annotation_files=annotations_dict)
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                    "mz"].astype(str).tolist()]
 
-        annots_obj, adata_mz = zmm.match_adata_mz_and_annots(annots_obj, adata_mz)
+        annots_obj, adata_mz = measures_methods.match_adata_mz_and_annots(annots_obj, adata_mz)
 
         my_new_dict[SAMPLE] = counts_per_orig_db(annots_obj.no_translated)
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
-        pw1, ann1_df = zm.SyncPathwaysAndAnnots.run(
+        pw1, ann1_df = spm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
             annots_obj.df.copy(),
             usable_id="moleculeIds",
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
         my_new_dict[SAMPLE] += counts_per_orig_db(ann1_df)
 
-        pws_obj_2, annots_2_df = zm.SyncPathwaysAndAnnots.run(
+        pws_obj_2, annots_2_df = spm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
             annots_obj.df.copy(),
             usable_id="moleculeIds",

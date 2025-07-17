@@ -3,16 +3,16 @@ import numpy as np
 
 from scipy.sparse import csr_matrix
 
-import zonist.data as zd
-import zonist.method as zm
+import smpath.data as spd
+import smpath.method as spm
 from sklearn.cluster import KMeans
 
 
 import pickle
 from analysis_helpers import *
-import zonist.processing.measures_methods as zmm
+import smpath.processing.measures_methods as measures_methods
 
-from myutils.quantifs_methods import run_pathway_scores_steps
+from myutils.quantifs_methods import run_pathway_scores_steps_produce_anndata
 
 import warnings
 warnings.simplefilter('ignore',category=FutureWarning)
@@ -68,7 +68,7 @@ def compute_differential_families_and_pathways(  pathways_types,
 def compute_families_scores( min_family_size,
           SAMPLE, subfolder, data_centralized_folder):
 
-    families_obj = zd.MetabolicPathways(
+    families_obj = spd.MetabolicPathways(
         data_dir=data_centralized_folder,
         subfolder=subfolder,
         file=f"{SAMPLE}-molecules_families.mmt"
@@ -84,16 +84,16 @@ def compute_families_scores( min_family_size,
                      f'{SAMPLE}-WIKI-CleanAnnotations.tsv'),
         sep='\t', header=0, index_col=None)
 
-    families_obj, annots_df = zm.SyncPathwaysAndAnnots.run(
+    families_obj, annots_df = spm.SyncPathwaysAndAnnots.run(
         families_obj.model_copy(),
         clean_annots_nokegg_ids,
         usable_id='moleculeIds',
         min_set_size=min_family_size)
 
-    scores_adata = run_pathway_scores_steps(adata_mz.copy(),
-                                            families_obj,
-                                            annots_df,
-                                            usable_id='moleculeIds', type="FAMILIES")
+    scores_adata = run_pathway_scores_steps_produce_anndata(
+        adata_mz.copy(), families_obj,  annots_df,
+         usable_id='moleculeIds',  min_set_size=min_family_size,
+        type_abbr="FAMILIES"  )
     
     out_file = os.path.join(data_centralized_folder, subfolder,
                          f'{SAMPLE}-scores-FAMILIES.h5ad')
@@ -114,7 +114,7 @@ def compute_molecules_families( cutoff_tree,
     molecules_ids_df = prepare_mols_df(top_differential,
                                        clean_ann_df=clean_annots_nokegg_ids)
 
-    mol_similarities_result = zm.ComputeMoleculesSimilarityMatrix.run(
+    mol_similarities_result = spm.ComputeMoleculesSimilarityMatrix.run(
         molecules_ids_list=molecules_ids_df["moleculeIds"])
 
     with open(os.path.join(data_centralized_folder, subfolder,
@@ -122,8 +122,8 @@ def compute_molecules_families( cutoff_tree,
               "wb") as f:
         pickle.dump(mol_similarities_result, f)
 
-    updated_config = zm.ComputeMoleculesFamiliesConfig(cutoff_tree=cutoff_tree)
-    computed_fam_results = zm.ComputeMoleculesFamilies.run(
+    updated_config = spm.ComputeMoleculesFamiliesConfig(cutoff_tree=cutoff_tree)
+    computed_fam_results = spm.ComputeMoleculesFamilies.run(
         mol_similarities_result,
         molecules_ids_df,
         SAMPLE,
@@ -148,7 +148,7 @@ def compute_pathway_scores( pathways_types, min_pathway_size,
     #mapped_elements = list()
     for pwtype in pathways_types:
         annots_df = clean_annots_dict[pwtype]
-        pathways_obj = zd.MetabolicPathways(
+        pathways_obj = spd.MetabolicPathways(
             data_dir=data_centralized_folder,
             subfolder=sets_args_dict[pwtype]['subfolder'],
             file=sets_args_dict[pwtype]['file']
@@ -156,7 +156,7 @@ def compute_pathway_scores( pathways_types, min_pathway_size,
         pathways_obj.molecule_id_type = sets_args_dict[pwtype]['id_type']
 
         pathways_obj.load()
-        pathways_obj, annots_df = zm.SyncPathwaysAndAnnots.run(
+        pathways_obj, annots_df = spm.SyncPathwaysAndAnnots.run(
             pathways_obj.model_copy(),
             annots_df,
             usable_id=sets_args_dict[pwtype]['id_type'],
@@ -165,8 +165,11 @@ def compute_pathway_scores( pathways_types, min_pathway_size,
         out_file = os.path.join(data_centralized_folder, subfolder,
                              f'{SAMPLE}-scores-{pwtype}.h5ad')
 
-        scores_adata = run_pathway_scores_steps(adata_mz.copy(), pathways_obj,
-            annots_df,  usable_id=sets_args_dict[pwtype]['id_type'], type=pwtype)
+        scores_adata = run_pathway_scores_steps_produce_anndata(
+            adata_mz.copy(), pathways_obj,
+            annots_df, usable_id=sets_args_dict[pwtype]['id_type'],
+            min_set_size=min_pathway_size,
+            type_abbr=pwtype)
 
         scores_adata.write_h5ad(out_file); print("success, saved scores\n")
         #mapped_elements += scores_adata.uns['current_pathways_df']['mz'].unique(
@@ -265,9 +268,9 @@ def clean_annotations_and_save( annots_obj, pathways_types,
     SAMPLE, subfolder, data_centralized_folder
 ):
     adata_mz = safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder)
-    annots_obj, adata_mz = zmm.match_adata_mz_and_annots(annots_obj, adata_mz)
+    annots_obj, adata_mz = measures_methods.match_adata_mz_and_annots(annots_obj, adata_mz)
 
-    ref_KEGG_ids_obj = zd.MetaboliteIdsMappings(
+    ref_KEGG_ids_obj = spd.MetaboliteIdsMappings(
         data_dir=data_centralized_folder,
         subfolder="metabolites-mappings",
         mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
@@ -302,9 +305,9 @@ def normalize_classify_and_save(annots_obj, offSample_cutoff,
     except KeyError:
         pass
 
-    annots_obj, adata_mz = zmm.match_adata_mz_and_annots(annots_obj, adata_mz)
-    adata_mz = zm.NormalizeIntensities.run(adata_mz)
-    adata_mz = zm.ClassifyMZProtocol.run(
+    annots_obj, adata_mz = measures_methods.match_adata_mz_and_annots(annots_obj, adata_mz)
+    adata_mz = spm.NormalizeIntensities.run(adata_mz)
+    adata_mz = spm.ClassifyMZProtocol.run(
         adata_mz, annots_obj, msm_cutoff, offSample_cutoff, fdr_cutoff,
         moran_I_cutoff, moran_padj_cutoff, SAMPLE, plot_folder)
 
@@ -328,31 +331,31 @@ def run_analysis_one_tissue( annotations_dict, offSample_cutoff,
     if not os.path.exists(plot_folder):
             os.mkdir(plot_folder)
 
-    # annots_obj = zd.MetabolomeAnnotations(
-    #     name=SAMPLE, data_dir=data_centralized_folder,
-    #     subfolder=subfolder, annotation_files=annotations_dict)
-    # annots_obj.load()  # load annotations
-    #
-    # normalize_classify_and_save(annots_obj, offSample_cutoff,
-    #     msm_cutoff, fdr_cutoff,  moran_I_cutoff, moran_padj_cutoff, SAMPLE, subfolder,
-    #     data_centralized_folder,  plot_folder)
-    #
-    # clean_annotations_and_save( annots_obj, pathways_types, SAMPLE, subfolder,
-    #     data_centralized_folder)
-    # del annots_obj   # no longer needed as the clean versions are now as .tsv
+    annots_obj = spd.MetabolomeAnnotations(
+        name=SAMPLE, data_dir=data_centralized_folder,
+        subfolder=subfolder, annotation_files=annotations_dict)
+    annots_obj.load()  # load annotations
 
-    # compute_clustering_of_spots(pathways_types, clustering_parameters,
-    #     SAMPLE, subfolder, data_centralized_folder, plot_folder)
-    #
-    #
-    # compute_differential_analysis_of_mzs(pathways_types,
-    #      clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
-    #
-    # compute_pathway_scores( pathways_types, min_pathway_size, SAMPLE,
-    #      subfolder, data_centralized_folder)
-    #
-    # compute_molecules_families(cutoff_tree,
-    #        SAMPLE, subfolder, data_centralized_folder, plot_folder)
+    normalize_classify_and_save(annots_obj, offSample_cutoff,
+        msm_cutoff, fdr_cutoff,  moran_I_cutoff, moran_padj_cutoff, SAMPLE, subfolder,
+        data_centralized_folder,  plot_folder)
+
+    clean_annotations_and_save( annots_obj, pathways_types, SAMPLE, subfolder,
+        data_centralized_folder)
+    del annots_obj   # no longer needed as the clean versions are now as .tsv
+
+    compute_clustering_of_spots(pathways_types, clustering_parameters,
+        SAMPLE, subfolder, data_centralized_folder, plot_folder)
+
+
+    compute_differential_analysis_of_mzs(pathways_types,
+         clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
+
+    compute_pathway_scores( pathways_types, min_pathway_size, SAMPLE,
+         subfolder, data_centralized_folder)
+
+    compute_molecules_families(cutoff_tree,
+           SAMPLE, subfolder, data_centralized_folder, plot_folder)
 
     compute_families_scores( min_family_size,
           SAMPLE, subfolder, data_centralized_folder)

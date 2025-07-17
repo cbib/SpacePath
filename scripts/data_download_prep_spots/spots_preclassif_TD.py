@@ -4,7 +4,7 @@ import anndata as ad
 import scanpy as sc
 import matplotlib.pyplot as plt
 from typing import List
-import zonist.method as zm
+import smpath.method as spm
 import json
 
 import warnings
@@ -48,7 +48,7 @@ def run_custom_spot_qual(datasets_parameters_df,
                             f'{SAMPLE}_out_tissue.json')):
             adata_mz = ad.read_h5ad(filename=os.path.join(
                 data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
-            adata_mz = zm.NormalizeIntensities.run(adata_mz)  # just for computations, but not saved
+            adata_mz = spm.NormalizeIntensities.run(adata_mz)  # just for computations, but not saved
 
             sc.tl.pca(adata_mz, svd_solver="arpack")
             sc.pp.neighbors(adata_mz)
