@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "zonist"
+name = "smpath"
 version = "0.0.0"
-description = "local essays not yet a library"
+description = "library for running the method of Spatial Exploration Method based on Pathway Activity Profiles"
 authors = ["johaGL <johanna.galvis@ibgc.cnrs.fr>"]
 
 readme = "README.md"

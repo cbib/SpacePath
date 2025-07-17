@@ -1,6 +1,6 @@
 from unittest import TestCase
 from typing import List, Dict
-import src.zonist.helpers as helpers
+import src.smpath.helpers as helpers
 
 import pandas as pd
 import numpy as np

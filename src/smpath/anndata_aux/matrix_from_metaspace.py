@@ -12,8 +12,8 @@ import anndata as ad
 
 from metaspace_converter import metaspace_to_anndata
 from scipy.sparse import csr_matrix
-import zonist.helpers as helpers
-from zonist.constants import mz_decimal_places
+import smpath.helpers as helpers
+from smpath.constants import mz_decimal_places
 import gc
 import logging
 

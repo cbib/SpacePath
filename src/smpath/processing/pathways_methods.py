@@ -12,7 +12,7 @@ import scanpy as sc
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra
 import zipfile
-from zonist.helpers import is_log_transformed
+from smpath.helpers import is_log_transformed
 
 
 

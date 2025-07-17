@@ -23,11 +23,11 @@ from scipy.sparse import csr_matrix
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
 import yaml
-import zonist.helpers as helpers
-from zonist.data import MetabolicPathways, MetabolomeAnnotations
-import zonist.processing.measures_methods as zmm
-import zonist.processing.pathways_methods as pathways_methods
-import zonist.visualization.visualization as zviz
+import smpath.helpers as helpers
+from smpath.data import MetabolicPathways, MetabolomeAnnotations
+import smpath.processing.measures_methods as measures_methods
+import smpath.processing.pathways_methods as pathways_methods
+import smpath.visualization.visualization as sviz
 
 
 logger = logging.getLogger(__name__)
@@ -181,9 +181,9 @@ class ComputeMoleculesFamilies:
         )
         logger.info("saved .mmt file to %s %s", mydata_dir, subfolder)
 
-        fig_obj = zviz.plot_families(molecules_ids_df, mol_similarities_result,
+        fig_obj = sviz.plot_families(molecules_ids_df, mol_similarities_result,
                       computed_dendrogram)
-        zviz.save_families_plot(fig_obj, SAMPLE, plot_folder)
+        sviz.save_families_plot(fig_obj, SAMPLE, plot_folder)
         logger.info("saved figure to %s", plot_folder)
 
         return {"computed_dendrogram" : computed_dendrogram,
@@ -209,7 +209,7 @@ class NormalizeIntensities:
                 if not 'norm' in list(adata_mz.uns.keys()):
                     logger.info("%s", config.description)
                     adata_mz.layers['raw_X'] = adata_mz.X.copy()
-                    normalised_X = zmm.tic_normalization(adata_mz.X.copy())
+                    normalised_X = measures_methods.tic_normalization(adata_mz.X.copy())
                     adata_mz.X = csr_matrix(normalised_X)
                     adata_mz.uns['norm'] = config.method
                 else:
@@ -234,13 +234,13 @@ class ClassifyMZProtocol:
         logger.info(f">> Part a: classifying the ions with thresholds: "
           f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff,
                     offSample_cutoff,fdr_cutoff)
-        me_annots, mz_good_from_part_a = zmm.part_a__mz_quality_mark(
+        me_annots, mz_good_from_part_a = measures_methods.part_a__mz_quality_mark(
             me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff)
 
         logger.info(f"  a total of %s ions pass MSM, offSample and FDR cutoffs.",
                     len(set(mz_good_from_part_a)))
         text_notice = f"valid $m/z$\n n = {len(mz_good_from_part_a)}"
-        zviz.plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,
+        sviz.plot_mz_given_quality_metrics(me_annots.mz_quality, SAMPLE,
                                       plot_folder, msm_cutoff,
                                       offSample_cutoff, text_notice)
         logger.info("  saved plot (MSM, offSample, FDR) to %s", plot_folder)
@@ -255,12 +255,12 @@ class ClassifyMZProtocol:
         logger.info(f">> Part b: classifying ions based on Moran's I: "
               f"thresholds: I >= %s,  (BH) adjusted p-value <= %s", moran_I_cutoff, moran_padj_cutoff)
         logger.info("  metrics are only computed for the ions that passed the 'Part a'.")
-        all_quality_df, mz_good_part_b, moran_mz_df = zmm.part_b__mz_quality_by_autocorr(
+        all_quality_df, mz_good_part_b, moran_mz_df = measures_methods.part_b__mz_quality_by_autocorr(
             adata_mz, mz_good_from_part_a, me_annots,
             moran_I_cutoff, moran_padj_cutoff, config.n_neighs_for_graph, config.n_perms_moran_calc)
 
         text_notice = f"valid $m/z$: n = {len(mz_good_part_b)}"
-        zviz.plot__moran_info(moran_mz_df, plot_folder,
+        sviz.plot__moran_info(moran_mz_df, plot_folder,
                          SAMPLE,
                          text_notice, moran_I_cutoff, moran_padj_cutoff)
         logger.info("  saved plot (autocorrelation) to %s", plot_folder)
@@ -268,7 +268,7 @@ class ClassifyMZProtocol:
         adata_mz.uns["history"]['features_n_after_mz_clean_2'] = len(
             mz_good_part_b)
 
-        adata_mz = zmm.adata_mz_insert_full_quality(adata_mz,
+        adata_mz = measures_methods.adata_mz_insert_full_quality(adata_mz,
                                                     moran_mz_df,
                                                     all_quality_df)
         n_good_mz = adata_mz.var.loc[

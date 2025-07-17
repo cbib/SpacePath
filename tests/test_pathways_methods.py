@@ -3,8 +3,8 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 #import anndata as ad
-import src.zonist.helpers as helpers
-import src.zonist.processing.pathways_methods as processing
+import src.smpath.helpers as helpers
+import src.smpath.processing.pathways_methods as pathways_methods
 
 
 class PathwaysForTests:
@@ -26,7 +26,7 @@ class PathwaysForTests:
 class Test(TestCase):
     def test_spots_groups_by_random_choice(self):
         spots_names = [str(i) for i in np.arange(13)]
-        result = processing.spots_groups_by_random_choice(
+        result = pathways_methods.spots_groups_by_random_choice(
             spots_names, n_groups=4)
         self.assertEqual(len(result[0]), 3)
         self.assertEqual(len(result[1]), 3)
@@ -36,7 +36,7 @@ class Test(TestCase):
     def test_reshape_pathways_for_kpca(self):
         pathways_dict = {"p1": ["9", "8", "7", "6",],
                          "p2": ["5", "4", "3"]}
-        result = processing.reshape_pathways_for_kpca(pathways_dict)
+        result = pathways_methods.reshape_pathways_for_kpca(pathways_dict)
         self.assertIsInstance(result, pd.DataFrame)
         self.assertListEqual(result.index.tolist(), ['p1', 'p2'])
         self.assertTrue(np.all(result.loc["p1", :].to_numpy() ==
@@ -52,7 +52,7 @@ class Test(TestCase):
                            index=['e', 'i', 'w'])
         dfs_dicts = {0: df1, 1: df2}
         ordered_spots_names = ['a', 'e', 'i', 'o', 'u', 'v', 'w']
-        result = processing.gather_scores_dfs_dict(
+        result = pathways_methods.gather_scores_dfs_dict(
             dfs_dicts, ordered_spots_names)
         self.assertIsInstance(result, pd.DataFrame)
         self.assertListEqual(result.columns.tolist(),

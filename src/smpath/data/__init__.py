@@ -16,10 +16,10 @@ from pandas.api.types import is_numeric_dtype
 
 from pathlib import Path
 
-import zonist.helpers as helpers
-import zonist.processing.pathways_methods as pathways_methods
+import smpath.helpers as helpers
+import smpath.processing.pathways_methods as pathways_methods
 
-from zonist.constants import (supported_mappings, supported_annotations,
+from smpath.constants import (supported_mappings, supported_annotations,
                               columns_kegg_conversion_expected,
                               not_metabolic_reactions_pathways,
                               mz_decimal_places)

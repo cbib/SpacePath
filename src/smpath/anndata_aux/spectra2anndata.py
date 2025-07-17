@@ -23,7 +23,7 @@ from tqdm import tqdm
 import os
 import sys
 from scipy.sparse import csr_matrix
-from zonist.constants import mz_decimal_places
+from smpath.constants import mz_decimal_places
 import gc
 import logging
 logging.basicConfig(level=logging.INFO)
