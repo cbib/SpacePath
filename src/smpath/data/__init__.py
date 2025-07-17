@@ -256,21 +256,21 @@ class MetabolomeAnnotations(Dataset):
 
     def remove_redundant_aliases(self):
         logger.info("collapsing metabolites' identifiers aliases")
-        assert self.usable_id != "KEGG", "bad `.usable_id` attribute"
+        if self.usable_id != "KEGG":
+            aliases_df = pd.read_csv(os.path.join(library_path,
+                "resources", "aliases-HMDB-05-07-24-LipidMaps-04-30-25.tsv"),
+                sep="\t", header=0, index_col=None, low_memory=False)
 
-        aliases_df = pd.read_csv(os.path.join(library_path,
-            "resources", "aliases-HMDB-05-07-24-LipidMaps-04-30-25.tsv"),
-            sep="\t", header=0, index_col=None, low_memory=False)
+            accepted_ids = helpers.aliases_handler(
+                aliases_df, self.df, self.usable_id)
 
-        accepted_ids = helpers.aliases_handler(
-            aliases_df, self.df, self.usable_id)
-
-        self.df = self.df.loc[
-                  self.df[self.usable_id].isin(
-                      accepted_ids), :].copy()
-        self.no_translated = self.no_translated.loc[
-                             self.no_translated[self.usable_id].isin(
-                                 accepted_ids), :].copy()
+            self.df = self.df.loc[
+                      self.df[self.usable_id].isin(accepted_ids), :].copy()
+            self.no_translated = self.no_translated.loc[
+                                 self.no_translated[self.usable_id].isin(
+                                     accepted_ids), :].copy()
+        else:
+            logger.info("ignored, not applicable for %s ids", self.usable_id)
 
     def check_expectations_1(self):
         if len(set(list(self.annotation_files.keys())).intersection(

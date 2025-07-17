@@ -43,10 +43,10 @@ def build_identifiers_weights_df(adata_mz:ad.AnnData,
 
         tmp_X[u_id] = np.array(curr_product_arr, dtype=np.float32)
 
-    data_df = pd.DataFrame(data=tmp_X,
+    metabolites_computed_w = pd.DataFrame(data=tmp_X,
                           columns=list(tmp_X.keys()),  # compounds ids
                           index=adata_mz.obs.index.tolist())  # spots ids
-    return data_df
+    return metabolites_computed_w
 
 
 def compute_mz_binary_df(adata_mz: ad.AnnData) -> pd.DataFrame:
@@ -120,7 +120,8 @@ def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5) -> ad.AnnData:
      in `adata.obsp` are required, so spatial neighbors must be run first"""
     logger.info('computing spatial neighbors, with n_neighs: %s', n_neighs)
     sq.gr.spatial_neighbors(adata, n_neighs=n_neighs)
-    logger.info("Computing Moran's I")
+    logger.info("Computing Moran's I autocorrelation "
+                "on data with shape (obs,vars) %s", adata.shape)
     sq.gr.spatial_autocorr(adata, mode="moran", n_perms=n_perms, n_jobs=1, seed=0)
 
     return adata

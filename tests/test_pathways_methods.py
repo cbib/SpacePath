@@ -61,15 +61,17 @@ class Test(TestCase):
         self.assertTrue(result.min().min() == -2)
 
     def test_compute_pathways_scores(self):
-        data_df = pd.DataFrame(data=np.array([[600, 6477, 4545, 1e4],
-                                             [1e4, 23423, 7000, 1e3],
-                                             [1e3, 95345, 1e4, 4353]]),
-                      columns=["lipid1", "lipid2", "lipid3", "lipid4"],
-                      index=["spotA", "spotB", "spotC"])
+        metabolites_computed_w = pd.DataFrame(
+            data=np.array([[600, 6477, 4545, 1e4],
+                          [1e4, 23423, 7000, 1e3],
+                           [1e3, 95345, 1e4, 4353]]),
+            columns=["lipid1", "lipid2", "lipid3", "lipid4"],
+            index=["spotA", "spotB", "spotC"])
         sets_dict = {'Set1': ["lipid3", "lipid1"], 'Set2': ["lipid2", "lip6"],
                      'Set3': ["lipid2", "lipid4", "lipid3"], 'Set4': ["lip9"]}
-        result = pathways_methods.compute_pathways_scores(
-            sets_dict, data_df, method='sspa_kpca', min_entity=2,
+
+        result = pathways_methods.compute_pathways_scores(sets_dict,
+             metabolites_computed_w, method='sspa_kpca', min_entity=2,
             n_groups_of_spots=30, threshold_n_spots_is_high=1000
         )
         result = result.round(4)

@@ -105,14 +105,15 @@ def spots_groups_by_random_choice(spots_names: List[str],
 
 
 def compute_kpca(sets__df: pd.DataFrame,
-                 data_df:pd.DataFrame, min_entity: int)-> pd.DataFrame:
+                 metabolites_computed_w: pd.DataFrame, min_entity: int
+                 )-> pd.DataFrame:
     """
-    Computes kPCA on the compounds quantifications matrix
+    computes kPCA on the compounds quantifications matrix
      to yield scores per pathway (or set), per spot.
-    Credits of the sspa package: C Wieder et al., 2022
+    credits of the sspa package: C Wieder et al., 2022
 
     :param sets__df: pathways or sets df, each row is a set (see sspa)
-    :param data_df: the data with the quantifications as a dataframe
+    :param metabolites_computed_w: the data with the quantifications as a dataframe
     :parm min_entity: the minimal size of the set to do the computation
 
     :returns: Computed scores as a dataframe
@@ -120,7 +121,7 @@ def compute_kpca(sets__df: pd.DataFrame,
     kpca_model = sspa.sspa_kpca.sspa_KPCA(
         sets__df, min_entity=min_entity, random_state=0)
 
-    kpca_scores = kpca_model.fit_transform(data_df)
+    kpca_scores = kpca_model.fit_transform(metabolites_computed_w)
 
     return kpca_scores
 
@@ -134,13 +135,13 @@ def reshape_pathways_for_kpca(pathways_dict)-> pd.DataFrame:
     return sets__df
 
 
-def compute_kpca_on_spot_groups(sets__df, data_df, groups_d: Dict[int, list],
+def compute_kpca_on_spot_groups(sets__df, metabolites_computed_w, groups_d: Dict[int, list],
                                 min_entity:int) -> Dict[int, dict]:
     kpca_scores_d = dict()
     for k in groups_d.keys():
         sys.stdout.write(".")
         sys.stdout.flush()
-        data_here = data_df.loc[groups_d[k], :].copy()
+        data_here = metabolites_computed_w.loc[groups_d[k], :].copy()
         kpca_scores_d[k] = compute_kpca(sets__df, data_here, min_entity)
 
     return kpca_scores_d
@@ -174,38 +175,37 @@ def gather_scores_dfs_dict(kpca_scores_d: Dict[int, pd.DataFrame],
 
 
 def compute_pathways_scores(pathways_dict: Dict[str, List[str]],
-                            data_df: pd.DataFrame, method: str, min_entity: int,
+                            metabolites_computed_w: pd.DataFrame, method: str, min_entity: int,
                             n_groups_of_spots: int,
                             threshold_n_spots_is_high: int)-> pd.DataFrame:
     """
-    :pathways_dict: the pathways or sets, e.g. {'pathway1': [HMDB6, HMDB1],..}
-    :data_df: the quantities with shape (spots (rows), features (columns)):
+    :param pathways_dict: the pathways or sets, e.g. {'pathway1': [HMDB6, HMDB1],..}
+    :param metabolites_computed_w: the quantities with shape (spots (rows), features (columns)):
                    HMDB0000045  HMDB0000058  HMDB0000122
         x2_y0          0.0          0.0          0.0
         x3_y0          0.0          0.0          0.0
         x4_y0          0.0          0.0          0.0
-    :n_groups_of_spots: how many groups of spots to form and process,
+    :param n_groups_of_spots: how many groups of spots to form and process,
        when the number of spots is superior to threshold_n_spots_is_high
     Returns:
        scores in a df with shape (spots (rows), set_names (columns))
-
     """
     if method == "sspa_kpca":
         sets__df = reshape_pathways_for_kpca(pathways_dict)
 
-        if not is_log_transformed(np.array(data_df)):
-            data_df = np.log(data_df + 1)
+        if not is_log_transformed(np.array(metabolites_computed_w)):
+            metabolites_computed_w = np.log(metabolites_computed_w + 1)
 
-        if data_df.shape[0] < threshold_n_spots_is_high:
-            scores_res = compute_kpca(sets__df, data_df, min_entity=min_entity)
+        if metabolites_computed_w.shape[0] < threshold_n_spots_is_high:
+            scores_res = compute_kpca(sets__df, metabolites_computed_w, min_entity=min_entity)
         else:
             groups_dict = spots_groups_by_random_choice(
-                data_df.index.tolist(), # the spots names
+                metabolites_computed_w.index.tolist(), # the spots names
                 n_groups=n_groups_of_spots)
             scores__dict = compute_kpca_on_spot_groups(
-                sets__df, data_df, groups_dict, min_entity=min_entity)
+                sets__df, metabolites_computed_w, groups_dict, min_entity=min_entity)
             scores_res = gather_scores_dfs_dict(
-                scores__dict, ordered_spots_names=data_df.index.tolist())
+                scores__dict, ordered_spots_names=metabolites_computed_w.index.tolist())
     else:
         raise NotImplementedError
 

@@ -229,7 +229,7 @@ class ComputePathwaysScores:
 
     @staticmethod
     def run(pathways_dict: Dict[str, List[str]],
-            data_df: pd.DataFrame,
+            metabolites_computed_w: pd.DataFrame,
             config=ComputePathwaysScoresConfig()
             ) -> pd.DataFrame:
         logger.info("\n Will compute spot-wise Pathways Scores "
@@ -237,7 +237,7 @@ class ComputePathwaysScores:
         if config.method == "sspa_kpca":
             logger.info(" using sspa library, credits: Wieder C et al., 2022")
         scores_df = pathways_methods.compute_pathways_scores(
-            pathways_dict, data_df,
+            pathways_dict, metabolites_computed_w,
             config.method, config.min_entity,
             config.n_groups_of_spots, config.threshold_n_spots_is_high)
         
