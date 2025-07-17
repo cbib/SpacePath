@@ -8,10 +8,9 @@ import scanpy as sc
 from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
 from sklearn.utils import sparsefuncs
-from zonist.data import MetabolicPathways, MetabolomeAnnotations
-import zonist.helpers as zh
-import zonist.method as zm
-from zonist.method import ComputePathwaysScoresConfig
+from smpath.data import MetabolicPathways, MetabolomeAnnotations
+import smpath.method as spm
+from smpath.method import ComputePathwaysScoresConfig
 
 
 def get_top_n(group, *args):
@@ -132,13 +131,19 @@ def build_identifiers_adata(adata_mz,  X_metabolites_probs_df,
     return adataIds
 
 
-def run_pathway_scores_steps(adata_mz, pws_obj, annots_df, usable_id, type):
+def run_pathway_scores_steps_produce_anndata(adata_mz,
+                                             pws_obj,
+                                             annots_df,
+                                             usable_id,
+                                             min_set_size,
+                                             type_abbr):
     adata_mz = adata_mz[:, annots_df['mz'].astype(str).unique()].copy()
     X_df = compute_metabolites_probs_df(adata_mz, annots_df, usable_id)
     adataIds = build_identifiers_adata(adata_mz, X_df, annots_df, usable_id)
     del adata_mz # free some space for computation
-    updated_config = zm.ComputePathwaysScoresConfig(type_abbr=type)
-    scores_df = zm.ComputePathwaysScores.run(
+    updated_config = spm.ComputePathwaysScoresConfig(type_abbr=type_abbr,
+                                                     min_set_size=min_set_size)
+    scores_df = spm.ComputePathwaysScores.run(
         pws_obj.to_dict(), adataIds, config=updated_config
     )
     scores_adata = score_as_adata(scores_df, adataIds,

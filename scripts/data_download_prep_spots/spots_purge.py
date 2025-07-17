@@ -3,8 +3,8 @@ import os
 import pandas as pd
 import anndata as ad
 import json
-import zonist.data as zd
-import zonist.processing.measures_methods as zmm
+import smpath.data as spd
+import smpath.processing.measures_methods as measures_methods
 import matplotlib.pyplot as plt
 
 import logging
@@ -85,12 +85,12 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
             annotations_to_use = row["annotations_to_use"].split(" ")
             annotations_dict = provide_annotation_dict(SAMPLE,
                                                        annotations_to_use)
-            annots_obj = zd.MetabolomeAnnotations(name=SAMPLE,
+            annots_obj = spd.MetabolomeAnnotations(name=SAMPLE,
                                                   data_dir=data_centralized_folder,
                                                   subfolder=subfolder,
                                                   annotation_files=annotations_dict)
             annots_obj.load()
-            annots_obj, adata_mz = zmm.match_adata_mz_and_annots(annots_obj,
+            annots_obj, adata_mz = measures_methods.match_adata_mz_and_annots(annots_obj,
                                                                  adata_mz)
 
             annots_obj.pull_mz_quality_df()  ## NEW
@@ -100,10 +100,10 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
                 if SAMPLE in ["LP-brain-mouse-5"]:
                     fdr_cutoff_features_to_compute_spot_qual = 0.2
                 x = fdr_cutoff_features_to_compute_spot_qual
-                adata_mz = zmm.compute_spot_quality(adata_mz, annots_obj,
+                adata_mz = measures_methods.compute_spot_quality(adata_mz, annots_obj,
                                                     allowed_in_out_ratio,
                                                     fdr_cutoff=x)
-                adata_mz = zmm.mark_weak_signal_spots(adata_mz, cutoff=100)
+                adata_mz = measures_methods.mark_weak_signal_spots(adata_mz, cutoff=100)
 
                 try:
                     adata_mz = custom_out_tissue(

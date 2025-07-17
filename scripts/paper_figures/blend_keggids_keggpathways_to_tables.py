@@ -3,23 +3,23 @@ import os
 
 import anndata as ad
 import pandas as pd
-import zonist.data as zd
-import zonist.method as zm
+import smpath.data as spd
+import smpath.method as spm
 
-import zonist.processing.measures_methods as zmm
+import smpath.processing.measures_methods as measures_methods
 from analysis_helpers import provide_annotation_dict
 
 
 
-def counts_per_orig_db(annotsdf):
+def counts_per_orig_db(annots_df):
     # the .df attr of annots object has always the database of origin of the metabolites
     out_l = [0, 0, 0]
     position_dict = {0: ["HMDB", "CoreMetabolome"], 1: ['LipidMaps'],
                      2: ["KEGG"]}
     for k in position_dict.keys():
-        sdf = annotsdf.loc[
-                        annotsdf['database'].isin(position_dict[k]), :].copy()
-        out_l[k] = len(sdf['moleculeIds'].unique())
+        s_df = annots_df.loc[
+                        annots_df['database'].isin(position_dict[k]), :].copy()
+        out_l[k] = len(s_df['moleculeIds'].unique())
     return out_l
 
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     # start
 
-    me_refmap = zd.MetaboliteIdsMappings(
+    me_refmap = spd.MetaboliteIdsMappings(
             data_dir=data_centralized_folder,
             subfolder="metabolites-mappings",
             mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
@@ -54,7 +54,7 @@ if __name__ == "__main__":
                            'CoreMetabolome': "CoreMetabolome-to-KEGG_05-07-24.tsv"})
     me_refmap.load()
 
-    pathwaysObj = zd.MetabolicPathways(
+    pathwaysObj = spd.MetabolicPathways(
         data_dir=data_centralized_folder,
         subfolder="metabolites-mappings",
         file="KEGG_hsa_pathways_compounds_R110.gmt")
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         annotations_to_use = row["annotations_to_use"].split(" ")
         annotations_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
 
-        annots_obj = zd.MetabolomeAnnotations(
+        annots_obj = spd.MetabolomeAnnotations(
             name=SAMPLE, data_dir=data_centralized_folder, subfolder=subfolder,
             annotation_files=annotations_dict)
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
                    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                    "mz"].astype(str).tolist()]
 
-        annots_obj, adata_mz = zmm.match_adata_mz_and_annots(annots_obj, adata_mz)
+        annots_obj, adata_mz = measures_methods.match_adata_mz_and_annots(annots_obj, adata_mz)
 
         my_new_dict[SAMPLE] = counts_per_orig_db(annots_obj.no_translated)
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
         initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
-        pws1, ann1_df = zm.SyncPathwaysAndAnnots.run(
+        pws1, ann1_df = spm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
             annots_obj.df.copy(),
             usable_id="KEGG",
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         )
         my_new_dict[SAMPLE] += counts_per_orig_db(ann1_df)
 
-        pws_obj_2, annots_2_df = zm.SyncPathwaysAndAnnots.run(
+        pws_obj_2, annots_2_df = spm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
             annots_obj.df.copy(),
             usable_id="KEGG",

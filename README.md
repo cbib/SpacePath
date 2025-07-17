@@ -5,7 +5,7 @@ under construction
 
 
 
-using https://github.com/johaGL/zonist which is under construction as well
+using https://github.com/johaGL/smpath which is under construction as well
 
 
 ### "datasets-parameters.tsv" : 
