@@ -314,7 +314,12 @@ def gmts_merge_pile_splitid(dfs_dict, pathway_id_col: str,
 def pathways_and_annots_join(pws_piled: pd.DataFrame,
                              anno_mz_ids: pd.DataFrame, mol_id_in_pws: str) -> pd.DataFrame:
     """
-
+    Filters the pathways piled table, by retaining only the elements
+    in the intersection with the annotations dataframe.
+    This also adds the 'mz' column to the pathways piled table.
+    :pws_piled: pathways df with columns: moleculeIds (or KEGG), pathway_id
+    :anno_mz_ids: annotations df with columns: mz, moleculeIds (or KEGG)
+    :mol_id_in_pws: "KEGG" or "moleculeIds"
     """
     assert len(list(pws_piled.columns)) == 2, \
         "too many columns in gmt piled table, bad format"

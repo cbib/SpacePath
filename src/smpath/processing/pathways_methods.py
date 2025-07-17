@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 
-from typing import List, Dict, Literal, Optional, Set, Union
+from typing import List, Dict,   Set, Union, Tuple
 
 import pandas as pd
 import anndata as ad
@@ -14,10 +14,14 @@ from pydantic import Extra
 import zipfile
 from smpath.helpers import is_log_transformed
 
-
+"""Functions exclusive to Pathways and Families computations"""
 
 def save_families_as_mmt_file(dedupl_df, molecules_ids_df,
-                               SAMPLE, subfolder, mydata_dir) -> dict:
+                               SAMPLE, subfolder, mydata_dir
+                              )-> None:
+    """
+    saves families as .mnt (metabolites version of .gmt format)
+    """
     molecs_families_dict = {}  # initialize and save as mmt
     for cluster in sorted(dedupl_df['molecules_cluster'].unique().tolist()):
         mols_in_cluster = dedupl_df.loc[
@@ -43,9 +47,9 @@ def save_families_as_mmt_file(dedupl_df, molecules_ids_df,
     molecs_families_mmt_df.to_csv(os.path.join(
         mydata_dir, subfolder, out_file), sep='\t', header=False)
 
-    return molecs_families_dict
 
-def compounds_and_smiles_ordered(smiles_df, molecules_ids_list):
+def compounds_and_smiles_ordered(smiles_df, molecules_ids_list
+                                 )-> Tuple[List[str], List[str]]:
     mycopy = smiles_df.copy()
     mycopy = mycopy.drop_duplicates(subset=['moleculeIds', 'SMILES'],
                                     keep='first')
@@ -78,6 +82,7 @@ def unzip_if_not_tsv(library_path, smiles_files)-> None:
 
 def spots_groups_by_random_choice(spots_names: List[str],
                                   n_groups: int=4) -> Dict[int, List[str]]:
+    """randomly assort the spots into n_groups, without resampling"""
     np.random.seed(0)
     seen_list = []
     n_spots_by_group = int(len(spots_names) / n_groups)
@@ -99,44 +104,44 @@ def spots_groups_by_random_choice(spots_names: List[str],
     return groups_dict
 
 
-def compute_kpca(pw_as_df: pd.DataFrame,
-                 adata: ad.AnnData, min_entity: int=2)-> pd.DataFrame:
+def compute_kpca(sets__df: pd.DataFrame,
+                 data_df:pd.DataFrame, min_entity: int)-> pd.DataFrame:
     """
     Computes kPCA on the compounds quantifications matrix
      to yield scores per pathway (or set), per spot.
     Credits of the sspa package: C Wieder et al., 2022
 
-    :param pw_as_df: pathways or sets df, each row is a set (see sspa)
-    :param adata: the data with the quantifications in its .X property
+    :param sets__df: pathways or sets df, each row is a set (see sspa)
+    :param data_df: the data with the quantifications as a dataframe
     :parm min_entity: the minimal size of the set to do the computation
 
     :returns: Computed scores as a dataframe
     """
     kpca_model = sspa.sspa_kpca.sspa_KPCA(
-        pw_as_df, min_entity=min_entity, random_state=0)
+        sets__df, min_entity=min_entity, random_state=0)
 
-    kpca_scores = kpca_model.fit_transform(adata.to_df())
+    kpca_scores = kpca_model.fit_transform(data_df)
 
     return kpca_scores
 
 
-def reshape_pathways_for_kpca(pathways_dict):
-    pw_as_df = pd.DataFrame({key: pd.Series(
+def reshape_pathways_for_kpca(pathways_dict)-> pd.DataFrame:
+    sets__df = pd.DataFrame({key: pd.Series(
         m_list) for key, m_list in pathways_dict.items()})
-    pw_as_df = pw_as_df.transpose()
-    pw_as_df['Pathway_name'] = 'none'  # sspa expects this column, which is dropped
+    sets__df = sets__df.transpose()
+    sets__df['Pathway_name'] = 'none'  # sspa expects this column, which is dropped
 
-    return pw_as_df
+    return sets__df
 
 
-def compute_kpca_on_spot_groups(pw_as_df, adata, groups_d: Dict[int, list],
-                                min_entity=2) -> Dict[int, dict]:
+def compute_kpca_on_spot_groups(sets__df, data_df, groups_d: Dict[int, list],
+                                min_entity:int) -> Dict[int, dict]:
     kpca_scores_d = dict()
     for k in groups_d.keys():
         sys.stdout.write(".")
         sys.stdout.flush()
-        adata_here = adata[groups_d[k], :].copy()
-        kpca_scores_d[k] = compute_kpca(pw_as_df, adata_here, min_entity)
+        data_here = data_df.loc[groups_d[k], :].copy()
+        kpca_scores_d[k] = compute_kpca(sets__df, data_here, min_entity)
 
     return kpca_scores_d
 
@@ -168,33 +173,52 @@ def gather_scores_dfs_dict(kpca_scores_d: Dict[int, pd.DataFrame],
     return tmp
 
 
-def compute_pathways_scores(pathways_dict,
-                            adata: ad.AnnData, method: str, min_entity: int,
+def compute_pathways_scores(pathways_dict: Dict[str, List[str]],
+                            data_df: pd.DataFrame, method: str, min_entity: int,
                             n_groups_of_spots: int,
                             threshold_n_spots_is_high: int)-> pd.DataFrame:
+    """
+    :pathways_dict: the pathways or sets, e.g. {'pathway1': [HMDB6, HMDB1],..}
+    :data_df: the quantities with shape (spots (rows), features (columns)):
+                   HMDB0000045  HMDB0000058  HMDB0000122
+        x2_y0          0.0          0.0          0.0
+        x3_y0          0.0          0.0          0.0
+        x4_y0          0.0          0.0          0.0
+    :n_groups_of_spots: how many groups of spots to form and process,
+       when the number of spots is superior to threshold_n_spots_is_high
+    Returns:
+       scores in a df with shape (spots (rows), set_names (columns))
+
+    """
     if method == "sspa_kpca":
-        pw_as_df = reshape_pathways_for_kpca(pathways_dict)
+        sets__df = reshape_pathways_for_kpca(pathways_dict)
 
-        if not is_log_transformed(adata.X):
-            sc.pp.log1p(adata)
+        if not is_log_transformed(np.array(data_df)):
+            data_df = np.log(data_df + 1)
 
-        if adata.obs.shape[0] < threshold_n_spots_is_high:
-            scores_res = compute_kpca(pw_as_df, adata, min_entity=min_entity)
+        if data_df.shape[0] < threshold_n_spots_is_high:
+            scores_res = compute_kpca(sets__df, data_df, min_entity=min_entity)
         else:
             groups_dict = spots_groups_by_random_choice(
-                adata.obs['obs'].tolist(), n_groups=n_groups_of_spots)
+                data_df.index.tolist(), # the spots names
+                n_groups=n_groups_of_spots)
             scores__dict = compute_kpca_on_spot_groups(
-                pw_as_df, adata, groups_dict, min_entity=min_entity)
+                sets__df, data_df, groups_dict, min_entity=min_entity)
             scores_res = gather_scores_dfs_dict(
-                scores__dict, ordered_spots_names=adata.obs['obs'].tolist())
+                scores__dict, ordered_spots_names=data_df.index.tolist())
     else:
         raise NotImplementedError
 
     return scores_res
 
 
-def find_metabolites_to_exclude(good_pathways: List[str], pathways_dict):
-    """TODO: ddetailed doc, very important"""  # todo !
+def find_metabolites_to_exclude(good_pathways: List[str], pathways_dict
+                                )->List[str]:
+    """
+    Used exclusively in the `constrain` method of MetabolicPathways:
+      when the synchronized Pathways are filtered if not fulfilling condition
+
+    """
     mts = {k: v for k, v in pathways_dict.items() if k in good_pathways}
     good_compounds_list = [i for m_id_list in mts.values() for i in m_id_list]
 
@@ -211,7 +235,12 @@ def find_metabolites_to_exclude(good_pathways: List[str], pathways_dict):
 def yield_compliant_pathways(pathways_dict,
                              min_pathway_size=2,
                              max_pathway_size=200) -> List[str]:
-    """TODO doc"""
+    """
+    Returns the list of pathway ids that respect a min and max size.
+    Note:
+      exclusive use of `.constrain` method, iif intersection with the clean
+      annotations was performed. See MetabolicPathways class.
+    """
     pathways_sizes = {k: len(pathways_dict[k]) for k in pathways_dict.keys()}
     if min_pathway_size != max_pathway_size:
         good_pathways_sizes = {k: v for k, v in pathways_sizes.items()

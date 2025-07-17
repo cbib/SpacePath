@@ -16,125 +16,83 @@ logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
 
 """"
-Functions related to mz intensities and their annotations
+Functions related to mz intensities, formulae quality metrics, and to weights of the assignments
 """
 
-# matchers
+# weights of the assignments
 
-def verification(adata_mz: ad.AnnData, me_annots: MetabolomeAnnotations) -> None:
-    try:
-        bool_equal = np.all(np.array(
-            sorted(me_annots.no_translated["mz"].unique())) == np.array(
-            sorted(adata_mz.var["mz"].tolist())))
-        logger.info("perfect match between mz in me_a.df "
-              f"and adata.X: => %s <=", bool_equal)
-    except ValueError:
-        logger.error("mz do not match between adata_mz and annotation table")
-        logger.error("unique annotated mz: %s", len(me_annots.no_translated["mz"].unique(
-        )))
-        logger.error("unique mz in adata_mz: %s", len(adata_mz.var["mz"].unique()))
+def build_identifiers_weights_df(adata_mz:ad.AnnData,
+                                 X_metabolites_probs_df: pd.DataFrame,
+                                 clean_annotations: pd.DataFrame,
+                                 usable_id: str):
+    mz_ids = clean_annotations[['mz', usable_id]].copy()
+    mz_ids = mz_ids.drop_duplicates()
+    mz_ids = mz_ids.sort_values(by=usable_id)
+    unique_compounds_ids = mz_ids[usable_id].unique().tolist()
+    tmp_X = dict()
+    for u_id in unique_compounds_ids:
+        mz_one_or_more = mz_ids.loc[mz_ids[usable_id] == u_id, 'mz'].astype(
+            str).tolist()
+        sub_adata = adata_mz[:, mz_one_or_more].copy()
+        mz_arr = np.array(sub_adata.X.todense().T).flatten()
+        if len(mz_one_or_more) > 1:
+            tmp = mz_arr.sum(axis=0)
+            mz_arr = tmp
+
+        curr_product_arr = X_metabolites_probs_df[u_id].to_numpy() * mz_arr
+
+        tmp_X[u_id] = np.array(curr_product_arr, dtype=np.float32)
+
+    data_df = pd.DataFrame(data=tmp_X,
+                          columns=list(tmp_X.keys()),  # compounds ids
+                          index=adata_mz.obs.index.tolist())  # spots ids
+    return data_df
 
 
-def match_adata_mz_and_annots(annotationsObj: MetabolomeAnnotations,
-                              adata_mz: ad.AnnData
-                              )->  Tuple[MetabolomeAnnotations, ad.AnnData]:
+def compute_mz_binary_df(adata_mz: ad.AnnData) -> pd.DataFrame:
+    X_presence_absence_mask = adata_mz.X.todense() > 0
+    X_mz_binary_df = pd.DataFrame(
+        np.array(X_presence_absence_mask, dtype=int),
+        columns= adata_mz.var['mz'].to_numpy(),
+        index=adata_mz.obs.index.tolist())
+
+    return X_mz_binary_df
+
+
+def compute_metabolites_probs_df(adata_mz: ad.AnnData, annots_df: pd.DataFrame,
+                                 usable_id, mz_col="mz") -> pd.DataFrame:
     """
-    Updates:
-     - adata_mz
-     - the following attributes of the annotation object:
-        .preloaded
-        .no_translated
-        .df (if exists)
-    making them match perfectly, by taking the m/z in the intersection only.
+    computes the matrix-like dataframe of assignments' probabilities
+    the probability of one assignment (compound id) is computed as 1/n,
+     where n is the number of clean assignments (clean compounds identifiers).
+
+    Note:
+    for a current id in the nested loop, already registered from another mz,
+    as it can happen (checked), retains the highest probability
     """
-    if not isinstance(annotationsObj, MetabolomeAnnotations):
-        logger.error("error: the first argument must be the annotation object!")
-        raise AssertionError
-    me_annots = annotationsObj.model_copy()  # copy of a pydantic class
-    okmz = list(set(adata_mz.var['mz'].astype(float).tolist()).intersection(
-        set(me_annots.no_translated["mz"].astype(float).unique()))
-    )
-    me_annots.preloaded = me_annots.preloaded.loc[
-        me_annots.preloaded['mz'].isin(okmz),:].copy()
-    me_annots.no_translated = me_annots.no_translated.loc[
-        me_annots.no_translated['mz'].isin(okmz),:].copy()
-    if me_annots.df.shape[0] != 0:  # if .df attr is not an empty df
-        me_annots.df = me_annots.df.loc[
-                                      me_annots.df['mz'].isin(okmz), :].copy()
-    adata_mz = adata_mz[:, np.array(sorted(okmz), dtype=str)].copy()
+    X_mz_binary_df = compute_mz_binary_df(adata_mz)
+    preX_probs = dict()
+    for a_mz in X_mz_binary_df.columns:
+        i_arr = X_mz_binary_df[a_mz].to_numpy()
+        the_ids_here = annots_df.loc[
+            annots_df[mz_col] == a_mz, usable_id].unique().tolist()
+        n = len(the_ids_here)
+        for kid in the_ids_here:
+            registered_prob = 0.0
+            if kid in preX_probs.keys():
+                registered_prob = preX_probs[kid][0]
+            # attribute the best probability between registered (if any) and current
+            compound_probability = max(registered_prob, 1 / n)
+            res = i_arr * np.repeat(compound_probability, len(i_arr))
+            preX_probs[kid] = np.array(res, dtype=np.float32)
 
-    return me_annots, adata_mz
+    X_metabolites_probs_df = pd.DataFrame(preX_probs)
+    X_metabolites_probs_df.index = X_mz_binary_df.index
 
-
-#  spots quality functions
-
-def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
-        max_n_tails: int = 100, fdr_cutoff: float = 0.1,
-        mz_col: str='mz', off_col: str='rawOffSampleProb', fdr_column= 'fdr',
-                               intensity_col='totalIntensity'
-)-> ad.AnnData:
-    """
-    :return:
-    """
-    def give_sum_array(adata_mz, mz_list):
-        tmp = adata_mz[:, mz_list].copy()
-        sarray = tmp.X.sum(axis=1)
-
-        return np.array(sarray).flatten()
-
-    df = features_classification_df[[mz_col, off_col, intensity_col, fdr_column]]
-    if not df[off_col].max() <= 1:
-        raise AssertionError(f"values of {off_col} must be in [0, 1]")
-    df = df.loc[df[fdr_column] <= fdr_cutoff, :].sort_values(by=off_col)
-    df_in = df.loc[df[off_col] <= 0.2, :].copy()
-    n_sample = max_n_tails
-    if df_in.shape[0] < n_sample:
-        n_sample = df_in.shape[0]
-    df_in = df_in.sort_values(by=[off_col, intensity_col, fdr_column],
-                              ascending=[True, False, True])
-    df_in = df_in.head(n=n_sample)
-    df_out = df.loc[df[off_col] >= 0.8, :].copy()
-    df_out = df_out.sort_values(by=[off_col, intensity_col, fdr_column],
-                                ascending=[True, True, False]) # not eq to in
-    df_out = df_out.tail(n=n_sample)
-    in_sum_arr = give_sum_array(adata_mz, df_in['mz'].astype(str).tolist())
-    out_sum_arr = give_sum_array(adata_mz, df_out['mz'].astype(str).tolist())
-    ratios_arr = (in_sum_arr + 1) / (out_sum_arr + 1)
-    adata_mz.obs = adata_mz.obs.assign(
-        sum_out_tissue_quants=out_sum_arr,
-        sum_in_tissue_quants=in_sum_arr,
-        ratio_in_out=ratios_arr)
-
-    return adata_mz
+    return X_metabolites_probs_df
 
 
-def compute_spot_quality(adata_mz, me_annots: MetabolomeAnnotations,
-                         allowed_in_out_ratio: float, fdr_cutoff: float):
-    logger.info("marking spot quality with params: %s", allowed_in_out_ratio)
-    adata_mz = adata_mz_mark_spot_quality(
-        adata_mz, me_annots.mz_quality, fdr_cutoff=fdr_cutoff
-    )
-    adata_mz.obs['spot_quality'] = "good"
-    adata_mz.obs.loc[adata_mz.obs['ratio_in_out'] < allowed_in_out_ratio,
-    'spot_quality'] = "bad"
-    try:
-        if len(adata_mz.uns['spot_quality_colors']
-               ) != len(adata_mz.obs['spot_quality'].unique()):
-            del adata_mz.uns['spot_quality_colors']
-    except KeyError:
-        pass
-    return adata_mz
-
-
-def mark_weak_signal_spots(adata_mz, cutoff: float = 10):
-    adata_mz.obs['totalIntensitySpot'] =  adata_mz.X.sum(axis=1)
-    adata_mz.obs.loc[adata_mz.obs['totalIntensitySpot'] <= cutoff, 'spot_quality'] = 'bad'
-
-    return adata_mz
-
-
-# #  normalization and autocorrelation
-
+# normalization of m/z's (ions) and autocorrelation
 
 def tic_normalization(intensity_matrix: Union[csr_matrix, np.array]) -> np.matrix:
     """
@@ -169,21 +127,21 @@ def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5):
 
 # phases of classification for m/z
 
-def part_a__mz_quality_mark(me_annots, msm_cutoff, offSample_cutoff, fdr_cutoff
+def part_a__mz_quality_mark(annotations_obj, msm_cutoff, offSample_cutoff, fdr_cutoff
                             ) -> (MetabolomeAnnotations, List[str]):
-    me_annots.pull_mz_quality_df()
-    me_annots.mz_quality['quality_msm_off_fdr'] = "bad"
-    me_annots.mz_quality.loc[
-        (me_annots.mz_quality[me_annots.msm_column] >= msm_cutoff
-         ) & (me_annots.mz_quality[me_annots.offsample_column] <= offSample_cutoff  #
-         ) & (me_annots.mz_quality[me_annots.fdr_column] <= fdr_cutoff),
+    annotations_obj.pull_mz_quality_df()
+    annotations_obj.mz_quality['quality_msm_off_fdr'] = "bad"
+    annotations_obj.mz_quality.loc[
+        (annotations_obj.mz_quality[annotations_obj.msm_column] >= msm_cutoff
+         ) & (annotations_obj.mz_quality[annotations_obj.offsample_column] <= offSample_cutoff  #
+         ) & (annotations_obj.mz_quality[annotations_obj.fdr_column] <= fdr_cutoff),
         'quality_msm_off_fdr'] = "good"
 
-    mz_to_keep_part1 = me_annots.mz_quality.loc[
-        me_annots.mz_quality['quality_msm_off_fdr'] == "good", "mz"].astype(
+    mz_to_keep_part1 = annotations_obj.mz_quality.loc[
+        annotations_obj.mz_quality['quality_msm_off_fdr'] == "good", "mz"].astype(
         str).tolist()
 
-    return me_annots, mz_to_keep_part1
+    return annotations_obj, mz_to_keep_part1
 
 
 def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
@@ -207,19 +165,19 @@ def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
         return None
 
 
-def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData, mz_good_from_part_a, me_annots,
+def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData, mz_good_from_part_a, annotations_obj,
                                    moran_I_cutoff, moran_padj_cutoff,
                                    n_neighs, n_perms
 ) -> (pd.DataFrame, List[str], pd.DataFrame):
     # prepare quality merged df
     all_quality_df = adata_mz.var.copy()
     all_quality_df["mz"] = all_quality_df["mz"].astype(str).tolist()
-    me_annots.mz_quality['mz'] = me_annots.mz_quality['mz'].astype(
+    annotations_obj.mz_quality['mz'] = annotations_obj.mz_quality['mz'].astype(
         str).tolist()
     all_quality_df = custom_join_left(
-        all_quality_df, me_annots.mz_quality[
-            ['mz', me_annots.msm_column, me_annots.offsample_column,
-             me_annots.fdr_column, me_annots.formula_col, "quality_msm_off_fdr"]], keycol='mz')
+        all_quality_df, annotations_obj.mz_quality[
+            ['mz', annotations_obj.msm_column, annotations_obj.offsample_column,
+             annotations_obj.fdr_column, annotations_obj.formula_col, "quality_msm_off_fdr"]], keycol='mz')
 
     copy_mz = adata_mz[:, mz_good_from_part_a].copy()   # only compute moran for the ok_part1 features
     try:
@@ -279,3 +237,116 @@ def adata_mz_insert_full_quality(adata_mz: ad.AnnData, moran_mz_df,
 
     return adata_mz
 
+
+# matchers
+
+def verification(adata_mz: ad.AnnData, annotations_obj: MetabolomeAnnotations) -> None:
+    try:
+        bool_equal = np.all(np.array(
+            sorted(annotations_obj.no_translated["mz"].unique())) == np.array(
+            sorted(adata_mz.var["mz"].tolist())))
+        logger.info("perfect match between mz in me_a.df "
+              f"and adata.X: => %s <=", bool_equal)
+    except ValueError:
+        logger.error("mz do not match between adata_mz and annotation table")
+        logger.error("unique annotated mz: %s", len(annotations_obj.no_translated["mz"].unique(
+        )))
+        logger.error("unique mz in adata_mz: %s", len(adata_mz.var["mz"].unique()))
+
+
+def match_adata_mz_and_annots(annotations_obj: MetabolomeAnnotations,
+                              adata_mz: ad.AnnData
+                              )->  Tuple[MetabolomeAnnotations, ad.AnnData]:
+    """
+    Updates:
+     - adata_mz
+     - the following attributes of the annotation object:
+        .preloaded
+        .no_translated
+        .df (if exists)
+    making them match perfectly, by taking the m/z in the intersection only.
+    """
+    if not isinstance(annotations_obj, MetabolomeAnnotations):
+        logger.error("error: the first argument must be the annotation object!")
+        raise AssertionError
+    annotations_obj = annotations_obj.model_copy()  # copy of a pydantic class
+    okmz = list(set(adata_mz.var['mz'].astype(float).tolist()).intersection(
+        set(annotations_obj.no_translated["mz"].astype(float).unique()))
+    )
+    annotations_obj.preloaded = annotations_obj.preloaded.loc[
+        annotations_obj.preloaded['mz'].isin(okmz),:].copy()
+    annotations_obj.no_translated = annotations_obj.no_translated.loc[
+        annotations_obj.no_translated['mz'].isin(okmz),:].copy()
+    if annotations_obj.df.shape[0] != 0:  # if .df attr is not an empty df
+        annotations_obj.df = annotations_obj.df.loc[
+                                      annotations_obj.df['mz'].isin(okmz), :].copy()
+    adata_mz = adata_mz[:, np.array(sorted(okmz), dtype=str)].copy()
+
+    return annotations_obj, adata_mz
+
+
+#  spots quality functions
+
+def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
+        max_n_tails: int = 100, fdr_cutoff: float = 0.1,
+        mz_col: str='mz', off_col: str='rawOffSampleProb', fdr_column= 'fdr',
+                               intensity_col='totalIntensity'
+)-> ad.AnnData:
+    """
+    :return:
+    """
+    def give_sum_array(adata_mz, mz_list):
+        tmp = adata_mz[:, mz_list].copy()
+        sarray = tmp.X.sum(axis=1)
+
+        return np.array(sarray).flatten()
+
+    df = features_classification_df[[mz_col, off_col, intensity_col, fdr_column]]
+    if not df[off_col].max() <= 1:
+        raise AssertionError(f"values of {off_col} must be in [0, 1]")
+    df = df.loc[df[fdr_column] <= fdr_cutoff, :].sort_values(by=off_col)
+    df_in = df.loc[df[off_col] <= 0.2, :].copy()
+    n_sample = max_n_tails
+    if df_in.shape[0] < n_sample:
+        n_sample = df_in.shape[0]
+    df_in = df_in.sort_values(by=[off_col, intensity_col, fdr_column],
+                              ascending=[True, False, True])
+    df_in = df_in.head(n=n_sample)
+    df_out = df.loc[df[off_col] >= 0.8, :].copy()
+    df_out = df_out.sort_values(by=[off_col, intensity_col, fdr_column],
+                                ascending=[True, True, False]) # not eq to in
+    df_out = df_out.tail(n=n_sample)
+    in_sum_arr = give_sum_array(adata_mz, df_in['mz'].astype(str).tolist())
+    out_sum_arr = give_sum_array(adata_mz, df_out['mz'].astype(str).tolist())
+    ratios_arr = (in_sum_arr + 1) / (out_sum_arr + 1)
+    adata_mz.obs = adata_mz.obs.assign(
+        sum_out_tissue_quants=out_sum_arr,
+        sum_in_tissue_quants=in_sum_arr,
+        ratio_in_out=ratios_arr)
+
+    return adata_mz
+
+
+def compute_spot_quality(adata_mz, annotations_obj: MetabolomeAnnotations,
+                         allowed_in_out_ratio: float, fdr_cutoff: float):
+    logger.info("marking spot quality with params: %s", allowed_in_out_ratio)
+    adata_mz = adata_mz_mark_spot_quality(
+        adata_mz, annotations_obj.mz_quality, fdr_cutoff=fdr_cutoff
+    )
+    adata_mz.obs['spot_quality'] = "good"
+    adata_mz.obs.loc[adata_mz.obs['ratio_in_out'] < allowed_in_out_ratio,
+    'spot_quality'] = "bad"
+    try:
+        if len(adata_mz.uns['spot_quality_colors']
+               ) != len(adata_mz.obs['spot_quality'].unique()):
+            del adata_mz.uns['spot_quality_colors']
+    except KeyError:
+        pass
+    return adata_mz
+
+
+def mark_weak_signal_spots(adata_mz, cutoff: float = 10):
+    adata_mz.obs['totalIntensitySpot'] =  adata_mz.X.sum(axis=1)
+    adata_mz.obs.loc[adata_mz.obs['totalIntensitySpot'] <= cutoff, 'spot_quality'] = 'bad'
+
+    return adata_mz

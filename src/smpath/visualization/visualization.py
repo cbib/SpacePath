@@ -10,7 +10,7 @@ import squidpy as sq
 
 
 
-def categorize_intervals(values):
+def categorize_intervals(values)->np.array:
     """
     Categorize an array of values into specified intervals.
     """
@@ -67,7 +67,6 @@ def plot_mz_given_quality_metrics(df, SAMPLE, plot_folder,
     fileoutplotstr = os.path.join(plot_folder, f"{SAMPLE}-msm_&_out.pdf")
     plt.savefig(fileoutplotstr)
     plt.close()
-
 
 
 def plot__moran_info(df, plot_folder, SAMPLE, text_notice,

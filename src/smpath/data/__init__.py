@@ -322,7 +322,7 @@ class MetabolicPathways(BaseModel, extra='allow'):
                 sspa.process_pathways.process_kegg(
                     organism="hsa", infile=None, download_latest=True,
                     filepath=os.path.join(self.data_dir, self.subfolder))
-                logger.info("saved!")
+                logger.info("done")
             else:
                 logger.info("only 'sspa-kegg' download is currently supported")
         try:
@@ -399,8 +399,13 @@ class MetabolicPathways(BaseModel, extra='allow'):
     def intersect_with_annotations(self, annots_df: pd.DataFrame,
                                    usable_id: str, mz_col: str):
         """
-         - adds the mz column to the .piled df in the MetabolicPathways obj
-         - retains only the elements that are in the intersection of both objs
+        Modifies in the Pathways object: only the elements that are
+        in its intersection with the annotations dataframe.
+
+        In other words, the annotated compounds that are mapped
+        to the pathways are kept within this Pathways object.
+
+        Also adds the 'mz' column to the .piled df within the Pathways obj
         """
         if not self.molecule_id_type == usable_id:
             logger.error("%s and %s are not identical. Aborted.", self.molecule_id_type, usable_id)
@@ -409,9 +414,12 @@ class MetabolicPathways(BaseModel, extra='allow'):
             self.piled[[self.set_id_col, self.molecule_id_type]],
             annots_df[[mz_col, usable_id]],
             self.molecule_id_type)
+        self.intersected: bool = True
 
     def constrain(self, min_pathway_size, max_pathway_size, mode):
+        """filters the Pathways object after intersection with annotations"""
         assert mode in ["default", "mz_aware"], "Error, mode not recognized"
+        assert self.intersected, "Must first run: .intersect_with_annotations"
         if mode == "default" :
             good_pathways_l = pathways_methods.yield_compliant_pathways(
                 self.to_dict(option="id"), min_pathway_size, max_pathway_size)
@@ -436,8 +444,9 @@ class MetabolicPathways(BaseModel, extra='allow'):
         :input ejection_list: List of identifiers (list of strings)
          or mz (list of floats) to be removed from the object
 
-        Note: this can be useful if willing to exclude identifiers that were 'mapped-to-pathways',
-        from the families sets object, but that is facultative
+        Note: this can be useful if having a list of compounds that were 'mapped-to-pathways',
+        and willing to exclude them from the families sets object at any moment,
+        but that is facultative
         """
         if not column in ["KEGG", "moleculeIds", "mz"]:
             logger.error("column '%s' not supported", column)
