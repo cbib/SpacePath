@@ -79,9 +79,6 @@ if __name__ == "__main__":
         annots_obj = spd.MetabolomeAnnotations(
             name=SAMPLE, data_dir=data_centralized_folder, subfolder=subfolder,
             annotation_files=annotations_dict)
-
-        annots_obj.usable_id = "KEGG"  # because will do translation to KEGG id
-
         annots_obj.load()
 
         adata_mz = ad.read_h5ad(filename=os.path.join(
@@ -97,6 +94,7 @@ if __name__ == "__main__":
 
         my_new_dict[SAMPLE] = counts_per_orig_db(annots_obj.no_translated)
 
+        annots_obj.usable_id = "KEGG"  # because will do translation to KEGG id
         annots_obj.convert_ids_to_kegg(me_refmap.table)
         annots_obj.keep_best_mz_id_pairs(adata_mz.var.copy())  #
 

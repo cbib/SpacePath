@@ -1,12 +1,101 @@
 import os
 import pandas as pd
+import numpy as np
 import anndata as ad
 import scanpy as sc
-from myutils.quantifs_methods import differential_results_filter
-import matplotlib.pyplot as plt
 
 
-def differential_routine(adata, group_str, ntop_per_cluster):
+from typing import Dict, List, Union
+
+
+from scipy.sparse import csr_matrix
+from smpath.data import MetabolicPathways, MetabolomeAnnotations
+import smpath.method as spm
+from smpath.method import ComputePathwaysScoresConfig
+
+
+## score outer level
+# todo: "send to smpath"
+def score_as_adata(scores_df,
+                   sets_ids_df_df: pd.DataFrame,
+                   pathways_piled: pd.DataFrame, coords: np.array) -> ad.AnnData:
+    score_adata = ad.AnnData(
+        X=csr_matrix(scores_df),
+        var=pd.DataFrame(
+            {'pathway_id': scores_df.columns.tolist()},
+            index=scores_df.columns.tolist()),
+        obs=pd.DataFrame({'obs': scores_df.index.tolist()},
+                         index=scores_df.index.tolist()),
+        obsm=coords
+    )
+    score_adata.uns['spatial'] = {'my_slice_name': {
+        'scalefactors': {'fiducial_diameter_fullres': 100,
+                         'spot_diameter_fullres': 1,
+                         'tissue_hires_scalef': 0.5,
+                         'tissue_lowres_scalef': 0.5}}}
+    tmp = sets_ids_df_df
+    tmp.index = tmp['pathway_id']
+    tmp = tmp.loc[score_adata.var['pathway_id'],:]
+    score_adata.var = score_adata.var.assign(
+        pathway_name=tmp['pathway_name'].tolist())
+
+    score_adata.uns['current_pathways_df'] = pathways_piled.copy() # # has m/z, KEGG/moleculeIds and pathway id columns
+
+    return score_adata
+
+
+def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
+                                             pws_obj,
+                                             min_set_size,
+                                             type_abbr) -> ad.AnnData:
+
+    updated_config = spm.ComputePathwaysScoresConfig(type_abbr=type_abbr,
+                                                     min_set_size=min_set_size)
+    scores_df = spm.ComputePathwaysScores.run(
+        pws_obj.to_dict(), metabolites_computed_df, config=updated_config
+    )
+    scores_adata = score_as_adata(scores_df,
+                   pws_obj.sets_ids_df,
+                   pws_obj.piled,
+                   coords)
+
+    return scores_adata
+
+
+## differential stuff
+
+
+def get_top_n(group, *args):
+    ntop_per_cluster = args[0]
+    sorted_group = group.sort_values(
+        by=['pvals_adj', 'abslfc'], ascending=[True, False])
+    return sorted_group.head(ntop_per_cluster)
+
+
+def differential_results_filter(differential_results, lfc: float=0.8,
+                                pvals_adj: float=0.05,
+                                ntop_per_cluster: Union[str, int]="auto",
+                                total_n_features:int=250)-> pd.DataFrame:
+    if ntop_per_cluster == "auto":
+        ntop_per_cluster = int(total_n_features / len(
+            differential_results['group'].unique()))
+
+    tmp = differential_results.loc[(abs(differential_results[
+             'logfoldchanges']) >= lfc) & (
+            differential_results['pvals_adj'] <= pvals_adj), :].copy()
+
+    tmp = tmp.assign(abslfc=abs(tmp['logfoldchanges']),
+                     cluster=tmp['group'].astype(str))
+    tmp = tmp.sort_values(by=['group', 'pvals_adj'], ascending=[True, False])
+    tmp = tmp.groupby('cluster', group_keys=False, as_index=False
+                      ).apply(get_top_n, ntop_per_cluster,
+                              include_groups=False  # avoid DeprecationWarning
+                              ).reset_index(drop=True)
+    return tmp
+
+
+def extract_top_differential_features(adata, group_str, ntop_per_cluster
+                                      )-> pd.DataFrame:
     sc.tl.rank_genes_groups(adata, groupby=group_str,
                             groups='all',
                             reference='rest',
@@ -22,6 +111,10 @@ def differential_routine(adata, group_str, ntop_per_cluster):
         differential_results_by_cluster, ntop_per_cluster=ntop_per_cluster)
 
     return top_differential
+
+
+
+## more routines
 
 
 def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder):
@@ -66,24 +159,7 @@ def safe_load_data_and_clean_annotations(SAMPLE,
     return adata_mz, annots_dict
 
 
-def clean_annotations(adata_mz, annots_obj, ref_KEGG_ids_obj, pwtype) -> None:
 
-    if pwtype == "WIKI":
-        annots_obj.usable_id = "moleculeIds"
-    elif pwtype == "KEGG":
-        annots_obj.usable_id = "KEGG"
-
-    if pwtype == "WIKI":
-        annots_obj.verify()
-    elif pwtype == "KEGG":
-        annots_obj.convert_ids_to_kegg(ref_KEGG_ids_obj.table)
-
-    annots_obj.keep_best_mz_id_pairs(adata_mz.var.copy())
-
-    if pwtype == "WIKI":
-        annots_obj.remove_redundant_aliases()  # when using multitype 'moleculeIds' annotations
-
-    return annots_obj
 
 
 

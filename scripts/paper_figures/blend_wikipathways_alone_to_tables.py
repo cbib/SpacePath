@@ -7,9 +7,9 @@ import smpath.data as spd
 import smpath.method as spm
 import smpath.processing.measures_methods as measures_methods
 
-from local_helpers.local_helpers import provide_annotation_dict
-
+from scripts.data_download_prep_spots.spots_purge import provide_annotation_dict
 from blend_keggids_keggpathways_to_tables import counts_per_orig_db
+
 
 
 
