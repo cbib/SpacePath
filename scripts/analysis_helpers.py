@@ -86,13 +86,13 @@ def clean_annotations(adata_mz, annots_obj, ref_KEGG_ids_obj, pwtype) -> None:
     return annots_obj
 
 
+
 def prepare_mols_df(top_differential, clean_ann_df):
     top_differential['names'] = top_differential['names'].astype(float).tolist()
     molecules_ids_df = pd.merge(top_differential, clean_ann_df,
                                 how='left', left_on='names', right_on='mz')
     molecules_ids_df.dropna(how='any', inplace=True)
     molecules_ids_df = molecules_ids_df[
-        #['moleculeIds', 'moleculeNames']].copy()
         ['moleculeIds', 'mz', 'moleculeNames']].copy()
     molecules_ids_df.drop_duplicates(inplace=True)
     molecules_ids_df.reset_index(inplace=True)
@@ -149,11 +149,3 @@ def extract_params_per_dataset(row):
 
 
 
-# def reference_noKEGG_KEGG_identifiers():
-#     # stored in the same centralized data folder (same level of the tissues' folders)
-#     subfolder="metabolites-mappings",
-#     mapping_files={'HMDB': "HMDB-to-KEGG_05-07-24.tsv",
-#                    'LipidMaps': "LipidMaps-to-KEGG_10-18-24.tsv",
-#                    'CoreMetabolome': "CoreMetabolome-to-KEGG_05-07-24.tsv"})
-#
-#     return subfolder, mapping_files

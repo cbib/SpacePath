@@ -12,7 +12,7 @@ import pickle
 from analysis_helpers import *
 import smpath.processing.measures_methods as measures_methods
 
-from myutils.quantifs_methods import run_pathway_scores_steps_produce_anndata
+from myutils.quantifs_methods import *
 
 import warnings
 warnings.simplefilter('ignore',category=FutureWarning)
@@ -64,7 +64,6 @@ def compute_differential_families_and_pathways(  pathways_types,
     print_minireport(top_differential, SAMPLE)
 
 
-
 def compute_families_scores( min_family_size,
           SAMPLE, subfolder, data_centralized_folder):
 
@@ -89,15 +88,20 @@ def compute_families_scores( min_family_size,
         clean_annots_nokegg_ids,
         usable_id='moleculeIds',
         min_set_size=min_family_size)
+    ##
+    adataIds, coords = spm.ComputeAssignmentsWeights.run(
+        adata_mz, annots_df, usable_id='moleculeIds' )
+    del adata_mz  # free some space, we can reload it later
 
-    scores_adata = run_pathway_scores_steps_produce_anndata(
-        adata_mz.copy(), families_obj,  annots_df,
-         usable_id='moleculeIds',  min_set_size=min_family_size,
-        type_abbr="FAMILIES"  )
-    
+    scores_adata = run_pathway_scores_steps_produce_anndata(adataIds, coords,
+                                             families_obj,
+                                             min_set_size=min_family_size,
+                                             type_abbr="FAMILIES"
+         )
     out_file = os.path.join(data_centralized_folder, subfolder,
                          f'{SAMPLE}-scores-FAMILIES.h5ad')
     scores_adata.write_h5ad(out_file)
+
 
 
 def compute_molecules_families( cutoff_tree,
@@ -141,12 +145,14 @@ def compute_molecules_families( cutoff_tree,
 
 def compute_pathway_scores( pathways_types, min_pathway_size,
          SAMPLE, subfolder, data_centralized_folder ):
-    adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
-        SAMPLE, pathways_types, subfolder, data_centralized_folder
-    )
+    """doctstring here?"""
+
     sets_args_dict = files_of_pathways_defaults()
     #mapped_elements = list()
     for pwtype in pathways_types:
+        adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
+            SAMPLE, pathways_types, subfolder, data_centralized_folder
+        )
         annots_df = clean_annots_dict[pwtype]
         pathways_obj = spd.MetabolicPathways(
             data_dir=data_centralized_folder,
@@ -165,11 +171,14 @@ def compute_pathway_scores( pathways_types, min_pathway_size,
         out_file = os.path.join(data_centralized_folder, subfolder,
                              f'{SAMPLE}-scores-{pwtype}.h5ad')
 
+        adataIds, coords = spm.ComputeAssignmentsWeights.run(adata_mz, annots_df,
+                                   usable_id=sets_args_dict[pwtype]['id_type'])
+        del adata_mz  # free some space, we  reload it
+
         scores_adata = run_pathway_scores_steps_produce_anndata(
-            adata_mz.copy(), pathways_obj,
-            annots_df, usable_id=sets_args_dict[pwtype]['id_type'],
+            adataIds, coords,  pathways_obj,
             min_set_size=min_pathway_size,
-            type_abbr=pwtype)
+             type_abbr=pwtype  )
 
         scores_adata.write_h5ad(out_file); print("success, saved scores\n")
         #mapped_elements += scores_adata.uns['current_pathways_df']['mz'].unique(
@@ -331,26 +340,26 @@ def run_analysis_one_tissue( annotations_dict, offSample_cutoff,
     if not os.path.exists(plot_folder):
             os.mkdir(plot_folder)
 
-    annots_obj = spd.MetabolomeAnnotations(
-        name=SAMPLE, data_dir=data_centralized_folder,
-        subfolder=subfolder, annotation_files=annotations_dict)
-    annots_obj.load()  # load annotations
-
-    normalize_classify_and_save(annots_obj, offSample_cutoff,
-        msm_cutoff, fdr_cutoff,  moran_I_cutoff, moran_padj_cutoff, SAMPLE, subfolder,
-        data_centralized_folder,  plot_folder)
-
-    clean_annotations_and_save( annots_obj, pathways_types, SAMPLE, subfolder,
-        data_centralized_folder)
-    del annots_obj   # no longer needed as the clean versions are now as .tsv
-
-    compute_clustering_of_spots(pathways_types, clustering_parameters,
-        SAMPLE, subfolder, data_centralized_folder, plot_folder)
-
-
-    compute_differential_analysis_of_mzs(pathways_types,
-         clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
-
+    # annots_obj = spd.MetabolomeAnnotations(
+    #     name=SAMPLE, data_dir=data_centralized_folder,
+    #     subfolder=subfolder, annotation_files=annotations_dict)
+    # annots_obj.load()  # load annotations
+    #
+    # normalize_classify_and_save(annots_obj, offSample_cutoff,
+    #     msm_cutoff, fdr_cutoff,  moran_I_cutoff, moran_padj_cutoff, SAMPLE, subfolder,
+    #     data_centralized_folder,  plot_folder)
+    #
+    # clean_annotations_and_save( annots_obj, pathways_types, SAMPLE, subfolder,
+    #     data_centralized_folder)
+    # del annots_obj   # no longer needed as the clean versions are now as .tsv
+    #
+    # compute_clustering_of_spots(pathways_types, clustering_parameters,
+    #     SAMPLE, subfolder, data_centralized_folder, plot_folder)
+    #
+    #
+    # compute_differential_analysis_of_mzs(pathways_types,
+    #      clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
+    #
     compute_pathway_scores( pathways_types, min_pathway_size, SAMPLE,
          subfolder, data_centralized_folder)
 
