@@ -96,7 +96,7 @@ class ComputeMoleculesFamiliesConfig(MethodConfig):
 class NormalizeIntensities:
     config: NormalizeIntensitiesConfig
     @staticmethod
-    def run(adata_mz: ad.AnnData, config=NormalizeIntensitiesConfig()):
+    def run(adata_mz: ad.AnnData, config=NormalizeIntensitiesConfig()) -> ad.AnnData:
         """
         Updates the adata_mz object:
          adata_mz.X with the normalized result
@@ -129,7 +129,8 @@ class ClassifyMZProtocol:
     @staticmethod
     def run(adata_mz, annotations_obj, msm_cutoff, offSample_cutoff, fdr_cutoff,
             moran_I_cutoff, moran_padj_cutoff,
-            SAMPLE, plot_folder, config=ClassifyMZProtocolConfig()):
+            SAMPLE, plot_folder, config=ClassifyMZProtocolConfig()
+            ) -> ad.AnnData:
         logger.info("Running %s", config.description)
         logger.info(f">> Part a: classifying the ions with thresholds: "
           f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff,

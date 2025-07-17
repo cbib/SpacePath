@@ -24,7 +24,7 @@ Functions related to mz intensities, formulae quality metrics, and to weights of
 def build_identifiers_weights_df(adata_mz:ad.AnnData,
                                  X_metabolites_probs_df: pd.DataFrame,
                                  clean_annotations: pd.DataFrame,
-                                 usable_id: str):
+                                 usable_id: str) -> pd.DataFrame:
     mz_ids = clean_annotations[['mz', usable_id]].copy()
     mz_ids = mz_ids.drop_duplicates()
     mz_ids = mz_ids.sort_values(by=usable_id)
@@ -115,7 +115,7 @@ def tic_normalization(intensity_matrix: Union[csr_matrix, np.array]) -> np.matri
     return normalized_matrix
 
 
-def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5):
+def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5) -> ad.AnnData:
     """note: to run Moran's I, through squidpy, the `spatial_connectivities`
      in `adata.obsp` are required, so spatial neighbors must be run first"""
     logger.info('computing spatial neighbors, with n_neighs: %s', n_neighs)
@@ -128,7 +128,7 @@ def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5):
 # phases of classification for m/z
 
 def part_a__mz_quality_mark(annotations_obj, msm_cutoff, offSample_cutoff, fdr_cutoff
-                            ) -> (MetabolomeAnnotations, List[str]):
+                            ) -> Tuple[MetabolomeAnnotations, List[str]]:
     annotations_obj.pull_mz_quality_df()
     annotations_obj.mz_quality['quality_msm_off_fdr'] = "bad"
     annotations_obj.mz_quality.loc[
@@ -215,7 +215,7 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData, mz_good_from_part_a, an
 
 
 def adata_mz_insert_full_quality(adata_mz: ad.AnnData, moran_mz_df,
-                                 all_quality_df):
+                                 all_quality_df) -> ad.AnnData:
     adata_mz.uns['moranI'] = moran_mz_df
 
     all_quality_df['final_quality'] = "bad"
@@ -295,7 +295,7 @@ def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
     """
     :return:
     """
-    def give_sum_array(adata_mz, mz_list):
+    def give_sum_array(adata_mz, mz_list) -> np.array:
         tmp = adata_mz[:, mz_list].copy()
         sarray = tmp.X.sum(axis=1)
 
@@ -328,7 +328,7 @@ def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
 
 
 def compute_spot_quality(adata_mz, annotations_obj: MetabolomeAnnotations,
-                         allowed_in_out_ratio: float, fdr_cutoff: float):
+                         allowed_in_out_ratio: float, fdr_cutoff: float) -> ad.AnnData:
     logger.info("marking spot quality with params: %s", allowed_in_out_ratio)
     adata_mz = adata_mz_mark_spot_quality(
         adata_mz, annotations_obj.mz_quality, fdr_cutoff=fdr_cutoff
@@ -345,7 +345,8 @@ def compute_spot_quality(adata_mz, annotations_obj: MetabolomeAnnotations,
     return adata_mz
 
 
-def mark_weak_signal_spots(adata_mz, cutoff: float = 10):
+def mark_weak_signal_spots(adata_mz, cutoff: float = 10) -> ad.AnnData:
+
     adata_mz.obs['totalIntensitySpot'] =  adata_mz.X.sum(axis=1)
     adata_mz.obs.loc[adata_mz.obs['totalIntensitySpot'] <= cutoff, 'spot_quality'] = 'bad'
 

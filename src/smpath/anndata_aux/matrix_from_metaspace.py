@@ -29,7 +29,7 @@ def build_coord_names(df) -> List[str]:
 
 
 def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr
-)->(set, List[pd.DataFrame]):
+)->(set, List[pd.DataFrame], List[pd.DataFrame]):
     matrices_dfs_list = []
     annotations_dfs_dict = {}
     all_mz_with_multiplets = list()

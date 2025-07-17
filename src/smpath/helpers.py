@@ -2,7 +2,7 @@ import sys
 import os
 import logging
 from datetime import datetime
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Tuple
 import pandas as pd
 import numpy as np
 import json
@@ -47,7 +47,7 @@ def combine_frames_identical_columns(dfs_dict : Dict[str, pd.DataFrame]
 
 
 def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str, 
-    molecule_ids_col: str, molecule_names_col: str):
+    molecule_ids_col: str, molecule_names_col: str)-> pd.DataFrame:
     """
     Transforms this format:
 
@@ -294,8 +294,9 @@ def gmt_to_piled_form(gmt_df, set_id_col: str, molecule_id_col: str):
     return piled_df
 
 
-def gmts_merge_pile_splitid(dfs_dict, pathway_id_col: str,
-                            set_name_col: str, molec_ids_pws_col: str):
+def gmts_merge_pile_splitid(dfs_dict: Dict[str, pd.DataFrame], pathway_id_col: str,
+                            set_name_col: str, molec_ids_pws_col: str
+                            ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     pathways_identities_dfs = {}
     for k in dfs_dict.keys():
         tmp = dfs_dict[k]
@@ -340,7 +341,8 @@ def pathways_and_annots_join(pws_piled: pd.DataFrame,
     return pws_piled_ok
 
 
-def pws_piled_to_dict(pws_piled_mz, pathway_id: str, mz_or_identity_col: str):
+def pws_piled_to_dict(pws_piled_mz, pathway_id: str, mz_or_identity_col: str
+                      ) -> Dict[str, List[str]]:
     keptdf = pws_piled_mz[[pathway_id, mz_or_identity_col]]
     pathways_uniqs = keptdf[pathway_id].unique().tolist()
 
@@ -364,7 +366,8 @@ def generate_coordinates_arr(pixels_names_l: List[str]) -> np.array:
     return np.array(coord_l)
 
 
-def is_log_transformed(sparse_matrix: Union[scipy.sparse.csr_matrix, np.array]):
+def is_log_transformed(
+        sparse_matrix: Union[scipy.sparse.csr_matrix, np.array]) -> bool:
 
     if sparse_matrix.min().min() < 0:
         return True
@@ -388,7 +391,8 @@ def yield_clean_noalias_ids(annots_with_aliases_df) -> List[str]:
     return list(accepted_ids)
 
 
-def ids_not_in_internal_aliases_table(aliases_df, hmdb_ids, lm_idf, kegg_ids):
+def ids_not_in_internal_aliases_table(aliases_df, hmdb_ids, lm_idf, kegg_ids
+                                      ) -> pd.DataFrame:
     exclusive_h = list(
         set(hmdb_ids) - set(aliases_df["HMDB"].unique().tolist()))
     exclusive_lm = list(
@@ -409,7 +413,7 @@ def ids_not_in_internal_aliases_table(aliases_df, hmdb_ids, lm_idf, kegg_ids):
     return annots_nomate_ids
 
 
-def aliases_handler(aliases_df, anno_df, usable_id):
+def aliases_handler(aliases_df, anno_df, usable_id:str) -> List[str]:
     m_ids = anno_df[usable_id].unique()
     hmdb_ids = [u for u in m_ids if u.startswith("HMDB")]
     lm_ids = [u for u in m_ids if u.startswith("LM")]
