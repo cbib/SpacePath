@@ -147,15 +147,14 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
 
 
 if __name__ == "__main__":
-    # input_file = "example-datasets-parameters.tsv"  #  "private-datasets-parameters.tsv"
-    # input_dir = "../../datasets_parameters"
+    # input_file = "../../datasets_parameters/example-datasets-parameters.tsv"  #  "private-datasets-parameters.tsv"
     # data_centralized_folder = "../../../data"
     # figures_centralized_folder = "../../../figures/"
     # my_csv_table_path = os.path.join(input_dir, input_file)
 
-    my_csv_table_path = os.path.join(sys.argv[2], sys.argv[1])
-    data_centralized_folder = sys.argv[3]
-    figures_centralized_folder = sys.argv[4]
+    my_csv_table_path = sys.argv[1]
+    data_centralized_folder = sys.argv[2]
+    figures_centralized_folder = sys.argv[3]
 
 
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,

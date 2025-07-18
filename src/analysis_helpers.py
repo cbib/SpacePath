@@ -58,7 +58,7 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
 
     return scores_adata
 
-## differential stuff
+## differential routine
 
 
 def get_top_n(group, *args):
@@ -109,9 +109,7 @@ def extract_top_differential_features(adata, group_str, ntop_per_cluster
     return top_differential
 
 
-
 ## more routines
-
 
 def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder):
 
@@ -154,9 +152,7 @@ def safe_load_data_and_clean_annotations(SAMPLE,
     return adata_mz, annots_dict
 
 
-
-
-def prepare_molecular_ids_df(top_differential, clean_ann_df):
+def prepare_molecular_ids_df(top_differential:pd.DataFrame, clean_ann_df:pd.DataFrame):
     top_differential_list = top_differential['names'
         ].astype(float).unique().tolist()  # names are mzs in the diff result
     molecules_ids_df = clean_ann_df.loc[clean_ann_df['mz'

@@ -62,12 +62,12 @@ def run_data_download(datasets_parameters_df, out_dir)-> None:
 
 if __name__ == "__main__":
     # define here my files and dirs
-    #my_csv_table_path = "../../datasets_parameters/example-datasets-parameters.tsv"
-    #out_dir = "../../../data/"
-    my_csv_table_path = os.path.join(sys.argv[2], sys.argv[1])
-    out_dir = sys.argv[3]
+    #input_file = "../../datasets_parameters/example-datasets-parameters.tsv"
+    #data_dir = "../../../data/"
+    input_file = sys.argv[1]
+    data_dir = sys.argv[2]
 
-    datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
+    datasets_parameters_df = pd.read_csv(input_file, header=0,
                                          index_col=None, sep='\t')
 
-    run_data_download(datasets_parameters_df, out_dir)
+    run_data_download(datasets_parameters_df, data_dir)

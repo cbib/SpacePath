@@ -12,7 +12,7 @@ see explanation.txt file.
  Tasks:
  1) Reassign mz indexes to MALDI data
 
-   The data in .tsv files were produces by R scripts of Heiland team (Freiburg):
+   The data in .tsv files were produces by R aux_scripts of Heiland team (Freiburg):
     a.corrected batch effect
     b.repeated the rows in the quantifications data to accomodate to the fact that several hmdb correspond to one mz
     c.assigned HMDB indexes to data

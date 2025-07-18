@@ -1,10 +1,9 @@
 import os
-from typing import Dict, List, Union, Tuple
-import pandas as pd
-import numpy as np
-import anndata as ad
-import scanpy as sc
-from scipy.sparse import csr_matrix
+from typing import  Tuple
+import logging
+import warnings
+warnings.simplefilter('ignore',category=FutureWarning)
+
 from smpath.data import MetabolicPathways, MetabolomeAnnotations
 import smpath.method as spm
 from smpath.method import ComputePathwaysScoresConfig
@@ -13,13 +12,13 @@ import smpath.data as spd
 from sklearn.cluster import KMeans
 
 import pickle
-from analysis_helpers import *
+import squidpy as sq
+
 import smpath.processing.measures_methods as measures_methods
+
 import matplotlib.pyplot as plt
 
-import warnings
-warnings.simplefilter('ignore',category=FutureWarning)
-import squidpy as sq
+from .analysis_helpers import *
 
 
 np.random.seed(42)  # important to make reproducible the computations
@@ -29,10 +28,10 @@ def display_minireport(top_differential, SAMPLE):
     all_fam = [k for k in all_l if k.startswith("MolFam")]
     wiki_p = [k for k in all_l if k.startswith("WP")]
     kegg_p = [k for k in all_l if k.startswith("hsa")]
-    print("SAMPLE:", SAMPLE)
-    print("   differential families:", len(all_fam))
-    print("   differential KEGG pathways:", len(kegg_p))
-    print("   differential WIKIPATHWAYS:", len(wiki_p))
+    logging.info("SAMPLE:", SAMPLE)
+    logging.info("   differential KEGG pathways:", len(kegg_p))
+    logging.info("   differential WIKIPATHWAYS:", len(wiki_p))
+    logging.info("   differential Families:", len(all_fam))
 
 
 def compute_differential_families_and_pathways(pathways_types,
@@ -92,10 +91,9 @@ def compute_families_scores( min_family_size,
         adata_mz, annots_df, usable_id='moleculeIds' )
     del adata_mz  # free some space, we can reload it later
 
-    scores_adata = run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
-                                             families_obj,
-                                             min_set_size=min_family_size,
-                                             type_abbr="FAMILIES"
+    scores_adata = run_pathway_scores_steps_produce_anndata(
+        metabolites_computed_df, coords, families_obj,
+        min_set_size=min_family_size,  type_abbr="FAMILIES"
          )
     out_file = os.path.join(data_centralized_folder, subfolder,
                          f'{SAMPLE}-scores-FAMILIES.h5ad')
@@ -179,7 +177,8 @@ def compute_pathway_scores( pathways_types, min_pathway_size,
             min_set_size=min_pathway_size,
              type_abbr=pw_type  )
 
-        scores_adata.write_h5ad(out_file); print("success, saved scores\n")
+        scores_adata.write_h5ad(out_file)
+        logging.info("success, saved scores\n")
         #mapped_elements += scores_adata.uns['current_pathways_df']['mz'].unique(
         #).tolist()
 
