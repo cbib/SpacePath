@@ -1,11 +1,9 @@
 import os
+from typing import Dict, List, Union, Tuple
 import pandas as pd
 import numpy as np
 import anndata as ad
 import scanpy as sc
-
-from typing import Dict, List, Union, Tuple
-
 from scipy.sparse import csr_matrix
 from smpath.data import MetabolicPathways, MetabolomeAnnotations
 import smpath.method as spm
@@ -116,8 +114,8 @@ def compute_molecules_families( cutoff_tree,
                      f'{SAMPLE}-WIKI-CleanAnnotations.tsv'),
         sep='\t', header=0, index_col=None)
 
-    molecules_ids_df = prepare_mols_df(top_differential,
-                                       clean_ann_df=clean_annots_nokegg_ids)
+    molecules_ids_df = prepare_molecular_ids_df(top_differential,
+                                                clean_ann_df=clean_annots_nokegg_ids)
 
     mol_similarities_result = spm.ComputeMoleculesSimilarityMatrix.run(
         molecules_ids_list=molecules_ids_df["moleculeIds"])
@@ -148,38 +146,38 @@ def compute_pathway_scores( pathways_types, min_pathway_size,
          SAMPLE, subfolder, data_centralized_folder ):
     """doctstring here?"""
 
-    sets_args_dict = files_of_pathways_defaults()
+    pathways_files_loc_info_dict = files_of_pathways__location_info()
     #mapped_elements = list()
-    for pwtype in pathways_types:
+    for pw_type in pathways_types:
         adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
             SAMPLE, pathways_types, subfolder, data_centralized_folder
         )
-        annots_df = clean_annots_dict[pwtype]
+        annots_df = clean_annots_dict[pw_type]
         pathways_obj = spd.MetabolicPathways(
             data_dir=data_centralized_folder,
-            subfolder=sets_args_dict[pwtype]['subfolder'],
-            file=sets_args_dict[pwtype]['file']
+            subfolder=pathways_files_loc_info_dict[pw_type]['subfolder'],
+            file=pathways_files_loc_info_dict[pw_type]['file']
         )
-        pathways_obj.molecule_id_type = sets_args_dict[pwtype]['id_type']
+        pathways_obj.molecule_id_type = pathways_files_loc_info_dict[pw_type]['id_type']
 
         pathways_obj.load()
         pathways_obj, annots_df = spm.SyncPathwaysAndAnnots.run(
             pathways_obj.model_copy(),
             annots_df,
-            usable_id=sets_args_dict[pwtype]['id_type'],
+            usable_id=pathways_files_loc_info_dict[pw_type]['id_type'],
             min_set_size=min_pathway_size)
 
         out_file = os.path.join(data_centralized_folder, subfolder,
-                             f'{SAMPLE}-scores-{pwtype}.h5ad')
+                             f'{SAMPLE}-scores-{pw_type}.h5ad')
 
         metabolites_computed_df, coords = spm.ComputeAssignmentsWeights.run(adata_mz, annots_df,
-                                   usable_id=sets_args_dict[pwtype]['id_type'])
+                                   usable_id=pathways_files_loc_info_dict[pw_type]['id_type'])
         del adata_mz  # free some space, we  reload it
 
         scores_adata = run_pathway_scores_steps_produce_anndata(
             metabolites_computed_df, coords,  pathways_obj,
             min_set_size=min_pathway_size,
-             type_abbr=pwtype  )
+             type_abbr=pw_type  )
 
         scores_adata.write_h5ad(out_file); print("success, saved scores\n")
         #mapped_elements += scores_adata.uns['current_pathways_df']['mz'].unique(
@@ -243,8 +241,11 @@ def compute_leiden__weighted_by_spatial_graph(
     return datacopy, the_labels_str_l
 
 
-def compute_clustering_of_spots(pathways_types, clustering_parameters,
-                                SAMPLE, subfolder, data_centralized_folder,  plot_folder ):
+def compute_clustering_of_spots(
+        pathways_types: List[str],
+        clustering_parameters: Dict[str, str|int|float],
+        SAMPLE: str, subfolder: str,
+        data_centralized_folder: str, plot_folder: str ):
     # subset to agree with the clean annotations
     adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
           SAMPLE, pathways_types, subfolder, data_centralized_folder
@@ -274,8 +275,9 @@ def compute_clustering_of_spots(pathways_types, clustering_parameters,
                              plot_folder)
 
 
-def clean_annotations_and_save_tsv(annots_obj, pathways_types,
-                                   SAMPLE, subfolder, data_centralized_folder
+def clean_annotations_and_save_tsv(annots_obj: MetabolomeAnnotations,
+                                   pathways_types: List[str],
+                                   SAMPLE: str, subfolder: str, data_centralized_folder: str
                                    )->None:
     """
     cleans the loaded annotations using smpath library,
@@ -295,13 +297,13 @@ def clean_annotations_and_save_tsv(annots_obj, pathways_types,
     ref_KEGG_ids_obj.load()
 
     # for each type of pathway, save the respective clean annotations
-    for pwtype in pathways_types:
+    for pw_type in pathways_types:
         annots_current = annots_obj.model_copy() # copy is compulsory
         # cleaning annotations using `smpath` library:
-        if pwtype == "WIKI":
+        if pw_type == "WIKI":
             annots_current.usable_id = "moleculeIds"
             annots_current.verify()
-        elif pwtype == "KEGG":
+        elif pw_type == "KEGG":
             annots_current.usable_id = "KEGG"
             annots_current.convert_ids_to_kegg(ref_KEGG_ids_obj.table)
 
@@ -310,17 +312,17 @@ def clean_annotations_and_save_tsv(annots_obj, pathways_types,
 
         # saving to tsv file
         out_file = os.path.join(data_centralized_folder, subfolder,
-            f'{SAMPLE}-{pwtype}-CleanAnnotations.tsv')
+            f'{SAMPLE}-{pw_type}-CleanAnnotations.tsv')
         annots_current.df.to_csv(out_file, sep='\t', header=True, index=False)
         del annots_current
     # end for
 
 
 def normalize_classify_and_save_anndata_mz(
-        annots_obj, offSample_cutoff,
-        msm_cutoff, fdr_cutoff, moran_I_cutoff,
-        moran_padj_cutoff, SAMPLE, subfolder,
-        data_centralized_folder, plot_folder) -> None:
+        annots_obj: MetabolomeAnnotations, offSample_cutoff: float,
+        msm_cutoff: float, fdr_cutoff: float, moran_I_cutoff: float,
+        moran_padj_cutoff: float, SAMPLE: str, subfolder: str,
+        data_centralized_folder: str, plot_folder: str) -> None:
     """
     performs the first step consisting of intensities' normalisation
     and the classification of the ions (m/z) by their quality metrics,

@@ -5,10 +5,8 @@ import numpy as np
 import squidpy as sq
 
 from analysis_helpers import *
-"""
-All this workflow relies on the library XXXX
 
-"""
+
 
 
 np.random.seed(42)  # important to make reproducible the computations

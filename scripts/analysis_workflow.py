@@ -1,24 +1,25 @@
-
-
-
 from analysis_quasidispatcher import *
 import warnings
 warnings.simplefilter('ignore',category=FutureWarning)
 import squidpy as sq
-"""
-All this workflow uses the library XXXX
+
 
 """
+All this workflow uses the library smpath
 
+"""
 # the function that calls all of the above
 
-def run_analysis_one_tissue(annotations_dict, offSample_cutoff,
-                            msm_cutoff, fdr_cutoff,
-                            moran_I_cutoff, moran_padj_cutoff,
-                            clustering_parameters,
-                            pathways_types, min_pathway_size, cutoff_tree,
-                            min_family_size,  SAMPLE,
-                            data_centralized_folder, figures_centralized_folder)-> None:
+def run_analysis_one_tissue(annotations_dict: Dict[str, str],
+                            offSample_cutoff: float ,
+                            msm_cutoff: float, fdr_cutoff: float,
+                            moran_I_cutoff: float, moran_padj_cutoff: float,
+                            clustering_parameters: Dict[str, str|int|float],
+                            pathways_types: List[str], min_pathway_size: int,
+                            cutoff_tree: float,
+                            min_family_size: int,  SAMPLE: str,
+                            data_centralized_folder: str,
+                            figures_centralized_folder: str)-> None:
     """runs every step for a given dataset and its parameters"""
     subfolder = SAMPLE
     plot_folder = os.path.join(figures_centralized_folder, SAMPLE)

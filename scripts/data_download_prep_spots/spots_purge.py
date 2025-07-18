@@ -17,7 +17,7 @@ import squidpy as sq
 logging.getLogger().setLevel(logging.INFO)
 
 
-def provide_annotation_dict(SAMPLE, annotation_types_list):
+def annotation_types_to_file_names_dict(SAMPLE, annotation_types_list):
     out_d = {}
     for annotation_type in annotation_types_list:
         out_d[annotation_type] = f"{SAMPLE}-{annotation_type}.csv"
@@ -83,7 +83,7 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
                 SAMPLE in force_for_these) or (
                 "spot_quality" not in adata_mz.obs.columns.tolist()):
             annotations_to_use = row["annotations_to_use"].split(" ")
-            annotations_dict = provide_annotation_dict(SAMPLE,
+            annotations_dict = annotation_types_to_file_names_dict(SAMPLE,
                                                        annotations_to_use)
             annots_obj = spd.MetabolomeAnnotations(name=SAMPLE,
                                                   data_dir=data_centralized_folder,

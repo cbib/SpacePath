@@ -7,7 +7,7 @@ import smpath.data as spd
 import smpath.method as spm
 import smpath.processing.measures_methods as measures_methods
 
-from scripts.data_download_prep_spots.spots_purge import provide_annotation_dict
+from scripts.data_download_prep_spots.spots_purge import annotation_types_to_file_names_dict
 from blend_keggids_keggpathways_to_tables import counts_per_orig_db
 
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         subfolder = SAMPLE
         plot_folder = os.path.join(figures_centralized_folder, SAMPLE)
         annotations_to_use = row["annotations_to_use"].split(" ")
-        annotations_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
+        annotations_dict = annotation_types_to_file_names_dict(SAMPLE, annotations_to_use)
 
         annots_obj = spd.MetabolomeAnnotations(
             name=SAMPLE, data_dir=data_centralized_folder, subfolder=subfolder,

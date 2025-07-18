@@ -4,14 +4,10 @@ import numpy as np
 import anndata as ad
 import scanpy as sc
 
-
 from typing import Dict, List, Union
 
-
 from scipy.sparse import csr_matrix
-from smpath.data import MetabolicPathways, MetabolomeAnnotations
 import smpath.method as spm
-from smpath.method import ComputePathwaysScoresConfig
 
 
 ## score outer level
@@ -44,13 +40,14 @@ def score_as_adata(scores_df,
     return score_adata
 
 
+
+
 def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
                                              pws_obj,
                                              min_set_size,
                                              type_abbr) -> ad.AnnData:
 
-    updated_config = spm.ComputePathwaysScoresConfig(type_abbr=type_abbr,
-                                                     min_set_size=min_set_size)
+    updated_config = spm.ComputePathwaysScoresConfig(type_abbr=type_abbr, min_set_size=min_set_size)
     scores_df = spm.ComputePathwaysScores.run(
         pws_obj.to_dict(), metabolites_computed_df, config=updated_config
     )
@@ -60,7 +57,6 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
                    coords)
 
     return scores_adata
-
 
 ## differential stuff
 
@@ -131,11 +127,11 @@ def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder):
 
 def read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_folder):
     annots_dict = {}
-    for pwtype in pathways_types:
+    for pw_type in pathways_types:
         tmpfi = os.path.join(data_centralized_folder,
                              subfolder,
-                             f'{SAMPLE}-{pwtype}-CleanAnnotations.tsv')
-        annots_dict[pwtype] = pd.read_csv(tmpfi,
+                             f'{SAMPLE}-{pw_type}-CleanAnnotations.tsv')
+        annots_dict[pw_type] = pd.read_csv(tmpfi,
                                           sep='\t', header=0, index_col=None)
 
     return annots_dict
@@ -149,36 +145,32 @@ def safe_load_data_and_clean_annotations(SAMPLE,
     annots_dict = read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_folder)
 
     adequate_mz = set()
-    for pwtype in pathways_types:
-        adequate_mz = adequate_mz.union(set(annots_dict[pwtype]['mz'].astype(str).unique()))
-
+    for pw_type in pathways_types:
+        adequate_mz = adequate_mz.union(
+            set(annots_dict[pw_type]['mz'].astype(str).unique())
+        )
     adata_mz = adata_mz[:, list(adequate_mz)].copy()
-    # if other_adequate_mzs is not None:
-    #     adata_mz = adata_mz[: other_adequate_mzs].copy()
 
     return adata_mz, annots_dict
 
 
 
 
+def prepare_molecular_ids_df(top_differential, clean_ann_df):
+    top_differential_list = top_differential['names'
+        ].astype(float).unique().tolist()  # names are mzs in the diff result
+    molecules_ids_df = clean_ann_df.loc[clean_ann_df['mz'
+        ].isin(top_differential_list),
+        ['moleculeIds', 'mz', 'moleculeNames'] ].copy()
 
-
-def prepare_mols_df(top_differential, clean_ann_df):
-    top_differential['names'] = top_differential['names'].astype(float).tolist()
-    molecules_ids_df = pd.merge(top_differential, clean_ann_df,
-                                how='left', left_on='names', right_on='mz')
     molecules_ids_df.dropna(how='any', inplace=True)
-    molecules_ids_df = molecules_ids_df[
-        ['moleculeIds', 'mz', 'moleculeNames']].copy()
     molecules_ids_df.drop_duplicates(inplace=True)
     molecules_ids_df.reset_index(inplace=True)
-    molecules_ids_df['moleculeNames'] = molecules_ids_df['moleculeNames'].astype(str).tolist()
 
     return molecules_ids_df
 
 
-
-def files_of_pathways_defaults():
+def files_of_pathways__location_info():
     # stored in the same centralized data folder (same level of the tissues' folders)
     pathways_files_defaults = {
         "KEGG" : {'file': "KEGG_hsa_pathways_compounds_R110.gmt",
@@ -188,40 +180,5 @@ def files_of_pathways_defaults():
                           'subfolder': "metabolites-mappings",
                           'id_type': 'moleculeIds'}}
     return pathways_files_defaults
-
-
-# functions to read the table of parameters
-
-def provide_annotation_dict(SAMPLE, annotation_types_list):
-    out_d = {}
-    for annotation_type in annotation_types_list:
-        out_d[annotation_type] = f"{SAMPLE}-{annotation_type}.csv"
-
-    return out_d
-
-
-def extract_params_per_dataset(row):
-    SAMPLE = row["dataset_name"]
-    annotations_to_use = row["annotations_to_use"].split(" ")
-    annotations_dict = provide_annotation_dict(SAMPLE, annotations_to_use)
-    offSample_cutoff = row["offSample_cutoff"]
-    msm_cutoff = row["msm_cutoff"]
-    fdr_cutoff = row["fdr_cutoff"]
-    moran_I_cutoff = row["Moran_I_cutoff"]
-    moran_padj_cutoff = row["Moran_padj_cutoff"]
-    clustering_params = row['cluster_params'].split(":")
-    clustering_parameters = {'choice': clustering_params[0].lower(),
-                             'numeric_parameter': clustering_params[1]}
-    pathways_types = row["pathways_types"].split(" ")
-    min_pathway_size = row["min_pathway_size"]
-    cutoff_tree = row['cut_tree_mol_families']
-    min_family_size = row["min_family_size"]
-
-    return (SAMPLE, annotations_dict, offSample_cutoff,
-            msm_cutoff, fdr_cutoff, moran_I_cutoff,
-            moran_padj_cutoff, clustering_parameters,
-            pathways_types, min_pathway_size, cutoff_tree,
-            min_family_size)
-
 
 
