@@ -1,16 +1,17 @@
+[![PyPI - Python Version](https://img.shields.io/pypi/v/smpath)](xxxxx)
 
 smpath
 ===
+A library for spatial metabolomics pathway-based exploration
 
 
-[![PyPI - Python Version](https://img.shields.io/pypi/v/smpath)](xxxxx)
 
 # Introduction
 
-The `smpath` library facilitates the construction of 
-a pathway-based analysis, dedicated to annotated Spatial Metabolomics data.
+The `smpath` library facilitates the construction of pathway-based workflows in Python, dedicated to annotated Spatial Metabolomics data.
 
-When working on spatial metabolomics bioinformatic pipelines, **smpath** can be easily articulated with other  popular libraries in the spatial omics world, such as `squidpy`, `scanpy`, `anndata`.
+When working on spatial metabolomics bioinformatic pipelines, **smpath** can be 
+easily articulated with other popular Python libraries in the spatial omics world, such as `squidpy`, `scanpy`, `anndata`.
 💡
 
 **What is inside?**
@@ -71,7 +72,9 @@ pip install sspa  # requirement when installing for the first time
 pip install smpath  # this library
 ```
 
-_Note_: for subsequent uses after installation do `micromamba activate smpath` only
+## After installation
+
+For subsequent use just run `micromamba activate smpath`
 
 
 ## Developer Setup
@@ -87,18 +90,14 @@ poetry install
 ```
 Finally install sspa `pip install sspa`
 
-
 ------
-
-
-
 ## Code organization
 
-* `src/dimet/processing` directory contains the implemented high-level  functions for the processed dedicated to the measurements and/or the pathways inputs
-* `src/dimet/visualization` directory contains the implemented high-level scripts to produce figures
-* `src/dimet/data` directory contains the python classes for data initialization alongside the methods proper to each data class
-* `src/dimet/method` directory contains the python classes of the configurations and methods that are applied on diverse types of input objects, by invoking 'src/dimet/processing' functions
-* `src/dimet/anndata_aux` directory contains the auxiliary functions for dataset download and formatting into an 'anndata' object
+* `src/smpath/processing` directory contains the implemented high-level  functions for the processed dedicated to the measurements and/or the pathways inputs
+* `src/smpath/visualization` directory contains the implemented high-level scripts to produce figures
+* `src/smpath/data` directory contains the python classes for data initialization alongside the methods proper to each data class
+* `src/smpath/method` directory contains the python classes of the configurations and methods that are applied on diverse types of input objects, by invoking 'src/smpath/processing' functions
+* `src/smpath/anndata_aux` directory contains the auxiliary functions for dataset download and formatting into an 'anndata' object
 * `tests` directory contains unit tests
 * `tools` directory contains virtual environment setup .yaml files.
 
