@@ -55,7 +55,7 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
 
     def load(self):
         logger.info(
-            "Loading reference files for mapping compounds identifiers")
+            "Loading reference tables of %s identifiers", self.style_desired)
         self.check_expectations_map1()
 
         dfs_dict = {}

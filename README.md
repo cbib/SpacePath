@@ -8,9 +8,9 @@ A library for spatial metabolomics pathway-based exploration
 
 # Introduction
 
-The `smpath` library facilitates the construction of pathway-based workflows in Python, dedicated to annotated Spatial Metabolomics data.
+The `smpath` library offers methods for the pathway-based analysis of annotated Spatial Metabolomics data.
 
-When working on spatial metabolomics bioinformatic pipelines, **smpath** can be 
+When building a spatial metabolomics bioinformatic pipeline, **smpath** can be 
 easily articulated with other popular Python libraries in the spatial omics world, such as `squidpy`, `scanpy`, `anndata`.
 💡
 
@@ -38,7 +38,7 @@ The full installation process should take less than 15 minutes on a standard com
 Via pip command:
 `pip install smpath`
 
-One dependency, the `sspa` package, is required to be installed by the user,
+One external library, the `sspa` package, is required to be installed by the user,
  by running `pip install sspa==1.0.4`
 
 All the install process must occur in a virtual environment (e.g.  `
