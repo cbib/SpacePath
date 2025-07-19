@@ -2,8 +2,17 @@
 
 A comprehensive library to construct a pathway-based analysis of annotated Spatial Metabolomics data.
 
-**smpath** powers the method XXXXX, available at @githubXXXXX. 
+
+
+In the context of spatial metabolomics bioinformatic pipelines, **smpath** can be easily articulated with other  popular libraries in the spatial omics world, such as `squidpy`, `scanpy`, `anndata`.
 💡
+
+**What is inside?**
+
+Within `smpath`, the modules dedicated to pathways-based analyses rely on powerful libraries such as `sspa`,  `rdkit` and `fastcluster`.
+
+
+_Note_: The aligned spectra datasets and their annotations obtained via [METASPACE]() are currently supported. We also provide auxiliary scripts for data downloading and formatting, powered by `metaspace-converter` and `pyimzml`.
 
 # Requirements
 
@@ -47,13 +56,16 @@ pip install smpath
  <sub><sup>(click to show/hide)</sup></sub>
  </summary>
 
-Developers can easily install a local version with poetry.
-Clone the repository and then run:
+After setting up the virtual environment, clone the repository and then run poetry:
 ```
 cd smpath
 poetry install
 ```
 </details>
+
+# Documentation
+
+Documentation and examples of how to use with `smpath` library are provided in the Wiki page.
 
 # License
 
