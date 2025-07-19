@@ -78,8 +78,7 @@ _Note_: for subsequent uses after installation do `micromamba activate smpath` o
 
 To start contributing to smpath, it is required to have a python environment with python >= 3.10 and [poetry](https://python-poetry.org/docs/) installed.
 
-The virtual environment must be activated (see 'Explanation for creating 
-of a virtual environment', in the Installation section)
+The virtual environment must be activated (see 'Explanation for creating a virtual environment', in the Installation section)
 
 After activating the environment, the project can be installed with
 ```bash
@@ -94,7 +93,7 @@ Finally install sspa `pip install sspa`
 
 ## Code organization
 
-* `src/dimet/processing` directory contains the implemented high-level  functions for the processed dedicated to the measurements and/or the pathways inputs
+* `src/dimet/processing` directory contains the implemented high-level functions for the processing of measurements, pathways, reference tables, and ions' annotations inputs
 * `src/dimet/visualization` directory contains the implemented high-level scripts to produce figures
 * `src/dimet/data` directory contains the python classes for data initialization alongside the methods proper to each data class
 * `src/dimet/method` directory contains the python classes of the configurations and methods that are applied on diverse types of input objects, by invoking 'src/dimet/processing' functions
