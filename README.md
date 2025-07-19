@@ -11,11 +11,11 @@ In the context of spatial metabolomics bioinformatic pipelines, **smpath** can b
 Within `smpath`, the modules dedicated to pathways-based analyses rely on powerful libraries such as `sspa`,  `rdkit` and `fastcluster`.
 
 
-_Note_: The aligned spectra datasets and their annotations obtained via [METASPACE](https://metaspace2020.org/) are currently supported. We also provide auxiliary scripts for data downloading and formatting, powered by `metaspace-converter` and `pyimzml`.
+_Note_: Currently, the library supports as input data, the aligned spectra datasets and their annotations obtained via [METASPACE](https://metaspace2020.org/). We provide auxiliary scripts for data downloading and formatting, powered by `metaspace-converter` and `pyimzml`.
 
 # Requirements
 
-smpath runs under Python >= 3.10. It is strongly recommended to install in a mamba, micromamba or conda virtual environment
+`smpath` runs under Python 3.10. It is strongly recommended to install in a mamba, micromamba or conda virtual environment
 (see [here](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html)).
 
 
@@ -56,7 +56,7 @@ pip install smpath
  <sub><sup>(click to show/hide)</sup></sub>
  </summary>
 
-After setting up and activating the virtual environment, clone the repository, locate yourself inside the cloned directory, and then run poetry:
+After setting up and activating the virtual environment, clone this repository, locate yourself inside the cloned directory, and then run poetry:
 ```
 micromamba activate mambaenv
 cd smpath
