@@ -56,8 +56,9 @@ pip install smpath
  <sub><sup>(click to show/hide)</sup></sub>
  </summary>
 
-After setting up the virtual environment, clone the repository and then run poetry:
+After setting up and activating the virtual environment, clone the repository, locate yourself inside the cloned directory, and then run poetry:
 ```
+micromamba activate mambaenv
 cd smpath
 poetry install
 ```
