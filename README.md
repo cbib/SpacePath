@@ -8,7 +8,7 @@ In the context of spatial metabolomics bioinformatic pipelines, **smpath** can b
 
 **What is inside?**
 
-Within `smpath`, the modules dedicated to pathways-based analyses rely on powerful libraries such as `sspa`,  `rdkit` and `fastcluster`.
+Within `smpath`, the computations dedicated to pathways-based analyses rely on powerful libraries such as `sspa`,  `rdkit` and `fastcluster`.
 
 
 _Note_: Currently, the library supports as input data, the aligned spectra datasets and their annotations obtained via [METASPACE](https://metaspace2020.org/). We provide auxiliary scripts for data downloading and formatting, powered by `metaspace-converter` and `pyimzml`.
