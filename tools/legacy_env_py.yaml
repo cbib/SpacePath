@@ -1,4 +1,4 @@
-name: mambaenv   # for local install purposes
+name: mambaenv   # legacy env only for first phases of dev
 channels:
   - bioconda
   - conda-forge
