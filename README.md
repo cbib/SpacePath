@@ -39,7 +39,7 @@ Via pip command:
 `pip install smpath`
 
 One dependency, the `sspa` package, is required to be installed by the user,
- by running `pip install sspa`
+ by running `pip install sspa==1.0.4`
 
 All the install process must occur in a virtual environment (e.g.  `
 micromamba activate smpath`).
@@ -68,14 +68,16 @@ To sum up, the installation commands in the appropriate order are:
 
 ```commandline
 micromamba activate smpath  # virtual environment
-pip install sspa  # requirement when installing for the first time
 pip install smpath  # this library
+pip install sspa==1.0.4  # required external library 
+
 ```
 
 ## After installation
 
 For subsequent use just run `micromamba activate smpath`
 
+----
 
 ## Developer Setup
 
@@ -88,9 +90,10 @@ After activating the environment, the project can be installed with
 ```bash
 poetry install
 ```
-Finally install sspa `pip install sspa`
+Finally install sspa `pip install sspa==1.0.4`
 
 ------
+
 ## Code organization
 
 * `src/smpath/processing` directory contains the implemented high-level  functions for the processed dedicated to the measurements and/or the pathways inputs
