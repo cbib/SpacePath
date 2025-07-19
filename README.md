@@ -85,6 +85,8 @@ After activating the environment, the project can be installed with
 ```bash
 poetry install
 ```
+Finally install sspa `pip install sspa`
+
 
 ------
 
