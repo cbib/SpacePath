@@ -14,17 +14,17 @@ from tqdm import tqdm
 from sklearn.utils import sparsefuncs
 
 
-LOGFILE = datetime.now().strftime("%y-%m-%-d_%H-%M-%S-%f.log")  # global var makes sure one logfile per run is saved
+LOGFILE = datetime.now().strftime("%y-%m-%-d_%H-%M-%S-%f.log")
 
 
-def setup_logger(logger):
+def setup_logger(logger, prefix=''):
     """parameters for the log file"""
     if not os.path.exists(os.path.join(os.getcwd(), "logs")):
         os.makedirs(os.path.join(os.getcwd(), "logs"))
 
     logging.basicConfig(encoding='utf-8', stream=sys.stdout)
-
-    file_handler = logging.FileHandler(os.path.join("logs", LOGFILE))
+    file_handler = logging.FileHandler(
+        os.path.join("logs", f'{prefix}{LOGFILE}'))
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
