@@ -1,4 +1,5 @@
 #!/bin/bash
+# Instruction: must be launched from mymethod/ folder
 
 input_file="datasets_parameters/manyspots-one-dataset.tsv"
 
@@ -6,4 +7,4 @@ data_dir="../example-manyspots"
 figures_dir="../figures"
 
 # start
-python3 main.py $input_file $data_dir $figures_dir
+python3 -m mymethod $input_file $data_dir $figures_dir

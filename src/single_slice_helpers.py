@@ -11,7 +11,7 @@ import smpath.method as spm
 
 
 ## score outer level
-# todo: "send to smpath"
+# todo: "send to smpath?"
 def score_as_adata(scores_df,
                    sets_ids_df_df: pd.DataFrame,
                    pathways_piled: pd.DataFrame, coords: np.array) -> ad.AnnData:
@@ -40,8 +40,6 @@ def score_as_adata(scores_df,
     return score_adata
 
 
-
-
 def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
                                              pws_obj,
                                              min_set_size,
@@ -61,7 +59,7 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
 ## differential routine
 
 
-def get_top_n(group, *args):
+def get_top_n(group: pd.DataFrame, *args) -> pd.DataFrame:
     ntop_per_cluster = args[0]
     sorted_group = group.sort_values(
         by=['pvals_adj', 'abslfc'], ascending=[True, False])
@@ -90,8 +88,7 @@ def differential_results_filter(differential_results, lfc: float=0.8,
     return tmp
 
 
-def extract_top_differential_features(adata, group_str, ntop_per_cluster
-                                      )-> pd.DataFrame:
+def squidpy_differential_analysis(adata, group_str)-> pd.DataFrame:
     sc.tl.rank_genes_groups(adata, groupby=group_str,
                             groups='all',
                             reference='rest',
@@ -103,13 +100,10 @@ def extract_top_differential_features(adata, group_str, ntop_per_cluster
         adata, key="top_feats_by_cluster",
         group=None)  # returns all groups
 
-    top_differential = differential_results_filter(
-        differential_results_by_cluster, ntop_per_cluster=ntop_per_cluster)
-
-    return top_differential
+    return differential_results_by_cluster
 
 
-## more routines
+## more custom routines
 
 def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder):
 
@@ -152,7 +146,8 @@ def safe_load_data_and_clean_annotations(SAMPLE,
     return adata_mz, annots_dict
 
 
-def prepare_molecular_ids_df(top_differential:pd.DataFrame, clean_ann_df:pd.DataFrame):
+def prepare_molecular_ids_df(top_differential:pd.DataFrame,
+                             clean_ann_df:pd.DataFrame) -> pd.DataFrame:
     top_differential_list = top_differential['names'
         ].astype(float).unique().tolist()  # names are mzs in the diff result
     molecules_ids_df = clean_ann_df.loc[clean_ann_df['mz'
@@ -166,15 +161,5 @@ def prepare_molecular_ids_df(top_differential:pd.DataFrame, clean_ann_df:pd.Data
     return molecules_ids_df
 
 
-def files_of_pathways__location_info():
-    # stored in the same centralized data folder (same level of the tissues' folders)
-    pathways_files_defaults = {
-        "KEGG" : {'file': "KEGG_hsa_pathways_compounds_R110.gmt",
-                      'subfolder': "metabolites-mappings",
-                      'id_type': 'KEGG'},
-        "WIKI" : {'file': "WIKIPATHWAYS_human_multi_id_redundant.mmt",
-                          'subfolder': "metabolites-mappings",
-                          'id_type': 'moleculeIds'}}
-    return pathways_files_defaults
 
 

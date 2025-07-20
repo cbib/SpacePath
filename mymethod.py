@@ -37,7 +37,7 @@ def main(input_file, data_dir, figures_dir):
             data_dir is not None
         ) and (figures_dir is not None):
             warnings.simplefilter('ignore', category=FutureWarning)
-            from src.tissues_dispatcher import process_tissues
+            from src.dispatch_tissues_slices import process_tissues
             process_tissues(input_file, data_dir, figures_dir)
     except Exception as e:
         logging.error(e)

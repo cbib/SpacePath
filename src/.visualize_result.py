@@ -3,20 +3,22 @@ import numpy as np
 
 import squidpy as sq
 
-from analysis_helpers import *
+from single_slice_helpers import *
 
-
+import matplotlib.pyplot as plt
 
 
 np.random.seed(42)  # important to make reproducible the computations
 
 
-SAMPLE = "LP-cerebellum-rat"
+SAMPLE = "LP-brain-mouse-5"#"TD-Lipido-635"
 data_centralized_folder = "../../data"
 subfolder = SAMPLE
 pathways_types = ['FAMILIES', 'KEGG', 'WIKI']
 #str_out = "leiden_sg-0.4"
-str_out = "kmeans-4"
+str_out = "kmeans-5"  # -4
+cluster_to_check =  '0' #'5'
+
 diff_sets = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
                                          f'{SAMPLE}-top-differential-SETS.tsv'),
                             sep='\t', header=0)
@@ -35,10 +37,9 @@ clusters_df = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
 joined.obs[str_out] = pd.Categorical(clusters_df[str_out].tolist(),
                                      categories=clusters_df[
                                          str_out].unique())
-print(diff_sets.head())
-diff_sets = diff_sets.loc[diff_sets['group'].astype(str) == '2',:].copy()
-print(diff_sets)
-print(diff_sets.shape)
+
+
+
 print(joined.var[['pathway_id', 'pathway_name']].head(20))
 joined.obsm = adata_scores.obsm
 joined.uns['spatial'] = {'my_slice_name': {
@@ -47,12 +48,19 @@ joined.uns['spatial'] = {'my_slice_name': {
                          'tissue_hires_scalef': 0.5,
                          'tissue_lowres_scalef': 0.5}}}
 
-print(diff_sets.names.unique().tolist())
-pid = joined.var['pathway_id'].tolist()
-print(joined.var['pathway_name'])
-pnm = [t for t in joined.var['pathway_name'].astype(str).to_numpy()]
+#pid = joined.var['pathway_id'].tolist()
+#pnm = [t for t in joined.var['pathway_name'].astype(str).to_numpy()]
+
+print(diff_sets.head())
+
+diff_sets = diff_sets.loc[diff_sets['group'].astype(str) == cluster_to_check,:].copy()
+diff_sets = diff_sets.sort_values(by='abslfc', ascending=False).head(5)
+print(diff_sets.shape)
+
+pid = diff_sets['pathway_id'].tolist()
+pnm = diff_sets['pathway_name'].tolist()
+
 for set_id, set_full_name in zip(pid, pnm) :
-    #set_full_name =
     print(set_full_name)
     sq.pl.spatial_scatter(
         joined, color=[set_id], img=False,

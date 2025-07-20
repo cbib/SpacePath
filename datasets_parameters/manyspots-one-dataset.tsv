@@ -1,2 +1,2 @@
 dataset_name	metaspace_registry	annotations_to_use	in/out intensities for spot class	perform_spots_selection	offSample_cutoff	msm_cutoff	fdr_cutoff	Moran_I_cutoff	Moran_padj_cutoff	cluster_params	pathways_types	min_pathway_size	cut_tree_mol_families	min_family_size
-WW-breast-cancer-1	2023-06-01_15h42m28s	HMDB LipidMaps CoreMetabolome	3	YES	0.2	0.5	0.25	0.02	0.1	Kmeans:5	KEGG WIKI	2	1	4
+WW-breast-cancer-1	2023-06-01_15h42m28s	HMDB LipidMaps CoreMetabolome	3	YES	0.2	0.5	0.25	0.1	0.1	Kmeans:5	KEGG WIKI	2	1	4

@@ -1,4 +1,5 @@
 #!/bin/bash
+# Instruction: must be launched from mymethod/ folder
 
 input_file="datasets_parameters/example-datasets-parameters.tsv"
 

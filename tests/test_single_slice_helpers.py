@@ -1,6 +1,6 @@
 from unittest import TestCase
 import pandas as pd
-from mymethod.src.analysis_helpers import (prepare_molecular_ids_df,
+from mymethod.src.single_slice_helpers import (prepare_molecular_ids_df,
                                            get_top_n,
                                             differential_results_filter)
 from typing import List, Dict
