@@ -58,6 +58,12 @@ class ClassifyMZProtocolConfig(MethodConfig):
     description: str = "protocol to classify the ions (m/z) by the quality of molecular formulae annotations, and the spatial distributions"
     n_neighs_for_graph: int = 20   # for neighbors graph computation before Moran's I
     n_perms_moran_calc: Union[int, str] = "auto"  # for Moran's I
+    msm_cutoff: float = 0.5
+    offSample_cutoff: float = 0.2
+    fdr_cutoff: float = 0.2,
+    moran_I_cutoff: float = 0.1
+    moran_padj_cutoff: float = 0.1
+    var_sim_cutoff: float = 1e-20
 
 
 class SyncPathwaysAndAnnotsConfig(MethodConfig): # todo: use this config ?
@@ -127,23 +133,24 @@ class NormalizeIntensities:
 class ClassifyMZProtocol:
     config: ClassifyMZProtocolConfig
     @staticmethod
-    def run(adata_mz, annotations_obj, msm_cutoff, offSample_cutoff, fdr_cutoff,
-            moran_I_cutoff, moran_padj_cutoff,
-            SAMPLE, plot_folder, config=ClassifyMZProtocolConfig()
+    def run(adata_mz: ad.AnnData, annotations_obj: MetabolomeAnnotations,
+
+            SAMPLE: str, plot_folder: str, config=ClassifyMZProtocolConfig()
             ) -> ad.AnnData:
         logger.info("Running %s", config.description)
         logger.info(f">> Part a: classifying the ions with thresholds: "
-          f"MSM >= %s, offSample <= %s, FDR <= %s", msm_cutoff,
-                    offSample_cutoff,fdr_cutoff)
+          f"MSM >= %s, offSample <= %s, FDR <= %s", config.msm_cutoff,
+                    config.offSample_cutoff, config.fdr_cutoff)
         annotations_obj, mz_good_from_part_a = measures_methods.part_a__mz_quality_mark(
-            annotations_obj, msm_cutoff, offSample_cutoff, fdr_cutoff)
+            annotations_obj, config.msm_cutoff,
+            config.offSample_cutoff, config.fdr_cutoff)
 
         logger.info(f"  a total of %s ions pass MSM, offSample and FDR cutoffs.",
                     len(set(mz_good_from_part_a)))
         text_notice = f"valid $m/z$\n n = {len(mz_good_from_part_a)}"
         sviz.plot_mz_given_quality_metrics(annotations_obj.mz_quality, SAMPLE,
-                                      plot_folder, msm_cutoff,
-                                      offSample_cutoff, text_notice)
+                                      plot_folder, config.msm_cutoff,
+                                      config.offSample_cutoff, text_notice)
         logger.info("  saved plot (MSM, offSample, FDR) to %s", plot_folder)
         adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(
             mz_good_from_part_a)
@@ -154,16 +161,20 @@ class ClassifyMZProtocol:
                 config.n_perms_moran_calc = 10
 
         logger.info(f">> Part b: classifying ions based on Moran's I: "
-              f"thresholds: I >= %s,  (BH) adjusted p-value <= %s", moran_I_cutoff, moran_padj_cutoff)
+              f"thresholds: I >= %s,  (BH) adjusted p-value <= %s",
+                    config.moran_I_cutoff, config.moran_padj_cutoff)
         logger.info("  metrics are only computed for the ions that passed the 'Part a'.")
         all_quality_df, mz_good_part_b, moran_mz_df = measures_methods.part_b__mz_quality_by_autocorr(
             adata_mz, mz_good_from_part_a, annotations_obj,
-            moran_I_cutoff, moran_padj_cutoff, config.n_neighs_for_graph, config.n_perms_moran_calc)
+            config.moran_I_cutoff, config.moran_padj_cutoff,
+            config.var_sim_cutoff,
+            config.n_neighs_for_graph,
+            config.n_perms_moran_calc)
 
         text_notice = f"valid $m/z$: n = {len(mz_good_part_b)}"
         sviz.plot__moran_info(moran_mz_df, plot_folder,
                          SAMPLE,
-                         text_notice, moran_I_cutoff, moran_padj_cutoff)
+                         text_notice, config.moran_I_cutoff, config.moran_padj_cutoff)
         logger.info("  saved plot (autocorrelation) to %s", plot_folder)
 
         adata_mz.uns["history"]['features_n_after_mz_clean_2'] = len(

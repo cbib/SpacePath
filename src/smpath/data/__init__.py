@@ -62,7 +62,7 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
         admitted_keys = list(set(supported_mappings).intersection(
             set(list(self.mapping_files.keys()))))
         for map_key in admitted_keys:
-            logger.info("  loading %s", map_key)
+            logger.info(" loading %s", map_key)
             try:
                 df = pd.read_csv(os.path.join(
                         self.data_dir, self.subfolder,
@@ -73,7 +73,6 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
 
             self.check_expectations_map2(df, map_key)
             #logger.info(" your loaded dataframe :\n {}".format(df.head(2)))
-            logger.info(" %s", df.head(2))
             df = df.dropna()
             df = df.loc[df[self.style_desired] != "", :]
             df = df.loc[~df[self.style_desired].isin(["NA", "NaN"]), :]

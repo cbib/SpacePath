@@ -115,11 +115,16 @@ def tic_normalization(intensity_matrix: Union[csr_matrix, np.array]) -> np.matri
     return normalized_matrix
 
 
-def compute_moran_i(adata, n_neighs: int=20, n_perms: int=5) -> ad.AnnData:
-    """note: to run Moran's I, through squidpy, the `spatial_connectivities`
-     in `adata.obsp` are required, so spatial neighbors must be run first"""
-    logger.info('computing spatial neighbors, with n_neighs: %s', n_neighs)
-    sq.gr.spatial_neighbors(adata, n_neighs=n_neighs)
+def compute_moran_i(adata: ad.AnnData, n_neighs: int=20, n_perms: int=5) -> ad.AnnData:
+    """
+    computes Moran's I with the squidpy implementation (spatial_autocorr).
+
+     If not `spatial_connectivities` in .obsp attr of the AnnData object,
+     the squidpy's 'spatial_neighbors' is also applied to satisfy spatial_autocorr
+    """
+    if not 'spatial_connectivities' in list(adata.obsp.keys()):
+        logger.info('computing spatial neighbors, with n_neighs: %s', n_neighs)
+        sq.gr.spatial_neighbors(adata, n_neighs=n_neighs)
     logger.info("Computing Moran's I autocorrelation "
                 "on data with shape (obs,vars) %s", adata.shape)
     sq.gr.spatial_autocorr(adata, mode="moran", n_perms=n_perms, n_jobs=1, seed=0)
@@ -166,9 +171,13 @@ def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
         return None
 
 
-def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData, mz_good_from_part_a, annotations_obj,
-                                   moran_I_cutoff, moran_padj_cutoff,
-                                   n_neighs, n_perms
+def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
+                                   mz_good_from_part_a: List[str],
+                                   annotations_obj: MetabolomeAnnotations,
+                                   moran_I_cutoff: float,
+                                   moran_padj_cutoff: float,
+                                   var_sim_cutoff: float,
+                                   n_neighs: int, n_perms: int
 ) -> (pd.DataFrame, List[str], pd.DataFrame):
     # prepare quality merged df
     all_quality_df = adata_mz.var.copy()
@@ -178,7 +187,8 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData, mz_good_from_part_a, an
     all_quality_df = custom_join_left(
         all_quality_df, annotations_obj.mz_quality[
             ['mz', annotations_obj.msm_column, annotations_obj.offsample_column,
-             annotations_obj.fdr_column, annotations_obj.formula_col, "quality_msm_off_fdr"]], keycol='mz')
+             annotations_obj.fdr_column, annotations_obj.formula_col, "quality_msm_off_fdr"]],
+        keycol='mz')
 
     copy_mz = adata_mz[:, mz_good_from_part_a].copy()   # only compute moran for the ok_part1 features
     try:
@@ -199,13 +209,16 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData, mz_good_from_part_a, an
             "Fatal: moranI table dimensions do not match with length of ions list passing the 'Part a'."
             "Killed! (solution: delete .uns['moranI'] dataframe and try again)")
     moran_mz_df = copy_mz.uns['moranI'].copy()
+    # discard features with extremely low simulated variance
+    moran_mz_df = moran_mz_df.loc[moran_mz_df['var_sim'] >= var_sim_cutoff].copy()
+
     moran_mz_df['mz'] = moran_mz_df.index.astype(str).tolist()
     all_quality_df = pd.merge(all_quality_df,
-                              moran_mz_df[['mz', 'I', 'pval_sim_fdr_bh']],
+                              moran_mz_df[['mz', 'I', 'pval_sim_fdr_bh', 'var_sim']],
                               how="left", left_on="mz", right_on="mz")
     mz_to_keep_part2 = all_quality_df.loc[
         (all_quality_df['I'] >= moran_I_cutoff) & (
-                all_quality_df['pval_sim_fdr_bh'] <= moran_padj_cutoff),
+                all_quality_df['pval_sim_fdr_bh'] <= moran_padj_cutoff) ,
         "mz"].astype(str).tolist()
 
     all_quality_df['quality_autocorr'] = 'bad'

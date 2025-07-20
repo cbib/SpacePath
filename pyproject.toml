@@ -68,8 +68,8 @@ build-backend = "poetry.core.masonry.api"
 filterwarnings = [
     "ignore::DeprecationWarning:sspa.*",
     "ignore::DeprecationWarning:pkg_resources.*" ,
-    "ignore::UserWarning:pkg_resources.*",
     "ignore::UserWarning:sspa.*",
+    "ignore::UserWarning:pkg_resources.*",
     "ignore::UserWarning:rpy2.*",
     "ignore::FutureWarning:squidpy.*",
     "ignore::FutureWarning:dask.*",

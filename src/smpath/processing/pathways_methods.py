@@ -108,12 +108,12 @@ def compute_kpca(sets__df: pd.DataFrame,
                  metabolites_computed_w: pd.DataFrame, min_entity: int
                  )-> pd.DataFrame:
     """
-    computes kPCA on the compounds quantifications matrix
+    computes kPCA on the compounds weights matrix
      to yield scores per pathway (or set), per spot.
     credits of the sspa package: C Wieder et al., 2022
 
     :param sets__df: pathways or sets df, each row is a set (see sspa)
-    :param metabolites_computed_w: the data with the quantifications as a dataframe
+    :param metabolites_computed_w: the data with the weights as a dataframe
     :parm min_entity: the minimal size of the set to do the computation
 
     :returns: Computed scores as a dataframe
@@ -189,12 +189,16 @@ def compute_pathways_scores(pathways_dict: Dict[str, List[str]],
        when the number of spots is superior to threshold_n_spots_is_high
     Returns:
        scores in a df with shape (spots (rows), set_names (columns))
+    Note: the quantities are log transformed as recommended by sspa
     """
     if method == "sspa_kpca":
         sets__df = reshape_pathways_for_kpca(pathways_dict)
 
         if not is_log_transformed(np.array(metabolites_computed_w)):
             metabolites_computed_w = np.log(metabolites_computed_w + 1)
+
+        # avoid ARPACK error -9: Starting vector is zero
+        metabolites_computed_w = metabolites_computed_w.replace(0, 1e-5)
 
         if metabolites_computed_w.shape[0] < threshold_n_spots_is_high:
             scores_res = compute_kpca(sets__df, metabolites_computed_w, min_entity=min_entity)
