@@ -59,6 +59,7 @@ def complex_plot(adata_mz, map_df_copy, set_id, set_full_name, i_mz,
         adata_mz, color=[str(i_mz)], img=False,
         title=f"m/z = {i_mz}\n", size=1.2,
         ax=ax1)
+    ax1.set_axis_off()
     ax1.set_rasterized(True)
 
     # next sub-plot
