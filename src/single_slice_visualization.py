@@ -15,17 +15,10 @@ np.random.seed(42)  # important to make the computations be reproducible
 
 
 def filter_sets_per_cluster_for_plot(diff_copy_df, cluster_to_check,
-                                     #cutoff_moran_for_plot=0.3,
-                                     #cutoff_abslfc_for_plot=1.5,
                                      top_for_plotting=2):
-
+    """subsets df of differential pathways with the n top for plotting"""
     diff_copy_df = diff_copy_df.loc[
                  diff_copy_df['group'].astype(str) == str(cluster_to_check), :].copy()
-
-    # diff_copy_df = diff_copy_df.loc[(diff_copy_df['I'].astype(
-    #     float) >=cutoff_moran_for_plot) & (
-    #         diff_copy_df['abslfc'] >= cutoff_abslfc_for_plot), :].copy()
-    # # keep deactivated: moran I is high for artifacts, do not use it anymore
 
     diff_copy_df = diff_copy_df.sort_values(
         by=['abslfc', 'pvals_adj'], ascending=[False, True]).head(top_for_plotting)
@@ -33,48 +26,20 @@ def filter_sets_per_cluster_for_plot(diff_copy_df, cluster_to_check,
     return diff_copy_df
 
 
-
-def custom_scatter_one_feat(df, feature: str, title:str,  the_ax, spot_size=2,
-                            marker="o", rasterized=False):
-
-    my_scatter = the_ax.scatter(df['x'], df['y'],
-                                c=df[feature], cmap='viridis',
-                                vmin=df[feature].min(),
-                                vmax=df[feature].max(),
-                                s=spot_size,
-                                marker=marker,
-                                linewidth=0, rasterized=rasterized
-                                )
-    my_title = f'{feature}'
-    if title is not None:
-        my_title = title
-    the_ax.invert_yaxis()
-    the_ax.set_title(my_title)
-    cbar = plt.colorbar(
-        my_scatter,
-        orientation='vertical',
-        fraction=0.07,
-        aspect=30,
-        pad=0.02, anchor=(0, 0))
-    the_ax.xaxis.set_tick_params(labelbottom=False)
-    the_ax.yaxis.set_tick_params(labelleft=False)
-    the_ax.set_xticks([])
-    the_ax.set_yticks([])
-    plt.tight_layout()
-
-    return the_ax
-
-
-def complex_plot(adata_mz, map_df, set_id, set_full_name , i_mz,
+def complex_plot(adata_mz, map_df_copy, set_id, set_full_name, i_mz,
                  save_path=None, dpi=400) -> Union[Figure, None]:
-
+    """
+    produces plot with the ion associated within a given pathway,
+     with subplots: intensities scatter, table of assignments in the pathway,
+     table of all asignments for the mz.
+    """
     sup_title = f"m/z = {i_mz}"
     caption = f"ion in set: {set_id}, '{set_full_name[:25]}'   \n"
 
-    curr_mz_df = map_df.loc[map_df['mz'] == i_mz, ['moleculeIds', 'moleculeNames' ]]
+    curr_mz_df = map_df_copy.loc[map_df_copy['mz'] == i_mz, ['moleculeIds', 'moleculeNames']]
     curr_mz_df['moleculeNames'] = curr_mz_df['moleculeNames'].str.slice(0,25)
     mz_in_pw_df = curr_mz_df.loc[curr_mz_df['moleculeIds'].isin(
-        map_df.loc[(map_df['mz'] == i_mz) & (map_df['pathway_id'] == set_id), 'moleculeIds'].tolist())  ,:]
+        map_df_copy.loc[(map_df_copy['mz'] == i_mz) & (map_df_copy['pathway_id'] == set_id), 'moleculeIds'].tolist())  , :]
     if curr_mz_df.shape[0] > 15:
         n_more = curr_mz_df.shape[0] - 15
         curr_mz_df = curr_mz_df.head(15)  # limit the lenght of the total annots of the current mz
@@ -90,17 +55,14 @@ def complex_plot(adata_mz, map_df, set_id, set_full_name , i_mz,
     fig.set_figwidth(15)
     fig.suptitle(sup_title, size=14)
 
-    # ax1 = custom_scatter_one_feat(tmp, feature=str(i_mz),
-    #                               title=f"m/z = {i_mz}\n", the_ax=ax1,
-    #                               spot_size=spot_size,
-    #                               marker=marker, rasterized=True)
     sq.pl.spatial_scatter(
         adata_mz, color=[str(i_mz)], img=False,
-        title=f"m/z = {i_mz}\n", size=1.4,
-        ax=ax1    #, rasterized=True
-    )
+        title=f"m/z = {i_mz}\n", size=1.2,
+        ax=ax1)
+    ax1.set_rasterized(True)
+
+    # next sub-plot
     ax2.set_axis_off()
-    ax2.set_rasterized(True)
     start_y = 0.09
 
     auto_height = mz_in_pw_df.shape[0] * 0.12
@@ -122,8 +84,8 @@ def complex_plot(adata_mz, map_df, set_id, set_full_name , i_mz,
     )
     table.auto_set_font_size(False)
     table.set_fontsize(10.5)
-    #table.scale(2, 2)  # may help
-    ##
+
+    # last sub-plot
     ax3.set_axis_off()
     ax3.text(auto_width, 0.5, "Total annotations of current m/z",
              rotation=270, va='center')
@@ -150,9 +112,5 @@ def complex_plot(adata_mz, map_df, set_id, set_full_name , i_mz,
         plt.close()
     else:
         plt.show()
-
-
-
-
 
 

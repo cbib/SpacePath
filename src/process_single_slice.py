@@ -1,23 +1,17 @@
-import os
 from typing import  Tuple
 import logging
 import warnings
 warnings.simplefilter('ignore',category=FutureWarning)
 
-from smpath.data import MetabolicPathways, MetabolomeAnnotations
-import smpath.method as spm
-from smpath.method import ComputePathwaysScoresConfig
+from smpath.data import MetabolomeAnnotations
 from smpath.processing.measures_methods import compute_moran_i
 from smpath.helpers import setup_logger  # to add extra info to the smpath log
 import smpath.data as spd
 from sklearn.cluster import KMeans
 
 import pickle
-import squidpy as sq
 
 import smpath.processing.measures_methods as measures_methods
-
-import matplotlib.pyplot as plt
 
 from .single_slice_helpers import *
 from .single_slice_visualization import *
@@ -38,39 +32,14 @@ pathways_files_location_info = {
                           'id_type': 'moleculeIds'}}
 
 
-def join_scores_adatas(pathways_types, SAMPLE, subfolder, data_centralized_folder):
-    if not "FAMILIES" in pathways_types:
-        pathways_types.append("FAMILIES")
-    list_of_scores_objects = list()
-    list_of_dfs = list()
-    for u in list(set(pathways_types)):
-        adata_scores = ad.read_h5ad(
-            filename=os.path.join(data_centralized_folder, subfolder,
-                                  f'{SAMPLE}-scores-{u}.h5ad'))
-        adata_scores.var['set_type'] = u
-        list_of_scores_objects.append(adata_scores)
-        df_uns = adata_scores.uns['current_pathways_df'].copy()
-        df_uns.columns = ["pathway_id", "moleculeIds", "mz"]
-        list_of_dfs.append(df_uns)
-
-    joined = ad.concat(adatas=list_of_scores_objects, join='outer', axis=1)
-
-    joined.uns['current_pathways_df'] = pd.concat(
-        list_of_dfs, join='outer', axis=0, ignore_index=True)
-
-    joined.obsm = adata_scores.obsm
-    joined.uns['spatial'] = {'my_slice_name': {
-        'scalefactors': {'fiducial_diameter_fullres': 100,
-                         'spot_diameter_fullres': 1,
-                         'tissue_hires_scalef': 0.5,
-                         'tissue_lowres_scalef': 0.5}}}
-
-    return joined
-
-
-def join_clean_annotations(pathways_types,
-                    SAMPLE, subfolder,
-                   data_centralized_folder):
+def join_clean_annotations(pathways_types: List[str],
+                    SAMPLE: str, subfolder: str,
+                   data_centralized_folder: str)-> pd.DataFrame:
+    """
+    concatenates annotations for each element in pathways_types
+     (but not FAMILIES, as the annotations in this case are the same that served to 'WIKI' type of pathway)
+     in other words, concatenates KEGG and no-KEGG (that we coined 'WIKI') annotations
+    """
     pathways_types = list(set(pathways_types) - {"FAMILIES"})
     annots_dict = read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_folder)
     dfs_to_gather = list()
@@ -89,6 +58,7 @@ def join_clean_annotations(pathways_types,
 def save_top_plots(pathways_types,
                    clustering_parameters, SAMPLE, subfolder,
                    data_centralized_folder, plot_folder)-> None:
+    logger.info("saving top pathways and families to plots")
     if not "FAMILIES" in pathways_types:
         pathways_types.append("FAMILIES")
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
@@ -135,7 +105,7 @@ def save_top_plots(pathways_types,
             sq.pl.spatial_scatter(
                 joined, color=[set_id], img=False,
                 title=f'{set_full_name[:45]}\n{set_id}',
-                size=1.4,
+                size=1.2,
                 save=os.path.abspath(plot_pathway_path)
             )
             plt.close()
@@ -150,13 +120,13 @@ def save_top_plots(pathways_types,
                           ) | (map_df['moleculeIds'].str.startswith("LM")), :].copy()
             elif set_id.startswith('hsa'):  # KEGG prefix for H sapiens
                 map_copy = map_df.loc[
-                    map_df['moleculeIds'].str.startswith("C"), :].copy
+                    map_df['moleculeIds'].str.startswith("C"), :].copy()
             for i_mz in mzs_in_pw:
                 # inner loop
                 inner_plot_path = os.path.join(plot_folder,
                                                str(cluster), f'{set_id}-mz{i_mz}--{SAMPLE}.pdf' )
                 complex_plot(
-                    adata_mz, map_df, set_id, set_full_name , i_mz,
+                    adata_mz, map_copy, set_id, set_full_name , i_mz,
                     save_path=inner_plot_path
                 )
 
@@ -167,10 +137,10 @@ def display_minireport(top_differential, SAMPLE):
     wiki_p = [k for k in all_l if k.startswith("WP")]
     kegg_p = [k for k in all_l if k.startswith("hsa")]
 
-    print("SAMPLE:", SAMPLE)
-    print("   differential KEGG pathways:", len(kegg_p))
-    print("   differential WIKIPATHWAYS:", len(wiki_p))
-    print("   differential Families:", len(all_fam))
+    logger.info("SAMPLE: %s", SAMPLE)
+    logger.info("   differential KEGG pathways: %s", len(kegg_p))
+    logger.info("   differential WIKIPATHWAYS: %s", len(wiki_p))
+    logger.info("   differential Families: %s", len(all_fam))
 
 
 def compute_differential_families_and_pathways(
@@ -217,7 +187,6 @@ def compute_differential_families_and_pathways(
                             sep='\t', header=True, index=False)
     display_minireport(top_differential, SAMPLE)
 
-    print("ended")
 
 
 def compute_families_scores( min_family_size,

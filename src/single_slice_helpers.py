@@ -11,9 +11,53 @@ import smpath.method as spm
 
 
 
+def join_scores_adatas(
+        pathways_types: List[str], SAMPLE: str,
+        subfolder:str, data_centralized_folder: str) -> ad.AnnData:
+    """joins computed scores (anndata objects) in one single anndata object"""
+    if not "FAMILIES" in pathways_types:
+        pathways_types.append("FAMILIES")
+    list_of_scores_objects = list()
+    list_of_dfs = list()
+    for u in list(set(pathways_types)):
+        adata_scores = ad.read_h5ad(
+            filename=os.path.join(data_centralized_folder, subfolder,
+                                  f'{SAMPLE}-scores-{u}.h5ad'))
+        adata_scores.var['set_type'] = u
+        list_of_scores_objects.append(adata_scores)
+        df_uns = adata_scores.uns['current_pathways_df'].copy()
+        df_uns.columns = ["pathway_id", "moleculeIds", "mz"]
+        list_of_dfs.append(df_uns)
+
+    joined = ad.concat(adatas=list_of_scores_objects, join='outer', axis=1)
+
+    joined.uns['current_pathways_df'] = pd.concat(
+        list_of_dfs, join='outer', axis=0, ignore_index=True)
+
+    joined.obsm = adata_scores.obsm
+    joined.uns['spatial'] = {'my_slice_name': {
+        'scalefactors': {'fiducial_diameter_fullres': 100,
+                         'spot_diameter_fullres': 1,
+                         'tissue_hires_scalef': 0.5,
+                         'tissue_lowres_scalef': 0.5}}}
+
+    return joined
+
+
 def score_as_adata(scores_df: pd.DataFrame,
-                   sets_ids_df_df: pd.DataFrame,
+                   sets_ids_df: pd.DataFrame,
                    pathways_piled: pd.DataFrame, coords: np.array) -> ad.AnnData:
+    """
+    wraps the computed scores into an anndata object
+    also:
+     - stores the pathways' information in .uns['current_pathways_df'],
+        which is the table with column names:
+           - pathway_id
+           - moleculeIds, or KEGG
+           - mz
+     - stores coordinates array into .obsm
+     - adds dictionary of parameters for plotting into .uns['spatial']
+    """
     score_adata = ad.AnnData(
         X=csr_matrix(scores_df),
         var=pd.DataFrame(
@@ -28,7 +72,7 @@ def score_as_adata(scores_df: pd.DataFrame,
                          'spot_diameter_fullres': 1,
                          'tissue_hires_scalef': 0.5,
                          'tissue_lowres_scalef': 0.5}}}
-    tmp = sets_ids_df_df
+    tmp = sets_ids_df
     tmp.index = tmp['pathway_id']
     tmp = tmp.loc[score_adata.var['pathway_id'],:]
     score_adata.var = score_adata.var.assign(
@@ -43,8 +87,9 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
                                              pws_obj,
                                              min_set_size,
                                              type_abbr) -> ad.AnnData:
-
-    updated_config = spm.ComputePathwaysScoresConfig(type_abbr=type_abbr, min_set_size=min_set_size)
+    """uses smpath library to compute scores dataframe"""
+    updated_config = spm.ComputePathwaysScoresConfig(type_abbr=type_abbr,
+                                                     min_set_size=min_set_size)
     scores_df = spm.ComputePathwaysScores.run(
         pws_obj.to_dict(), metabolites_computed_df, config=updated_config
     )
@@ -104,19 +149,21 @@ def squidpy_differential_analysis(adata, group_str)-> pd.DataFrame:
 
 ## more custom routines
 
-def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder):
-
+def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder)->ad.AnnData:
+    """safely load mzs intensities (anndata) with only good quality ions"""
     adata_mz = ad.read_h5ad(filename=os.path.join(
         data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
     adata_mz = adata_mz[:,
                adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
                "mz"].astype(str).tolist()]
 
-
     return adata_mz
 
 
-def read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_folder):
+def read_clean_annotations(SAMPLE, pathways_types, subfolder,
+                           data_centralized_folder)-> Dict[str, pd.DataFrame]:
+    """provide the dictionary of annotations dataframes,
+     where the keys are the pathways_types"""
     annots_dict = {}
     for pw_type in pathways_types:
         tmpfi = os.path.join(data_centralized_folder,
@@ -130,8 +177,11 @@ def read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_f
 
 def safe_load_data_and_clean_annotations(SAMPLE,
                                          pathways_types,
-                                         subfolder, data_centralized_folder):
-
+                                         subfolder, data_centralized_folder) ->(ad.AnnData, pd.DataFrame):
+    """
+    safely load mzs intensities (anndata) and annotations (dataframe):
+     only good quality ions AND only clean annotations, for both objects
+    """
     adata_mz = safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder)
     annots_dict = read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_folder)
 
@@ -147,6 +197,7 @@ def safe_load_data_and_clean_annotations(SAMPLE,
 
 def prepare_molecular_ids_df(top_differential:pd.DataFrame,
                              clean_ann_df:pd.DataFrame) -> pd.DataFrame:
+    """yields clean df with columns 'moleculeIds', 'mz', 'moleculeNames'"""
     top_differential_list = top_differential['names'
         ].astype(float).unique().tolist()  # names are mzs in the diff result
     molecules_ids_df = clean_ann_df.loc[clean_ann_df['mz'

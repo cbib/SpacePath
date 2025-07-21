@@ -5,6 +5,7 @@ warnings.simplefilter('ignore',category=FutureWarning)
 
 
 def annotation_types_to_file_names_dict(SAMPLE, annotation_types_list):
+    """fills dictionary of annotation files with standardized file names"""
     out_d = {}
     for annotation_type in annotation_types_list:
         out_d[annotation_type] = f"{SAMPLE}-{annotation_type}.csv"
