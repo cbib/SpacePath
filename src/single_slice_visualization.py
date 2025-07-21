@@ -16,7 +16,7 @@ np.random.seed(42)  # important to make the computations be reproducible
 
 def filter_sets_per_cluster_for_plot(diff_copy_df, cluster_to_check,
                                      top_for_plotting=2):
-    """subsets df of differential pathways with the n top for plotting"""
+    """selects differential pathways being the n top by lfc, for plotting"""
     diff_copy_df = diff_copy_df.loc[
                  diff_copy_df['group'].astype(str) == str(cluster_to_check), :].copy()
 

@@ -479,7 +479,6 @@ def normalize_classify_and_save_anndata_mz(
         data_centralized_folder, subfolder, f"{SAMPLE}.h5ad"))
 
 
-
 # big call
 
 def run_analysis_one_tissue(annotations_dict: Dict[str, str],
@@ -503,42 +502,42 @@ def run_analysis_one_tissue(annotations_dict: Dict[str, str],
     if not os.path.exists(plot_folder):
             os.mkdir(plot_folder)
 
-    # annots_obj = spd.MetabolomeAnnotations(
-    #     name=SAMPLE, data_dir=data_centralized_folder,
-    #     subfolder=subfolder, annotation_files=annotations_dict)
-    # annots_obj.load()  # load annotations with smpath library
-    #
-    # normalize_classify_and_save_anndata_mz(
-    #     annots_obj, offSample_cutoff, msm_cutoff, fdr_cutoff, moran_I_cutoff,
-    #     moran_padj_cutoff, SAMPLE, subfolder,
-    #     data_centralized_folder, plot_folder)
-    #
-    # clean_annotations_and_save_tsv(annots_obj, pathways_types, SAMPLE, subfolder,
-    #                                data_centralized_folder); del annots_obj  # obj no longer used: use clean .tsv files from now
+    annots_obj = spd.MetabolomeAnnotations(
+        name=SAMPLE, data_dir=data_centralized_folder,
+        subfolder=subfolder, annotation_files=annotations_dict)
+    annots_obj.load()  # load annotations with smpath library
 
-    # compute_clustering_of_spots(pathways_types, clustering_parameters,
-    #     SAMPLE, subfolder, data_centralized_folder, plot_folder)
+    normalize_classify_and_save_anndata_mz(
+        annots_obj, offSample_cutoff, msm_cutoff, fdr_cutoff, moran_I_cutoff,
+        moran_padj_cutoff, SAMPLE, subfolder,
+        data_centralized_folder, plot_folder)
 
-    # compute_differential_analysis_of_mzs(pathways_types,
-    #      clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
+    clean_annotations_and_save_tsv(annots_obj, pathways_types, SAMPLE, subfolder,
+                                   data_centralized_folder); del annots_obj  # obj no longer used: use clean .tsv files from now
 
-    # try:
-    #     compute_pathway_scores(pathways_types, min_pathway_size, SAMPLE,
-    #          subfolder, data_centralized_folder)
-    # except Exception as e:
-    #     logger.warning("failed compute_pathway_scores, %s", e)
+    compute_clustering_of_spots(pathways_types, clustering_parameters,
+        SAMPLE, subfolder, data_centralized_folder, plot_folder)
 
-    # try:
-    #     compute_molecules_families(cutoff_tree,
-    #            SAMPLE, subfolder, data_centralized_folder, plot_folder)
-    # except Exception as e:
-    #     logger.warning("failed compute_molecules_families , %s", e)
-    #
-    # try:
-    #     compute_families_scores( min_family_size,
-    #         SAMPLE, subfolder, data_centralized_folder)
-    # except Exception as e:
-    #     logger.warning("failed compute_families_scores , %s", e)
+    compute_differential_analysis_of_mzs(pathways_types,
+         clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
+
+    try:
+        compute_pathway_scores(pathways_types, min_pathway_size, SAMPLE,
+             subfolder, data_centralized_folder)
+    except Exception as e:
+        logger.warning("failed compute_pathway_scores, %s", e)
+
+    try:
+        compute_molecules_families(cutoff_tree,
+               SAMPLE, subfolder, data_centralized_folder, plot_folder)
+    except Exception as e:
+        logger.warning("failed compute_molecules_families , %s", e)
+
+    try:
+        compute_families_scores( min_family_size,
+            SAMPLE, subfolder, data_centralized_folder)
+    except Exception as e:
+        logger.warning("failed compute_families_scores , %s", e)
 
     try:
         compute_differential_families_and_pathways(pathways_types,
@@ -551,6 +550,6 @@ def run_analysis_one_tissue(annotations_dict: Dict[str, str],
                        clustering_parameters, SAMPLE, subfolder,
                        data_centralized_folder, plot_folder)
     except Exception as e:
-        logger.warning("failed plot: %s", e)
+        logger.warning("failed save_top_plots: %s", e)
 
     logger.info("processed sample %s \n\n", SAMPLE)
