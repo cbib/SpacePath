@@ -10,9 +10,8 @@ from scipy.sparse import csr_matrix
 import smpath.method as spm
 
 
-## score outer level
-# todo: "send to smpath?"
-def score_as_adata(scores_df,
+
+def score_as_adata(scores_df: pd.DataFrame,
                    sets_ids_df_df: pd.DataFrame,
                    pathways_piled: pd.DataFrame, coords: np.array) -> ad.AnnData:
     score_adata = ad.AnnData(

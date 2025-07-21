@@ -20,12 +20,13 @@ import smpath.processing.measures_methods as measures_methods
 import matplotlib.pyplot as plt
 
 from .single_slice_helpers import *
+from .single_slice_visualization import *
 
 logger = logging.getLogger(__name__)
 setup_logger(logger)
 
 
-np.random.seed(42)  # important to make reproducible the computations
+np.random.seed(42)  # important to make the computations be reproducible
 
 
 pathways_files_location_info = {
@@ -37,8 +38,127 @@ pathways_files_location_info = {
                           'id_type': 'moleculeIds'}}
 
 
+def join_scores_adatas(pathways_types, SAMPLE, subfolder, data_centralized_folder):
+    if not "FAMILIES" in pathways_types:
+        pathways_types.append("FAMILIES")
+    list_of_scores_objects = list()
+    list_of_dfs = list()
+    for u in list(set(pathways_types)):
+        adata_scores = ad.read_h5ad(
+            filename=os.path.join(data_centralized_folder, subfolder,
+                                  f'{SAMPLE}-scores-{u}.h5ad'))
+        adata_scores.var['set_type'] = u
+        list_of_scores_objects.append(adata_scores)
+        df_uns = adata_scores.uns['current_pathways_df'].copy()
+        df_uns.columns = ["pathway_id", "moleculeIds", "mz"]
+        list_of_dfs.append(df_uns)
+
+    joined = ad.concat(adatas=list_of_scores_objects, join='outer', axis=1)
+
+    joined.uns['current_pathways_df'] = pd.concat(
+        list_of_dfs, join='outer', axis=0, ignore_index=True)
+
+    joined.obsm = adata_scores.obsm
+    joined.uns['spatial'] = {'my_slice_name': {
+        'scalefactors': {'fiducial_diameter_fullres': 100,
+                         'spot_diameter_fullres': 1,
+                         'tissue_hires_scalef': 0.5,
+                         'tissue_lowres_scalef': 0.5}}}
+
+    return joined
 
 
+def join_clean_annotations(pathways_types,
+                    SAMPLE, subfolder,
+                   data_centralized_folder):
+    pathways_types = list(set(pathways_types) - {"FAMILIES"})
+    annots_dict = read_clean_annotations(SAMPLE, pathways_types, subfolder, data_centralized_folder)
+    dfs_to_gather = list()
+    for k in annots_dict.keys():
+        if k == 'KEGG':
+            df = annots_dict[k][["KEGG", "moleculeNames"]]
+            df.columns = ["moleculeIds", "moleculeNames"]
+        elif k == 'WIKI':
+            df = annots_dict[k][["moleculeIds", "moleculeNames"]]
+        dfs_to_gather.append(df)
+
+    gathered_annotations = pd.concat(dfs_to_gather, axis=0)
+    return gathered_annotations
+
+
+def save_top_plots(pathways_types,
+                   clustering_parameters, SAMPLE, subfolder,
+                   data_centralized_folder, plot_folder)-> None:
+    if not "FAMILIES" in pathways_types:
+        pathways_types.append("FAMILIES")
+    str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
+
+    joined = join_scores_adatas(pathways_types, SAMPLE, subfolder, data_centralized_folder)
+    map_df = joined.uns['current_pathways_df'].copy()
+
+    gathered_annotations = join_clean_annotations(pathways_types,
+                    SAMPLE, subfolder,
+                   data_centralized_folder)
+    map_df = pd.merge(map_df, gathered_annotations, how='left', left_on='moleculeIds', right_on='moleculeIds')
+    diff_sets = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
+                                         f'{SAMPLE}-top-differential-SETS.tsv'),
+                            sep='\t', header=0)
+
+    clusters_df = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
+                                           f'{SAMPLE}-clusters-{str_out}.txt'),
+                              header=0)
+
+    # important: add cluster to joined adata
+    joined.obs[str_out] = pd.Categorical(clusters_df[str_out].tolist(),
+                                         categories=clusters_df[
+                                             str_out].unique())
+
+    # mzs will be required in inner loop
+    adata_mz = safe_load_processed_data(SAMPLE, subfolder,
+                                        data_centralized_folder)
+
+    for cluster in diff_sets['group'].unique().tolist():
+        diff_sets_current_cluster = filter_sets_per_cluster_for_plot(diff_sets.copy(),
+                                                                     cluster)
+        pid = diff_sets_current_cluster['pathway_id'].tolist()
+        pnm = diff_sets_current_cluster['pathway_name'].tolist()
+        moran_vals = diff_sets_current_cluster['I'].tolist()
+
+        for set_id, set_full_name, mor_v in zip(pid, pnm, moran_vals):
+            plot_pathway_path = os.path.join(
+                 plot_folder, str(cluster), f'{set_id}-cluster-{cluster}--{SAMPLE}-png')
+            try:
+                os.makedirs(os.path.join(plot_folder, str(cluster)))
+            except:
+                pass # skips if already exists
+
+            sq.pl.spatial_scatter(
+                joined, color=[set_id], img=False,
+                title=f'{set_full_name[:45]}\n{set_id}',
+                size=1.4,
+                save=os.path.abspath(plot_pathway_path)
+            )
+            plt.close()
+
+            # plot also the mz belonging to the current pathway
+            mzs_in_pw = map_df.loc[
+                map_df['pathway_id'] == set_id, 'mz'].unique().tolist()
+
+            if (set_id.startswith('MolFam')) or (set_id.startswith('WP')):
+                map_copy = map_df.loc[
+                         (map_df['moleculeIds'].str.startswith("HMDB")
+                          ) | (map_df['moleculeIds'].str.startswith("LM")), :].copy()
+            elif set_id.startswith('hsa'):  # KEGG prefix for H sapiens
+                map_copy = map_df.loc[
+                    map_df['moleculeIds'].str.startswith("C"), :].copy
+            for i_mz in mzs_in_pw:
+                # inner loop
+                inner_plot_path = os.path.join(plot_folder,
+                                               str(cluster), f'{set_id}-mz{i_mz}--{SAMPLE}.pdf' )
+                complex_plot(
+                    adata_mz, map_df, set_id, set_full_name , i_mz,
+                    save_path=inner_plot_path
+                )
 
 
 def display_minireport(top_differential, SAMPLE):
@@ -56,20 +176,12 @@ def display_minireport(top_differential, SAMPLE):
 def compute_differential_families_and_pathways(
         pathways_types: List[str], clustering_parameters: Dict[str, str|int|float],
         SAMPLE: str, subfolder: str, data_centralized_folder: str) -> None:
-    pathways_types += ["FAMILIES"]
+    if not "FAMILIES" in pathways_types:
+        pathways_types.append("FAMILIES")
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
 
-    list_of_scores_objects =  list()
-    for u in pathways_types:
-        adata_scores = ad.read_h5ad(filename=os.path.join(data_centralized_folder, subfolder,
-                         f'{SAMPLE}-scores-{u}.h5ad'))
-        adata_scores.var['set_type'] = u
-        list_of_scores_objects.append(adata_scores)
-
-    joined = ad.concat(adatas=list_of_scores_objects, join='outer', axis=1)
-    # also pass obsm to the joined object
-    joined.obsm = adata_scores.obsm
-    del adata_scores
+    joined = join_scores_adatas(pathways_types, SAMPLE, subfolder,
+                                data_centralized_folder)
 
     clusters_df = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
         f'{SAMPLE}-clusters-{str_out}.txt'), header=0)
@@ -87,14 +199,16 @@ def compute_differential_families_and_pathways(
         differential_results_by_cluster, ntop_per_cluster=20)
 
     # new : moran filter for the sets
-    compute_moran_i(joined)
+    joined = compute_moran_i(joined)
+    joined.var['I'] = joined.uns['moranI'].loc[joined.var.index.tolist(),
+        'I'].astype(float).tolist()
     top_sets_by_moran_i = joined.uns['moranI'].loc[
                           joined.uns['moranI']['I'] >= 0.2,:].copy().index.tolist()
     top_differential = top_differential.loc[
         top_differential['names'].isin(top_sets_by_moran_i), :]
 
     top_differential = pd.merge(top_differential,
-                                joined.var[['pathway_id', 'pathway_name']].copy(),
+                                joined.var[['pathway_id', 'pathway_name', 'I']].copy(),
                                 how='left',
                                 left_on="names", right_on="pathway_id")
 
@@ -102,6 +216,7 @@ def compute_differential_families_and_pathways(
                                          f'{SAMPLE}-top-differential-SETS.tsv'),
                             sep='\t', header=True, index=False)
     display_minireport(top_differential, SAMPLE)
+
     print("ended")
 
 
@@ -256,9 +371,9 @@ def plot_clustering_results(adata_mz, clustering_parameters,
                                  f'{SAMPLE}-clusters-{str_out}.png')
     sq.pl.spatial_scatter(
         adata_mz, color=[str_out], img=False,
-        title="Clustering of ions of good quality",
+        title="Clustering of spots",
         linewidth=0, edgecolors=(0,0,0,0),
-        shape="circle",  size=1.1,#  'circle', 'square', 'hex'
+        shape="circle",  size=1,#  'circle', 'square', 'hex'
         save=os.path.abspath(plot_out_path),
         dpi=600)
     plt.close()
@@ -419,47 +534,54 @@ def run_analysis_one_tissue(annotations_dict: Dict[str, str],
     if not os.path.exists(plot_folder):
             os.mkdir(plot_folder)
 
-    annots_obj = spd.MetabolomeAnnotations(
-        name=SAMPLE, data_dir=data_centralized_folder,
-        subfolder=subfolder, annotation_files=annotations_dict)
-    annots_obj.load()  # load annotations with smpath library
+    # annots_obj = spd.MetabolomeAnnotations(
+    #     name=SAMPLE, data_dir=data_centralized_folder,
+    #     subfolder=subfolder, annotation_files=annotations_dict)
+    # annots_obj.load()  # load annotations with smpath library
+    #
+    # normalize_classify_and_save_anndata_mz(
+    #     annots_obj, offSample_cutoff, msm_cutoff, fdr_cutoff, moran_I_cutoff,
+    #     moran_padj_cutoff, SAMPLE, subfolder,
+    #     data_centralized_folder, plot_folder)
+    #
+    # clean_annotations_and_save_tsv(annots_obj, pathways_types, SAMPLE, subfolder,
+    #                                data_centralized_folder); del annots_obj  # obj no longer used: use clean .tsv files from now
 
-    normalize_classify_and_save_anndata_mz(
-        annots_obj, offSample_cutoff, msm_cutoff, fdr_cutoff, moran_I_cutoff,
-        moran_padj_cutoff, SAMPLE, subfolder,
-        data_centralized_folder, plot_folder)
+    # compute_clustering_of_spots(pathways_types, clustering_parameters,
+    #     SAMPLE, subfolder, data_centralized_folder, plot_folder)
 
-    clean_annotations_and_save_tsv(annots_obj, pathways_types, SAMPLE, subfolder,
-                                   data_centralized_folder); del annots_obj  # obj no longer used: use clean .tsv files from now
+    # compute_differential_analysis_of_mzs(pathways_types,
+    #      clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
 
-    compute_clustering_of_spots(pathways_types, clustering_parameters,
-        SAMPLE, subfolder, data_centralized_folder, plot_folder)
+    # try:
+    #     compute_pathway_scores(pathways_types, min_pathway_size, SAMPLE,
+    #          subfolder, data_centralized_folder)
+    # except Exception as e:
+    #     logger.warning("failed compute_pathway_scores, %s", e)
 
-    compute_differential_analysis_of_mzs(pathways_types,
-         clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
-
-    try:
-        compute_pathway_scores(pathways_types, min_pathway_size, SAMPLE,
-             subfolder, data_centralized_folder)
-    except Exception as e:
-        logger.warning("failed compute_pathway_scores, %s", e)
-
-    try:
-        compute_molecules_families(cutoff_tree,
-               SAMPLE, subfolder, data_centralized_folder, plot_folder)
-    except Exception as e:
-        logger.warning("failed compute_molecules_families , %s", e)
-
-    try:
-        compute_families_scores( min_family_size,
-            SAMPLE, subfolder, data_centralized_folder)
-    except Exception as e:
-        logger.warning("failed compute_families_scores , %s", e)
+    # try:
+    #     compute_molecules_families(cutoff_tree,
+    #            SAMPLE, subfolder, data_centralized_folder, plot_folder)
+    # except Exception as e:
+    #     logger.warning("failed compute_molecules_families , %s", e)
+    #
+    # try:
+    #     compute_families_scores( min_family_size,
+    #         SAMPLE, subfolder, data_centralized_folder)
+    # except Exception as e:
+    #     logger.warning("failed compute_families_scores , %s", e)
 
     try:
         compute_differential_families_and_pathways(pathways_types,
             clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
     except Exception as e:
         logger.warning("failed differential families %s", e)
+
+    try:
+        save_top_plots(pathways_types,
+                       clustering_parameters, SAMPLE, subfolder,
+                       data_centralized_folder, plot_folder)
+    except Exception as e:
+        logger.warning("failed plot: %s", e)
 
     logger.info("processed sample %s \n\n", SAMPLE)

@@ -42,10 +42,6 @@ def extract_params_per_dataset(row)-> (
             min_family_size)
 
 
-
-
-
-
 def process_tissues(input_file:str, data_dir:str, figures_dir:str)-> None:
     """
     parses the input dataframe having the specifics of the datasets
@@ -64,7 +60,6 @@ def process_tissues(input_file:str, data_dir:str, figures_dir:str)-> None:
          pathways_types, min_pathway_size, cutoff_tree,
          min_family_size
          ) = extract_params_per_dataset(row)
-
 
         run_analysis_one_tissue(annotations_dict, offSample_cutoff,
                                 msm_cutoff, fdr_cutoff,

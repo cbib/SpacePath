@@ -8,15 +8,15 @@ from single_slice_helpers import *
 import matplotlib.pyplot as plt
 
 
-np.random.seed(42)  # important to make reproducible the computations
+np.random.seed(42)  # important to make the computations be reproducible
 
 
-SAMPLE = "LP-brain-mouse-5"#"TD-Lipido-635"
+SAMPLE = "LP-cerebellum-rat"#"TD-Lipido-635"
 data_centralized_folder = "../../data"
 subfolder = SAMPLE
 pathways_types = ['FAMILIES', 'KEGG', 'WIKI']
 #str_out = "leiden_sg-0.4"
-str_out = "kmeans-5"  # -4
+str_out = "kmeans-4"  # -5
 cluster_to_check =  '0' #'5'
 
 diff_sets = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
@@ -37,8 +37,6 @@ clusters_df = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
 joined.obs[str_out] = pd.Categorical(clusters_df[str_out].tolist(),
                                      categories=clusters_df[
                                          str_out].unique())
-
-
 
 print(joined.var[['pathway_id', 'pathway_name']].head(20))
 joined.obsm = adata_scores.obsm

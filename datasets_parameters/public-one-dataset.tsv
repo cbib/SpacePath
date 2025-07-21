@@ -1,0 +1,2 @@
+dataset_name	metaspace_registry	annotations_to_use	in/out intensities for spot class	perform_spots_selection	offSample_cutoff	msm_cutoff	fdr_cutoff	Moran_I_cutoff	Moran_padj_cutoff	cluster_params	pathways_types	min_pathway_size	cut_tree_mol_families	min_family_size
+LP-brain-mouse-5	2023-07-09_23h26m29s	HMDB LipidMaps	0.5	YES	0.2	0.4	0.5	0.1	0.05	Kmeans:5	KEGG WIKI	2	0.5	4
