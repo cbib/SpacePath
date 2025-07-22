@@ -9,15 +9,14 @@ METHOD: A pathway-guided framework for deep exploration of Spatial Metabolomics 
 
 # Introduction
 
-METHOD is a novel bioinformatics framework designed to analyze spatial metabolomics and lipidomics in the context of metabolic pathways. It addresses challenges like compound identification ambiguities and incomplete pathway databases,  enabling the mapping of metabolic processes onto tissue architecture, enhancing understanding of tumor metabolism.
+METHOD is a novel bioinformatics framework designed to analyze spatial metabolomics and lipidomics in the context of metabolic pathways. It addresses challenges like compound identification ambiguities and incomplete pathway databases, enabling the mapping of metabolic processes onto tissue architecture.
 
-METHOD's approach integrates pathway activity scores, facilitating the interpretation of complex mass spectrometry imaging data. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping.
-
-Notably, this method was applied on glioblastoma, and many other types of tissues. Our method offers new insights into glioblastoma's metabolic organization and potential biomarker discovery. 
-[REF paper or biorxiv XXXXX]
-
+METHOD's approach integrates pathway activity scores at the spatial resolution level, and investigates unmapped features with the help of molecular similarity approaches. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping, and facilitating the interpretation of complex mass spectrometry imaging data. When applied to cancer tissues, METHOD can enhance the understanding of tumor metabolism.
 
 <img width="900" height="570" alt="Screenshot from 2025-07-22 15-06-39" src="https://github.com/user-attachments/assets/5a5bcc3b-d561-4ffc-b110-5fe0b40b75ca" />
+
+Notably, METHOD was applied on a collection of different types of healthy and tumoral tissues, including glioblastoma. By integrating complex spatially resolved lipidomics data and functional sets expressed as pathways or families, the method provided valuable insights about the glioblastoma's metabolic organization and potential biomarker discovery.
+[REF paper or biorxiv XXXXX]()
 
 
 ## How METHOD is implemented
@@ -48,28 +47,8 @@ Then install the two dependencies: smpath and sspa. Visit  [LINK TO SMPATH REPO]
 pip install smpath
 pip install sspa==1.0.4
 ```
-It is strongly recommended to use a virtual environment. 
+It is strongly recommended to use a virtual environment. [LINK TO SMPATH REPO]()
 
-<details><!--comment:micromamba-->
-
- <summary>Explanation for creating a virtual environment
- <sub><sup>(click to show/hide)</sup></sub>
- </summary>
-
-The users can employ the provided <code>smpath/tools/smpath_env.yaml</code> file:
-```
-micromamba create -f smpath_env.yaml  
-```
-or they can alternatively run:
-```
-micromamba create -n smpath python=3.10.18 -c conda-forge poetry==2.1.3
-```
-
-whether using conda or mamba, the arguments after the 'create' command are the same.
-Mamba or micromamba are faster, for further information see
- [here](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html).
- 
-</details>
 
  
 <details>
