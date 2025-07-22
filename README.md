@@ -2,31 +2,24 @@
  
 METHOD
 ===
+A pathway-guided framework for deep exploration of Spatial Metabolomics and Lipidomics data
 
-METHOD: A pathway-guided framework for deep exploration of Spatial Metabolomics and Lipidomics data
 
-
+This repository contains the code for the manuscript "XXXXXXXXXX" [REF paper or biorxiv XXXXX](). The code is also applicable to datasets other than those included in the paper.
 
 # Introduction
 
 METHOD is a novel bioinformatics framework designed to analyze spatial metabolomics and lipidomics in the context of metabolic pathways. It addresses challenges like compound identification ambiguities and incomplete pathway databases, enabling the mapping of metabolic processes onto tissue architecture.
 
-METHOD's approach integrates pathway activity scores at the spatial resolution level, and investigates unmapped features with the help of molecular similarity approaches. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping, and facilitating the interpretation of complex mass spectrometry imaging data. When applied to cancer tissues, METHOD can enhance the understanding of tumor metabolism.
+METHOD's approach integrates pathway activity scores at the spatial resolution level, and investigates unmapped features with a strategy that exploits the molecular similarity between chemical entities. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping, and facilitating the interpretation of complex mass spectrometry imaging data. When applied to cancer tissues, METHOD can enhance the understanding of tumor metabolism.
 
 <img width="900" height="570" alt="Screenshot from 2025-07-22 15-06-39" src="https://github.com/user-attachments/assets/5a5bcc3b-d561-4ffc-b110-5fe0b40b75ca" />
+
 
 Notably, METHOD was applied on a collection of different types of healthy and tumoral tissues, including glioblastoma. By integrating complex spatially resolved lipidomics data and functional sets expressed as pathways or families, the method provided valuable insights about the glioblastoma's metabolic organization and potential biomarker discovery.
 [REF paper or biorxiv XXXXX]()
 
-
-## How METHOD is implemented
-
-Our method is implemented as a pipeline, that relies on the new `smpath` library. The `smpath` library [link](), offers rich functions for the pathway-based analysis of annotated Spatial Metabolomics data; by implementing `sspa`, `rdkit`, `fastcluster`, among other powerful libraries, for relevant steps.
-
-The METHOD pipeline can also be re-used and adapted to the needs of any type of research team working with Spatial Metabolomics or Spatial Lipidomics data, being interested in the
-functional interpretation of their data oriented by the metabolic pathways or families.
-
-_Note_: Currently, our method supports as input data, the aligned spectra datasets and their annotations obtained via [METASPACE](https://metaspace2020.org/). 
+_Note_: Currently, our method supports as input data, the datasets consisting of aligned and recalibrated spectra intensities alongside their annotations, that are all obtained from the [METASPACE](https://metaspace2020.org/) output. 
 
 
 # Using METHOD 
@@ -36,49 +29,69 @@ Running METHOD requires an Unix environment with [python 3.10](http://www.python
 It was tested under Linux and MacOS environments.
 
 
+
+**_Information about the method implementation_**
+
+Our method is implemented as a pipeline that entirely depends on the new `smpath` library ([link]()), which is very easy to install (see Installation section of this README).
+
+> [!NOTE]  
+> Our library `smpath` offers rich functions for the pathway-based analysis of annotated spatial metabolomics data. It implements `sspa`, `rdkit`, `fastcluster`, among other powerful libraries.
+
+
 ## Installation 
 
-The full installation process should take less than 15 minutes on a standard computer. 
+The full installation process should take less than 15 minutes on a standard computer (dependencies included). 
 
-First **clone this repository** in your workspace, 
-
-Then install the two dependencies: smpath and sspa. Visit  [LINK TO SMPATH REPO]()
+1. First **clone `mymethod`** in your workspace (`git clone git@github.com:cbib/mymethod.git`)   %%caution, link will change when name appropriate%%
+2. also **clone `smpath`** in your workspace (`git clone git@github.com:cbib/smpath.git`)
+3. activate your virtual environment with poetry installed (visit [LINK TO SMPATH REPO]()); 
+4. run:
 ```
-pip install smpath
+cd smpath
+poetry install
 pip install sspa==1.0.4
 ```
-It is strongly recommended to use a virtual environment. [LINK TO SMPATH REPO]()
-
-
  
 <details>
 
  <summary>Running unitary tests <sub><sup>(click to show/hide)</sup></sub>
  </summary>
  
-We include some unitary tests (this pipeline is a project in active development). 
-Run `pytest` from the terminal.
+We include some unitary tests (this project in active development). 
+```
+cd mymethod
+pytest
+```
 
 </details>
 
  
 ## After installation
 
-For subsequent use just run `micromamba activate smpath` before launching a method command
+For subsequent use just activate the environment (e.g. `micromamba activate smpath`) as it has all the requirements already installed for running METHOD.
+Then you can run the generic command of METHOD (see Use case).
 
+
+## Use case
+
+The generic command line is:
+```
+python -m mymethod $INPUT_FILE $DATA_FOLDER $FIGURES_FOLDER
+```
 ----
 
 # Documentation
 
-Documentation and **examples of how to use our pipeline** are provided in the [Wiki]() page.   
+Documentation, examples of how to use our pipeline, and the specifics of the datasets used in the analysis presented in our manuscript, are provided in the [Wiki]() page.   
 
 -----------------------------------------------
 
 
 ## Code organization
 
-I propose to put the code organization into the Wiki
 
+* `src/..  TO COMPLETE HERE !!
+* `src/..  TO COMPLETE HERE !!
 * `src/..  TO COMPLETE HERE !!
 * `tests` directory contains unit tests
 
