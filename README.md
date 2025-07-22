@@ -35,7 +35,7 @@ It was tested under Linux and MacOS environments.
 
 ## Installation 
 
-The full installation process should take less than 15 minutes on a standard computer. A virtual environment with poetry installed is required
+The full installation process should take less than 15 minutes on a standard computer. A virtual environment with poetry 2.1.3 is required
 (see 'Explanation for creating a virtual environment').
 
 <details><!--commentvirtualenv-->
