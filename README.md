@@ -1,4 +1,5 @@
-[![PyPI - Python Version](https://img.shields.io/pypi/v/smpath)](xxxxx)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 smpath
 ===
@@ -9,8 +10,9 @@ A library for spatial metabolomics pathway-based exploration
 # Introduction
 
 The `smpath` library offers methods for the pathway-based analysis of annotated Spatial Metabolomics data.
+Its use is demonstrated in the pipeline [LINK TO METHOD]()
 
-When building a spatial metabolomics bioinformatic pipeline, **smpath** can be 
+Moreover, when building a spatial metabolomics bioinformatic pipeline, **smpath** can be 
 easily articulated with other popular Python libraries in the spatial omics world, such as `squidpy`, `scanpy`, `anndata`.
 💡
 
@@ -27,70 +29,78 @@ _Note_: Currently, the library supports as input data, the aligned spectra datas
 # Installing smpath 
 
 ## System Requirements
-`smpath` installation requires an Unix environment with [python 3.10](http://www.python.org/). 
+`smpath` installation requires an Unix environment with [python 3.10](http://www.python.org/) . 
 It was tested under Linux and MacOS environments.
 
 
 ## Installation 
 
-The full installation process should take less than 15 minutes on a standard computer.
+The full installation process should take less than 15 minutes on a standard computer. A virtual environment with poetry installed is required
+(see 'Explanation for creating a virtual environment').
 
-Via pip command:
-`pip install smpath`
-
-One external library, the `sspa` package, is required to be installed by the user,
- by running `pip install sspa==1.0.4`
-
-All the install process must occur in a virtual environment (e.g.  `
-micromamba activate smpath`).
-
-<details><!--comment:micromamba-->
+<details><!--commentvirtualenv-->
 
  <summary>Explanation for creating a virtual environment
  <sub><sup>(click to show/hide)</sup></sub>
  </summary>
 
-The users can employ the provided <code>smpath/tools/smpath_env.yaml</code> file:
+All the install process must occur in a virtual environment with poetry installed.
+* with pyvenv in python (>=3.10,<3.13):
 ```
-micromamba create -f smpath_env.yaml  
+python3 -m venv smpath
+source smpath/bin/activate  # activate
+pip install poetry==2.1.3
 ```
-or they can alternatively run:
+* with conda, miniconda, micromamba or mamba:
+  
+Use the following command, example for micromamba:
 ```
 micromamba create -n smpath python=3.10.18 -c conda-forge poetry==2.1.3
 ```
+Or use the <code>smpath/tools/smpath_env.yaml</code> file:
+```
+micromamba create -f smpath_env.yaml  
+```
 
-whether using conda or mamba, the arguments after the 'create' command are the same.
-Mamba or micromamba are faster, for further information see
- [here](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html).
 </details>
+
+After activating your virtual environment, **clone this repository**, locate yourself within (`cd smpath`) and run
+```
+poetry install
+```
+and install the external library `sspa`:
+```
+pip install sspa==1.0.4`
+```
 
 To sum up, the installation commands in the appropriate order are:
 
 ```commandline
-micromamba activate smpath  # virtual environment
-pip install smpath  # this library
-pip install sspa==1.0.4  # required external library 
-
+conda activate smpath OR source smpath/bin/activate   # example with conda OR venv for activating the environment
+cd smpath
+poetry install   # installs this library
+pip install sspa==1.0.4    # required external library 
 ```
 
 ## After installation
 
-For subsequent use just run `micromamba activate smpath`
+For subsequent use just activate your environment (e.g. `micromamba activate smpath`)
 
 ----
 
 ## Developer Setup
 
-To start contributing to smpath, it is required to have a python environment with python >= 3.10 and [poetry](https://python-poetry.org/docs/) installed.
+To start contributing to smpath, it is required to have a python environment with python >= 3.10 (and < 3.13) and [poetry](https://python-poetry.org/docs/) installed.
 
-The virtual environment must be activated (see 'Explanation for creating 
+The virtual environment with poetry must be activated (see 'Explanation for creating 
 of a virtual environment', in the Installation section)
 
-After activating the environment, the project can be installed with
+After activating the environment, run in the project folder:
+
 ```bash
 poetry install
+pip install sspa==1.0.4
 ```
-Finally install sspa `pip install sspa==1.0.4`
 
 ------
 
