@@ -20,7 +20,7 @@ Notably, this method was applied on glioblastoma, and many other types of tissue
 
 ## How METHOD is implemented
 
-Our method is implemented as a pipeline, that relies on the new `smpath` library, which offers methods for the pathway-based analysis of annotated Spatial Metabolomics data, available HERE[LINK].
+Our method is implemented as a pipeline, that relies on the new `smpath` library, which offers rich functions for the pathway-based analysis of annotated Spatial Metabolomics data, available HERE[LINK].
 
 Our pipeline that also be re-used and adapted to the needs of any type of research team working with Spatial Metabolomics or Spatial Lipidomics data and interested in
 functional interpretation oriented by metabolic pathways.
