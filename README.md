@@ -68,35 +68,14 @@ Mamba or micromamba are faster, for further information see
  [here](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html).
 </details>
 
-To sum up, the installation commands in the appropriate order are:
 
-```commandline
-micromamba activate smpath  # virtual environment
-pip install smpath  # this library
-pip install sspa==1.0.4  # required external library 
-
-```
 
 ## After installation
 
-For subsequent use just run `micromamba activate smpath`
+For subsequent use just run `micromamba activate smpath` before launching a method command
 
 ----
 
-## Developer Setup
-
-To start contributing to smpath, it is required to have a python environment with python >= 3.10 and [poetry](https://python-poetry.org/docs/) installed.
-
-The virtual environment must be activated (see 'Explanation for creating 
-of a virtual environment', in the Installation section)
-
-After activating the environment, the project can be installed with
-```bash
-poetry install
-```
-Finally install sspa `pip install sspa==1.0.4`
-
-------
 
 ## Code organization
 
