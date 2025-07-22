@@ -20,7 +20,7 @@ Within `smpath`, the computations dedicated to pathways-based analyses rely on p
 
 ____
 
-_Note_: Currently, the library supports as input data, the aligned spectra datasets and their annotations obtained via [METASPACE](https://metaspace2020.org/). We provide auxiliary scripts for data downloading and formatting, powered by `metaspace-converter` and `pyimzml`.
+_Note_: Currently, the library supports as input data, the aligned spectra datasets and their annotations obtained via [METASPACE](https://metaspace2020.org/). Auxiliary scripts for data downloading and formatting, powered by `metaspace-converter` and `pyimzml`, are also provided.
 
 
 
