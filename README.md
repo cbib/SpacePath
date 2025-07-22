@@ -39,7 +39,7 @@ It was tested under Linux and MacOS environments.
 
 The full installation process should take less than 15 minutes on a standard computer. 
 
-First **clone this repository** in your workspace, a recommended folder structure is explained in the Wiki [LINK]
+First **clone this repository** in your workspace, 
 
 Then install the two dependencies: smpath and sspa. Visit [LINK TO SMPATH REPO]
 ```
@@ -81,27 +81,19 @@ For subsequent use just run `micromamba activate smpath` before launching a meth
 
 ## Code organization
 
-* `src/smpath/processing` directory contains the implemented high-level  functions for the processed dedicated to the measurements and/or the pathways inputs
-* `src/smpath/visualization` directory contains the implemented high-level scripts to produce figures
-* `src/smpath/data` directory contains the python classes for data initialization alongside the methods proper to each data class
-* `src/smpath/method` directory contains the python classes of the configurations and methods that are applied on diverse types of input objects, by invoking 'src/smpath/processing' functions
-* `src/smpath/anndata_aux` directory contains the auxiliary functions for dataset download and formatting into an 'anndata' object
+* `src/..  TO COMPLETE HERE !!
 * `tests` directory contains unit tests
-* `tools` directory contains virtual environment setup .yaml files.
 
 
 ## Running unit tests 
 
-* With pytest, by running `pytest` from `smpath`
-* Alternatively, place yourself in `smpath/tests` and execute `python -m unittest` 
-* If the project was installed with `poetry install`, tests can also be run using `poetry run pytest` or from VSCode's GUI
+Run `pytest`
 
 -----------------------------------------------------------------------------------------------
 
 # Documentation
 
-Documentation and examples of how to use with `smpath` library 
-are provided in the Wiki page.
+Documentation and examples of how to use our pipeline are provided in the Wiki page.   
 
 -----------------------------------------------
   
