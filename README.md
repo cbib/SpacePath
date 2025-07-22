@@ -7,9 +7,9 @@ METHOD: A pathway-guided framework for deep exploration of Spatial Metabolomics 
 
 # Introduction
 
-METHOD is a novel bioinformatics framework designed to analyze spatial metabolomics and lipidomics data in glioblastoma. It addresses challenges like compound identification ambiguities and incomplete pathway databases by employing probabilistic methods, TIC normalization, and spatial clustering. This enables accurate mapping of metabolic processes onto tissue architecture, enhancing understanding of tumor metabolism.
+METHOD is a novel bioinformatics framework designed to analyze spatial metabolomics and lipidomics in the context of metabolic pathways. It addresses challenges like compound identification ambiguities and incomplete pathway databases,  enabling the mapping of metabolic processes onto tissue architecture, enhancing understanding of tumor metabolism.
 
-METHOD's approach integrates pathway activity scores with spatial clustering, facilitating the interpretation of complex mass spectrometry imaging data. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping. It relies on the new `smpath` library, which offers methods for the pathway-based analysis of annotated Spatial Metabolomics data, available HERE[LINK].
+METHOD's approach integrates pathway activity scores, facilitating the interpretation of complex mass spectrometry imaging data. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping.
 
 Notably, this method was applied on glioblastoma, and many other types of tissues. Our method offers new insights into glioblastoma's metabolic organization and potential biomarker discovery. 
 [REF paper or biorxiv XXXXX]
@@ -20,7 +20,9 @@ Notably, this method was applied on glioblastoma, and many other types of tissue
 
 ## How METHOD is implemented
 
-Our method is implemented as a pipeline, that can be re-used and adapted to the needs of any type of research team working with Spatial Metabolomics or Spatial Lipidomics data and interested in
+Our method is implemented as a pipeline, that relies on the new `smpath` library, which offers methods for the pathway-based analysis of annotated Spatial Metabolomics data, available HERE[LINK].
+
+Our pipeline that also be re-used and adapted to the needs of any type of research team working with Spatial Metabolomics or Spatial Lipidomics data and interested in
 functional interpretation oriented by metabolic pathways.
 
 _Note_: Currently, our method supports as input data, the aligned spectra datasets and their annotations obtained via [METASPACE](https://metaspace2020.org/). 
