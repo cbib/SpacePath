@@ -1,3 +1,5 @@
+ [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+ 
 METHOD
 ===
 
@@ -15,15 +17,15 @@ Notably, this method was applied on glioblastoma, and many other types of tissue
 [REF paper or biorxiv XXXXX]
 
 
-[DIAGRAM HERE]
-💡
+<img width="900" height="570" alt="Screenshot from 2025-07-22 15-06-39" src="https://github.com/user-attachments/assets/5a5bcc3b-d561-4ffc-b110-5fe0b40b75ca" />
+
 
 ## How METHOD is implemented
 
-Our method is implemented as a pipeline, that relies on the new `smpath` library, which offers rich functions for the pathway-based analysis of annotated Spatial Metabolomics data, available HERE[LINK].
+Our method is implemented as a pipeline, that relies on the new `smpath` library. The `smpath` library [link](), offers rich functions for the pathway-based analysis of annotated Spatial Metabolomics data; by implementing `sspa`, `rdkit`, `fastcluster`, among other powerful libraries, for relevant steps.
 
-Our pipeline that also be re-used and adapted to the needs of any type of research team working with Spatial Metabolomics or Spatial Lipidomics data and interested in
-functional interpretation oriented by metabolic pathways.
+The METHOD pipeline can also be re-used and adapted to the needs of any type of research team working with Spatial Metabolomics or Spatial Lipidomics data, being interested in the
+functional interpretation of their data oriented by the metabolic pathways or families.
 
 _Note_: Currently, our method supports as input data, the aligned spectra datasets and their annotations obtained via [METASPACE](https://metaspace2020.org/). 
 
@@ -41,14 +43,12 @@ The full installation process should take less than 15 minutes on a standard com
 
 First **clone this repository** in your workspace, 
 
-Then install the two dependencies: smpath and sspa. Visit [LINK TO SMPATH REPO]
+Then install the two dependencies: smpath and sspa. Visit  [LINK TO SMPATH REPO]()
 ```
 pip install smpath
 pip install sspa==1.0.4
 ```
-It is strongly recommended to use a virtual environment  visit [LINK TO SMPATH REPO].
-
-For subsequent uses just run `micromamba activate smpath` before running the method.
+It is strongly recommended to use a virtual environment. 
 
 <details><!--comment:micromamba-->
 
@@ -68,34 +68,44 @@ micromamba create -n smpath python=3.10.18 -c conda-forge poetry==2.1.3
 whether using conda or mamba, the arguments after the 'create' command are the same.
 Mamba or micromamba are faster, for further information see
  [here](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html).
+ 
 </details>
 
+ 
+<details>
 
+ <summary>Running unitary tests <sub><sup>(click to show/hide)</sup></sub>
+ </summary>
+ 
+We include some unitary tests (this pipeline is a project in active development). 
+Run `pytest` from the terminal.
 
+</details>
+
+ 
 ## After installation
 
 For subsequent use just run `micromamba activate smpath` before launching a method command
 
 ----
 
+# Documentation
+
+Documentation and **examples of how to use our pipeline** are provided in the [Wiki]() page.   
+
+-----------------------------------------------
+
 
 ## Code organization
+
+I propose to put the code organization into the Wiki
 
 * `src/..  TO COMPLETE HERE !!
 * `tests` directory contains unit tests
 
 
-## Running unit tests 
-
-Run `pytest`
-
 -----------------------------------------------------------------------------------------------
 
-# Documentation
-
-Documentation and examples of how to use our pipeline are provided in the Wiki page.   
-
------------------------------------------------
   
 # Getting help
 
