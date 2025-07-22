@@ -45,19 +45,19 @@ The full installation process should take less than 15 minutes on a standard com
  </summary>
 
 All the install process must occur in a virtual environment with poetry installed.
-* with pyvenv in python (>=3.10,<3.13):
+* with venv in python (>=3.10,<3.13):
 ```
 python3 -m venv smpath
 source smpath/bin/activate  # activate
 pip install poetry==2.1.3
 ```
-* with conda, miniconda, micromamba or mamba:
+* with conda, miniconda, micromamba or mamba (command examples below use micromamba):
   
-Use the following command, example for micromamba:
+Use the following command:
 ```
 micromamba create -n smpath python=3.10.18 -c conda-forge poetry==2.1.3
 ```
-Or use the <code>smpath/tools/smpath_env.yaml</code> file:
+Or use the provided .yaml file that is located at <code>smpath/tools/smpath_env.yaml</code> :
 ```
 micromamba create -f smpath_env.yaml  
 ```
