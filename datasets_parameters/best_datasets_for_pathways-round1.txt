@@ -1,10 +1,7 @@
 "dataset_name"
-"LP-lung"
+
 "LP-brain-rat-2"
-"LP-skin-cancer-1"
 "LP-stomach"
-"LP-breast-cancer-1"
-"LP-skin-cancer-2"
 "LP-gut"
 "LP-brain-mouse-1"
 "LP-brain-mouse-3"
@@ -22,3 +19,5 @@
 "TD-Lipido-636"
 "TD-Lipido-836"
 "TD-Lipido-827"
+
+NOTE: for the breast cancer, if official Landry Blanc's permission not obtained, delete
