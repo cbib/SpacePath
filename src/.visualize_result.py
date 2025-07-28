@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 np.random.seed(42)  # important to make the computations be reproducible
 
 
-SAMPLE = "LP-cerebellum-rat"#"TD-Lipido-635"
+SAMPLE = "LP-cerebellum"#"TD-Lipido-635"
 data_centralized_folder = "../../data"
 subfolder = SAMPLE
 pathways_types = ['FAMILIES', 'KEGG', 'WIKI']

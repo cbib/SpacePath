@@ -15,7 +15,7 @@ import warnings
 def main(input_file, data_dir, figures_dir):
     """
     \b
-    'mymethod': Spatial Metabolomics Exploration Based on Pathway and Families Activity Profiles
+    'mymethod': Spatial Metabolomics Exploration Based on Pathways and Families Profiles
 
     Positional arguments:
 

@@ -105,7 +105,9 @@ def save_top_plots(pathways_types,
             sq.pl.spatial_scatter(
                 joined, color=[set_id], img=False,
                 title=f'{set_full_name[:45]}\n{set_id}',
-                size=1.2,
+                linewidth=0, edgecolors=(0,0,0,0),
+                shape="circle", size=1.2,
+                palette='viridis',
                 save=os.path.abspath(plot_pathway_path)
             )
             plt.close()
@@ -166,7 +168,7 @@ def compute_differential_families_and_pathways(
         joined, group_str=str_out)
 
     top_differential = differential_results_filter(
-        differential_results_by_cluster, ntop_per_cluster=20)
+        differential_results_by_cluster, ntop_per_cluster=10)
 
     # new : moran filter for the sets
     joined = compute_moran_i(joined)
@@ -515,6 +517,7 @@ def run_analysis_one_tissue(annotations_dict: Dict[str, str],
     clean_annotations_and_save_tsv(annots_obj, pathways_types, SAMPLE, subfolder,
                                    data_centralized_folder); del annots_obj  # obj no longer used: use clean .tsv files from now
 
+
     compute_clustering_of_spots(pathways_types, clustering_parameters,
         SAMPLE, subfolder, data_centralized_folder, plot_folder)
 
@@ -544,12 +547,12 @@ def run_analysis_one_tissue(annotations_dict: Dict[str, str],
             clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
     except Exception as e:
         logger.warning("failed differential families %s", e)
-
-    try:
-        save_top_plots(pathways_types,
-                       clustering_parameters, SAMPLE, subfolder,
-                       data_centralized_folder, plot_folder)
-    except Exception as e:
-        logger.warning("failed save_top_plots: %s", e)
+    #
+    # try:
+    #     save_top_plots(pathways_types,
+    #                    clustering_parameters, SAMPLE, subfolder,
+    #                    data_centralized_folder, plot_folder)
+    # except Exception as e:
+    #     logger.warning("failed save_top_plots: %s", e)
 
     logger.info("processed sample %s \n\n", SAMPLE)

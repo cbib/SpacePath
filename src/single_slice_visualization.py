@@ -57,7 +57,10 @@ def complex_plot(adata_mz, map_df_copy, set_id, set_full_name, i_mz,
 
     sq.pl.spatial_scatter(
         adata_mz, color=[str(i_mz)], img=False,
-        title=f"m/z = {i_mz}\n", size=1.2,
+        title=f"m/z = {i_mz}\n",
+        linewidth=0, edgecolors=(0, 0, 0, 0),
+        shape="circle",  size=1.2,
+        palette='viridis',
         ax=ax1)
     ax1.set_axis_off()
     ax1.set_rasterized(True)

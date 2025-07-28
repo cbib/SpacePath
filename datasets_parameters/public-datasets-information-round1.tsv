@@ -9,7 +9,7 @@ LP-gut,2022-07-06_09h33m52s,mmu,gut,WT,SDHB,positive,orbitrap,Orbitrap+AP-SMALDI
 LP-brain-mouse-1,2025-04-10_23h29m14s,mmu,brain,WT,,positive,,,public,
 LP-brain-mouse-2,2025-04-10_14h45m11s,mmu,brain,WT,,positive,,,public,
 LP-brain-rat-3,2025-04-10_15h11m23s,mmu,brain,WT,,positive,,,public,
-LP-cerebellum-rat,2025-04-10_14h53m38s,rno,cerebellum,to check,,positive,,,public,
+LP-cerebellum,2025-04-10_14h53m38s,rno,cerebellum,to check,,positive,,,public,
 LP-brain-mouse-3,2023-09-29_18h44m00s,mmu,brain,to check,,positive,,,public,
 LP-brain-mouse-4,2020-01-16_13h13m47s,mmu,brain,to check,,positive,,,public,
 LP-brain-mouse-5,2023-07-09_23h26m29s,mmu,brain,,,positive,,,public,
