@@ -157,7 +157,7 @@ class ClassifyMZProtocol:
 
         if config.n_perms_moran_calc == "auto":
             config.n_perms_moran_calc = 50
-            if (adata_mz.obs.shape[0] > 1e5) and (adata_mz.var.shape[0] > 1e3):
+            if (adata_mz.shape[0] > 9e4) and (adata_mz.shape[1] > 1e3):
                 config.n_perms_moran_calc = 10
 
         logger.info(f">> Part b: classifying ions based on Moran's I: "

@@ -6,6 +6,7 @@ from typing import List, Dict,   Set, Union, Tuple
 
 import pandas as pd
 import anndata as ad
+import scipy.sparse.linalg as linalg
 import sspa as sspa
 import scanpy as sc
 
@@ -114,6 +115,7 @@ def compute_kpca(sets__df: pd.DataFrame,
 
     :param sets__df: pathways or sets df, each row is a set (see sspa)
     :param metabolites_computed_w: the data with the weights as a dataframe
+       consisting of m rows (samples) and n columns (features)
     :parm min_entity: the minimal size of the set to do the computation
 
     :returns: Computed scores as a dataframe
@@ -121,7 +123,18 @@ def compute_kpca(sets__df: pd.DataFrame,
     kpca_model = sspa.sspa_kpca.sspa_KPCA(
         sets__df, min_entity=min_entity, random_state=0)
 
-    kpca_scores = kpca_model.fit_transform(metabolites_computed_w)
+    try:
+        kpca_scores = kpca_model.fit_transform(metabolites_computed_w)
+    except linalg._eigen.arpack.ArpackError:
+        # unfrequent error, when the first column vector variance is zero.
+        # to rescue, dropping the zero variance features
+        metabolites_computed_w = metabolites_computed_w.loc[:,
+                                 metabolites_computed_w.var() != 0]
+        # also decreasing min_entity to tolerate dropped features
+        kpca_model = sspa.sspa_kpca.sspa_KPCA(
+            sets__df, min_entity=1, random_state=0)
+
+        kpca_scores =  kpca_model.fit_transform(metabolites_computed_w)
 
     return kpca_scores
 

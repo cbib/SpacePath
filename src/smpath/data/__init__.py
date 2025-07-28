@@ -269,7 +269,7 @@ class MetabolomeAnnotations(Dataset):
                                  self.no_translated[self.usable_id].isin(
                                      accepted_ids), :].copy()
         else:
-            logger.info("ignored, not applicable for %s ids", self.usable_id)
+            logger.info("all is %s ids, no alias", self.usable_id)
 
     def check_expectations_1(self):
         if len(set(list(self.annotation_files.keys())).intersection(
