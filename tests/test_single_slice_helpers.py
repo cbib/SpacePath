@@ -1,9 +1,11 @@
 from unittest import TestCase
 import pandas as pd
 from mymethod.src.single_slice_helpers import (prepare_molecular_ids_df,
-                                           get_top_n,
-                                            differential_results_filter)
+                                               get_top_n_simple,
+                                               get_top_n,
+                                               differential_results_filter)
 from typing import List, Dict
+import numpy as np
 
 
 class Test(TestCase):
@@ -26,20 +28,38 @@ class Test(TestCase):
         self.assertNotIn(None, result['mz'].values)
         self.assertEqual(result.shape[0], len(result['mz'].unique()))
 
-    def test_get_top_n(self):
+    def test_get_top_n_simple(self):
         data = {
             'pvals_adj': [0.01, 0.9, 0.02, 0.01, 0.0001],
             'abslfc': [10, 20, 15, 25, 5],
             'cluster': ['A', 'A', 'A', 'A', 'A']
         }
         df = pd.DataFrame(data)
-        result = get_top_n(df, 3)
+        result = get_top_n_simple(df, 3)
         self.assertEqual(len(result), 3)
         self.assertEqual(result.iloc[0]['pvals_adj'],
                          min(df['pvals_adj']))
         sorted_pvals = sorted(df['pvals_adj'])
         self.assertEqual(result.iloc[1]['pvals_adj'], sorted_pvals[1])
 
+    def test_get_top_n(self):
+        data = {
+            'pvals_adj': [0.01, 0.05, 0.02, 0.01, 0.0001, 0.01, 0.01, 0.01],
+            'logfoldchanges': [-10, -1, 15, -2, -15, -3, -5, 7],
+            'cluster': ['A', 'A', 'A', 'A', 'A', 'A', 'A', 'A']
+        }
+        df = pd.DataFrame(data)
+        result1 = get_top_n(df, 3, "down")
+        result2 = get_top_n(df, 7, "up")
+        print(result2)
+        self.assertTrue(np.all(np.around(
+            result1['logfoldchanges'].to_numpy(), 0) == np.array(
+            [-15, -10, -5]
+        )))
+        self.assertTrue(np.all(np.around(
+            result2['logfoldchanges'].to_numpy(), 0) == np.array(
+            [7, 15]
+        )))
 
     def test_differential_results_filter(self):
         data = {
@@ -58,4 +78,6 @@ class Test(TestCase):
 
         self.assertTrue(all(abs(result['logfoldchanges']) >= 0.8))
         self.assertTrue(all(result['pvals_adj'] <= 0.05))
+
+
 

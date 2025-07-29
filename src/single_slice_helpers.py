@@ -102,22 +102,40 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
 
 ## differential routine
 
-
-def get_top_n(group: pd.DataFrame, *args) -> pd.DataFrame:
+def get_top_n_simple(group: pd.DataFrame, *args) -> pd.DataFrame:
     ntop_per_cluster = args[0]
     sorted_group = group.sort_values(
         by=['pvals_adj', 'abslfc'], ascending=[True, False])
     return sorted_group.head(ntop_per_cluster)
 
 
+def get_top_n(group: pd.DataFrame, *args) -> pd.DataFrame:
+    ntop_per_cluster = args[0]
+    direction_type = args[1]
+    sorted_group= pd.DataFrame()
+    if direction_type == "up":
+        group = group.loc[group['logfoldchanges'] > 0,:].copy()
+        sorted_group = group.sort_values(
+            by=['pvals_adj', 'logfoldchanges'], ascending=[True, False])
+    elif direction_type == "down":
+        group = group.loc[group['logfoldchanges'] < 0, :].copy()
+        sorted_group = group.sort_values(
+            by=['pvals_adj', 'logfoldchanges'], ascending=[True, True])
+
+    return sorted_group.head(ntop_per_cluster)
+
+
 def differential_results_filter(differential_results, lfc: float=0.8,
                                 pvals_adj: float=0.05,
                                 ntop_per_cluster: Union[str, int]="auto",
-                                total_n_features:int=250)-> pd.DataFrame:
+                                total_n_features:int=250,
+                                up_down_proportion:tuple=(0.7, 0.3)
+                                )-> pd.DataFrame:
     if ntop_per_cluster == "auto":
         ntop_per_cluster = int(total_n_features / len(
             differential_results['group'].unique()))
-
+    up_n = int(ntop_per_cluster * up_down_proportion[0])
+    down_n = int(ntop_per_cluster * up_down_proportion[1])
     tmp = differential_results.loc[(abs(differential_results[
              'logfoldchanges']) >= lfc) & (
             differential_results['pvals_adj'] <= pvals_adj), :].copy()
@@ -125,10 +143,16 @@ def differential_results_filter(differential_results, lfc: float=0.8,
     tmp = tmp.assign(abslfc=abs(tmp['logfoldchanges']),
                      cluster=tmp['group'].astype(str))
     tmp = tmp.sort_values(by=['group', 'pvals_adj'], ascending=[True, False])
-    tmp = tmp.groupby('cluster', group_keys=False, as_index=False
-                      ).apply(get_top_n, ntop_per_cluster,
+    tmp_up = tmp.groupby('cluster', group_keys=False, as_index=False
+                      ).apply(get_top_n, up_n, "up",
                               include_groups=False  # avoid DeprecationWarning
-                              ).reset_index(drop=True)
+                              ).reset_index(drop=True).copy()
+    tmp_down = tmp.groupby('cluster', group_keys=False, as_index=False
+                      ).apply(get_top_n, down_n, "down",
+                              include_groups=False  # avoid DeprecationWarning
+                              ).reset_index(drop=True).copy()
+    tmp = pd.concat([tmp_up, tmp_down], axis=0)
+
     return tmp
 
 

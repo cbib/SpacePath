@@ -16,14 +16,37 @@ np.random.seed(42)  # important to make the computations be reproducible
 
 def filter_sets_per_cluster_for_plot(diff_copy_df, cluster_to_check,
                                      top_for_plotting=2):
-    """selects differential pathways being the n top by lfc, for plotting"""
+    """
+    selects differential pathways being the n top by lfc, for plotting
+       forces selection by positive and negative log2FCs, to avoid having
+       all down or all up.
+
+    Note that 'down' or 'up' are theoretical, not yet biologically verified
+    """
     diff_copy_df = diff_copy_df.loc[
                  diff_copy_df['group'].astype(str) == str(cluster_to_check), :].copy()
 
-    diff_copy_df = diff_copy_df.sort_values(
-        by=['abslfc', 'pvals_adj'], ascending=[False, True]).head(top_for_plotting)
+    up = diff_copy_df.sort_values(
+        by=['logfoldchanges', 'pvals_adj'],
+        ascending=[False, True]).head(top_for_plotting).copy()
+    down = diff_copy_df.sort_values(
+        by=['logfoldchanges', 'pvals_adj'],
+        ascending=[True, True]).head(top_for_plotting).copy()
+
+    diff_copy_df = pd.concat([up, down], axis=0)
 
     return diff_copy_df
+
+
+def truncate_df_with_text_last_cell(df, n):
+    df = df.reset_index(drop=True)
+    df = df.drop_duplicates(ignore_index=True)
+    if df.shape[0] > n:
+        n_more = df.shape[0] - n
+        df = df.head(n)  # limit the lenght of the total annots of the current mz
+        df.loc[n] = ["...", f"...(truncated {n_more} more)..."]
+
+    return df
 
 
 def complex_plot(adata_mz, map_df_copy, set_id, set_full_name, i_mz,
@@ -38,12 +61,13 @@ def complex_plot(adata_mz, map_df_copy, set_id, set_full_name, i_mz,
 
     curr_mz_df = map_df_copy.loc[map_df_copy['mz'] == i_mz, ['moleculeIds', 'moleculeNames']]
     curr_mz_df['moleculeNames'] = curr_mz_df['moleculeNames'].str.slice(0,25)
+
     mz_in_pw_df = curr_mz_df.loc[curr_mz_df['moleculeIds'].isin(
         map_df_copy.loc[(map_df_copy['mz'] == i_mz) & (map_df_copy['pathway_id'] == set_id), 'moleculeIds'].tolist())  , :]
-    if curr_mz_df.shape[0] > 15:
-        n_more = curr_mz_df.shape[0] - 15
-        curr_mz_df = curr_mz_df.head(15)  # limit the lenght of the total annots of the current mz
-        curr_mz_df.loc[15] = ["...", f"...(truncated {n_more} more)..."]
+
+    curr_mz_df = truncate_df_with_text_last_cell(curr_mz_df, 17)
+    mz_in_pw_df = truncate_df_with_text_last_cell(mz_in_pw_df, 17)
+
     tmp = adata_mz[:,str(i_mz)].to_df()
 
     tmp['x'] = np.array(adata_mz.obsm['spatial'])[:,0]

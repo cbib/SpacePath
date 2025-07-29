@@ -55,9 +55,138 @@ def join_clean_annotations(pathways_types: List[str],
     return gathered_annotations
 
 
+def table_contracted(df):
+    df = df.drop(columns=['moleculeIds'])
+    transformed_df = df.groupby(['mz', 'cluster', 'pathway_name',
+                                 'pathway_id', 'theoretical_direction'], as_index=False).agg({
+        'moleculeNames': lambda x: '; '.join(list(set(x)))
+    })
+    return transformed_df
+
+
+def save_top_as_heterogeneous_files(pathways_types,
+                   clustering_parameters, SAMPLE, subfolder,
+                   data_centralized_folder, plot_folder, top_for_plotting=5):
+    FOO = list()
+    if not "FAMILIES" in pathways_types:
+        pathways_types.append("FAMILIES")
+    str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
+
+    joined = join_scores_adatas(pathways_types, SAMPLE, subfolder,
+                                data_centralized_folder)
+    map_df = joined.uns['current_pathways_df'].copy()
+
+    gathered_annotations = join_clean_annotations(pathways_types,
+                                                  SAMPLE, subfolder,
+                                                  data_centralized_folder)
+    map_df = pd.merge(map_df, gathered_annotations, how='left',
+                      left_on='moleculeIds', right_on='moleculeIds')
+    diff_sets = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
+                                         f'{SAMPLE}-top-differential-SETS.tsv'),
+                            sep='\t', header=0)
+
+    diff_mzs = pd.read_csv(
+        os.path.join(data_centralized_folder, subfolder,
+                     f'{SAMPLE}-top-differential-mzs.tsv'), sep='\t',
+        header=0)  # todo mark as new, use also for the other complex plots
+
+    clusters_df = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
+                                           f'{SAMPLE}-clusters-{str_out}.txt'),
+                              header=0)
+
+    # important: add cluster to joined adata
+    joined.obs[str_out] = pd.Categorical(clusters_df[str_out].tolist(),
+                                         categories=clusters_df[
+                                             str_out].unique())
+
+    # mzs will be required in inner loop
+    adata_mz = safe_load_processed_data(SAMPLE, subfolder,
+                                        data_centralized_folder)
+
+    for cluster in diff_sets['group'].unique().tolist():
+
+        plot_cluster_path = os.path.join(
+            plot_folder, str(cluster),
+            f'{SAMPLE}-cluster-{cluster}.png')
+        # plot_cluster_highlight(adata_mz, save_path=) # todo create this function
+
+        diff_sets_current_cluster = filter_sets_per_cluster_for_plot(
+            diff_sets.copy(),
+            cluster,
+            top_for_plotting=top_for_plotting)
+
+        pid = diff_sets_current_cluster['pathway_id'].tolist()
+        pnm = diff_sets_current_cluster['pathway_name'].tolist()
+        logFCs = diff_sets_current_cluster['logfoldchanges'].tolist()
+        moran_vals = diff_sets_current_cluster['I'].tolist()
+
+        for set_id, set_full_name, mor_v, lFC in zip(pid, pnm, moran_vals,
+                                                     logFCs):
+            map_copy = map_df.loc[
+                map_df['pathway_id'] == set_id,:].copy()
+            try:
+                os.makedirs(os.path.join(plot_folder, str(cluster)))
+            except:
+                pass  # skips if already exists
+
+            theoretical_direction: str = "DOWN"
+            if lFC > 0:
+                theoretical_direction = "UP"
+
+            # plot also the mz belonging to the current pathway
+            if (set_id.startswith('MolFam')) or (set_id.startswith('WP')):
+                map_copy = map_copy.loc[
+                           (map_copy['moleculeIds'].str.startswith("HMDB")
+                            ) | (map_copy['moleculeIds'].str.startswith("LM")),
+                           :].copy()
+            elif set_id.startswith('hsa'):  # KEGG prefix for H sapiens
+                map_copy = map_copy.loc[
+                           map_copy['moleculeIds'].str.startswith("C"),
+                           :].copy()
+
+            FOO_df = map_copy.copy()
+            #FOO_df['pathway_id'] = set_id
+            FOO_df['pathway_name'] = set_full_name
+            FOO_df['cluster'] = f'cluster{cluster}'
+            FOO_df['theoretical_direction'] = theoretical_direction
+            FOO_df = FOO_df.drop_duplicates(ignore_index=True)
+
+            FOO.append(FOO_df)
+
+            mzs_significant_in_cluster = diff_mzs.loc[diff_mzs['group'].astype(int) == int(cluster), 'mz' ].unique().tolist()
+
+            mzs_final_set = set(map_copy['mz'].unique().tolist()).intersection(
+                set(mzs_significant_in_cluster)
+            )
+            if len(mzs_final_set) != 0:
+                for i_mz in list(mzs_final_set):
+                    # inner loop
+                    inner_plot_path = os.path.join(plot_folder, str(cluster),
+                                                   f'{set_id}-{theoretical_direction}-cluster{cluster}--mz{i_mz}-{SAMPLE}-foo.png')
+                    sq.pl.spatial_scatter(
+                        adata_mz, color=[str(i_mz)], img=False,
+                        title=f'{i_mz}\n({set_id}, {set_full_name[:45]})',
+                        linewidth=0, edgecolors=(0, 0, 0, 0),
+                        shape="circle", size=1.2,
+                        palette='viridis',
+                        save=os.path.abspath(inner_plot_path)
+                    )
+                    plt.close()
+        # end for set_id
+    # end for cluster
+    FOO_megadf = pd.concat(FOO, axis=0)
+    print(FOO_megadf.head())
+    FOO_megadf = table_contracted(FOO_megadf)
+    print("ppppp")
+    print(FOO_megadf.head())
+    FOO_megadf.to_csv(os.path.join(plot_folder,  f'top-foo-{SAMPLE}-foo.tsv'), sep='\t', index=False, header=True)
+
+
+
+
 def save_top_plots(pathways_types,
                    clustering_parameters, SAMPLE, subfolder,
-                   data_centralized_folder, plot_folder)-> None:
+                   data_centralized_folder, plot_folder, top_for_plotting=5)-> None:
     logger.info("saving top pathways and families to plots")
     if not "FAMILIES" in pathways_types:
         pathways_types.append("FAMILIES")
@@ -69,7 +198,8 @@ def save_top_plots(pathways_types,
     gathered_annotations = join_clean_annotations(pathways_types,
                     SAMPLE, subfolder,
                    data_centralized_folder)
-    map_df = pd.merge(map_df, gathered_annotations, how='left', left_on='moleculeIds', right_on='moleculeIds')
+    map_df = pd.merge(map_df, gathered_annotations, how='left',
+                      left_on='moleculeIds', right_on='moleculeIds')
     diff_sets = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
                                          f'{SAMPLE}-top-differential-SETS.tsv'),
                             sep='\t', header=0)
@@ -88,49 +218,74 @@ def save_top_plots(pathways_types,
                                         data_centralized_folder)
 
     for cluster in diff_sets['group'].unique().tolist():
+
+        plot_cluster_path = os.path.join(
+            plot_folder, str(cluster),
+            f'{SAMPLE}-cluster-{cluster}.png')
+        #plot_cluster_highlight(adata_mz, save_path=) # todo create this function
+
         diff_sets_current_cluster = filter_sets_per_cluster_for_plot(diff_sets.copy(),
-                                                                     cluster)
+                                                                     cluster,
+                                                                     top_for_plotting=top_for_plotting)
         pid = diff_sets_current_cluster['pathway_id'].tolist()
         pnm = diff_sets_current_cluster['pathway_name'].tolist()
+        logFCs = diff_sets_current_cluster['logfoldchanges'].tolist()
         moran_vals = diff_sets_current_cluster['I'].tolist()
 
-        for set_id, set_full_name, mor_v in zip(pid, pnm, moran_vals):
-            plot_pathway_path = os.path.join(
-                 plot_folder, str(cluster), f'{set_id}-cluster-{cluster}--{SAMPLE}-png')
+        for set_id, set_full_name, mor_v, lFC in zip(pid, pnm, moran_vals, logFCs):
+            map_copy = map_df.loc[
+                       map_df['pathway_id'] == set_id, :].copy()
+            # plot_pathway_path = os.path.join(
+            #      plot_folder, str(cluster), f'{set_id}-cluster-{cluster}--{SAMPLE}-png')  # todo:  delete in next commit
             try:
                 os.makedirs(os.path.join(plot_folder, str(cluster)))
             except:
                 pass # skips if already exists
 
-            sq.pl.spatial_scatter(
-                joined, color=[set_id], img=False,
-                title=f'{set_full_name[:45]}\n{set_id}',
-                linewidth=0, edgecolors=(0,0,0,0),
-                shape="circle", size=1.2,
-                palette='viridis',
-                save=os.path.abspath(plot_pathway_path)
-            )
-            plt.close()
+            theoretical_direction: str="DOWN"
+            if lFC > 0:
+                theoretical_direction = "UP"
+
+            # sq.pl.spatial_scatter(
+            #     joined, color=[set_id], img=False,
+            #     title=f'{set_full_name[:45]}\n{set_id}',
+            #     linewidth=0, edgecolors=(0,0,0,0),
+            #     shape="circle", size=1.2,
+            #     palette='viridis',
+            #     save=os.path.abspath(plot_pathway_path)
+            # )
+            # plt.close()   # todo:  delete in next commit
+
 
             # plot also the mz belonging to the current pathway
-            mzs_in_pw = map_df.loc[
-                map_df['pathway_id'] == set_id, 'mz'].unique().tolist()
-
             if (set_id.startswith('MolFam')) or (set_id.startswith('WP')):
-                map_copy = map_df.loc[
-                         (map_df['moleculeIds'].str.startswith("HMDB")
-                          ) | (map_df['moleculeIds'].str.startswith("LM")), :].copy()
+                map_copy = map_copy.loc[
+                           (map_copy['moleculeIds'].str.startswith("HMDB")
+                            ) | (map_copy['moleculeIds'].str.startswith(
+                               "LM")),
+                           :].copy()
             elif set_id.startswith('hsa'):  # KEGG prefix for H sapiens
-                map_copy = map_df.loc[
-                    map_df['moleculeIds'].str.startswith("C"), :].copy()
-            for i_mz in mzs_in_pw:
-                # inner loop
-                inner_plot_path = os.path.join(plot_folder,
-                                               str(cluster), f'{set_id}-mz{i_mz}--{SAMPLE}.pdf' )
-                complex_plot(
-                    adata_mz, map_copy, set_id, set_full_name , i_mz,
-                    save_path=inner_plot_path
-                )
+                map_copy = map_copy.loc[
+                           map_copy['moleculeIds'].str.startswith("C"),
+                           :].copy()
+
+            mzs_significant_in_cluster = diff_mzs.loc[
+                diff_mzs['group'].astype(int) == int(
+                    cluster), 'mz'].unique().tolist()
+
+            mzs_final_set = set(
+                map_copy['mz'].unique().tolist()).intersection(
+                set(mzs_significant_in_cluster)
+            )
+            if len(mzs_final_set) != 0:
+                for i_mz in list(mzs_final_set):
+                    # inner loop
+                    inner_plot_path = os.path.join(plot_folder, str(cluster),
+                         f'{set_id}-{theoretical_direction}-{cluster}--mz{i_mz}-{SAMPLE}.pdf')
+                    complex_plot(
+                        adata_mz, map_copy, set_id, set_full_name , i_mz,
+                        save_path=inner_plot_path
+                    )
 
 
 def display_minireport(top_differential, SAMPLE):
@@ -147,7 +302,8 @@ def display_minireport(top_differential, SAMPLE):
 
 def compute_differential_families_and_pathways(
         pathways_types: List[str], clustering_parameters: Dict[str, str|int|float],
-        SAMPLE: str, subfolder: str, data_centralized_folder: str) -> None:
+        SAMPLE: str, subfolder: str, data_centralized_folder: str,
+        n_top_per_cluster: int=10) -> None:
     if not "FAMILIES" in pathways_types:
         pathways_types.append("FAMILIES")
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
@@ -168,7 +324,7 @@ def compute_differential_families_and_pathways(
         joined, group_str=str_out)
 
     top_differential = differential_results_filter(
-        differential_results_by_cluster, ntop_per_cluster=10)
+        differential_results_by_cluster, ntop_per_cluster=n_top_per_cluster)
 
     # new : moran filter for the sets
     joined = compute_moran_i(joined)
@@ -310,7 +466,8 @@ def compute_pathway_scores( pathways_types, min_pathway_size,
 
 
 def compute_differential_analysis_of_mzs(pathways_types,
-    clustering_parameters, SAMPLE,  subfolder, data_centralized_folder
+    clustering_parameters, SAMPLE,  subfolder, data_centralized_folder,
+                                         n_top_per_cluster=25
 ):
     adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
         SAMPLE, pathways_types, subfolder, data_centralized_folder
@@ -327,7 +484,7 @@ def compute_differential_analysis_of_mzs(pathways_types,
         adata_mz, group_str=str_out)
 
     top_differential = differential_results_filter(
-        differential_results_by_cluster, ntop_per_cluster=50)
+        differential_results_by_cluster, ntop_per_cluster=n_top_per_cluster)
 
     top_differential['mz'] = top_differential['names'].tolist()
     top_differential.to_csv(os.path.join(data_centralized_folder, subfolder,
