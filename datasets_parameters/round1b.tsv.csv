@@ -1,9 +1,0 @@
-dataset_name	metaspace_registry	annotations_to_use	in/out intensities for spot class	perform_spots_selection	offSample_cutoff	msm_cutoff	fdr_cutoff	Moran_I_cutoff	Moran_padj_cutoff	cluster_params	pathways_types	min_pathway_size	cut_tree_mol_families	min_family_size
-LP-cerebellum	2025-04-10_14h53m38s	HMDB LipidMaps	0.1	NO	0.2	0.3	0.5	0.08	0.1	kmeans:4	KEGG WIKI	2	0.5	3
-MALDI_248_T	not provided	HMDB	1	NO	0.2	0.1	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-MALDI_259_T	not provided	HMDB	1	NO	0.2	0.1	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-MALDI_260_T	not provided	HMDB	1	NO	0.2	0.1	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-MALDI_262_T	not provided	HMDB	1	NO	0.2	0.1	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-MALDI_269_T	not provided	HMDB	1	NO	0.2	0.1	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-MALDI_275_T	not provided	HMDB	1	NO	0.2	0.1	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-LP-brain-mouse-3	2023-09-29_18h44m00s	HMDB LipidMaps	0.2	YES	0.15	0.5	0.2	0.2	0.1	kmeans:5	KEGG WIKI	2	0.8	4
