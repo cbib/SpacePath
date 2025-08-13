@@ -1,8 +1,20 @@
+# johaGL 2025
+# script for cleaning spots in a tissue slice of Spatial Metabolomics
+# usage example in `data_dps.sh`
+#
+# further usage examples:
+# - running without forcing on specific tissues
+#     python3 spots_purge.py "$input_directory/$input_file" ../../../data ../../../figures
+# or
+# - forcing two tissues to run again:
+#     python3 spots_purge.py "$input_directory/$input_file" ../../../data ../../../figures "LP-brain-mouse-7;LP-kidney3"
+
 import sys
 import os
 import pandas as pd
 import anndata as ad
 import json
+from typing import List
 import smpath.data as spd
 import smpath.processing.measures_methods as measures_methods
 import matplotlib.pyplot as plt
@@ -10,7 +22,7 @@ import matplotlib.pyplot as plt
 import logging
 
 import warnings
-warnings.simplefilter('ignore',category=FutureWarning)
+warnings.simplefilter('ignore', category=FutureWarning)
 import squidpy as sq
 
 
@@ -25,7 +37,16 @@ def annotation_types_to_file_names_dict(SAMPLE, annotation_types_list):
     return out_d
 
 
-def plot_spots(adata_mz, plot_out_path, title='my title'):
+def plot_spots(adata_mz, plot_out_path,
+               title='my title') -> ad.AnnData:
+
+    if 'spot_quality_colors' in adata_mz.uns.keys():
+        # avoid ValueError: Expected palette to be of length `2`, found `1`
+        adata_mz.uns['spot_quality_colors'] = None  # compulsory to unlock key
+        del adata_mz.uns['spot_quality_colors']
+
+    adata_mz.obs['spot_quality'] = pd.Categorical(
+        adata_mz.obs['spot_quality'].tolist(), categories=['bad', 'good'])
     show_message("Saving plot of spots")
     sq.pl.spatial_scatter(
         adata_mz, color=["spot_quality"], img=False,
@@ -79,9 +100,10 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
                 'spot_number_initial': adata_mz.obs.shape[0],
                 'features_n_initial': adata_mz.var.shape[0]}
 
-        if (
-                SAMPLE in force_for_these) or (
-                "spot_quality" not in adata_mz.obs.columns.tolist()):
+        if (SAMPLE in force_for_these) or (
+                "spot_quality" not in adata_mz.obs.columns.tolist()) or (
+                select_spots_yes_no.lower() in ["yes", "y"]
+        ) :
             annotations_to_use = row["annotations_to_use"].split(" ")
             annotations_dict = annotation_types_to_file_names_dict(SAMPLE,
                                                        annotations_to_use)
@@ -123,6 +145,7 @@ def run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
                                adata_mz.obs["spot_quality"] == "good", :]
                     plot_out_path = os.path.join(plot_folder,
                                                  f'{SAMPLE}-spotsAfter.png')
+
                     plot_spots(adata_mz, plot_out_path,
                                title="After spots selection")
                     show_message(
@@ -155,10 +178,16 @@ if __name__ == "__main__":
     my_csv_table_path = sys.argv[1]
     data_centralized_folder = sys.argv[2]
     figures_centralized_folder = sys.argv[3]
-
+    force_for_these = []
+    try:
+        force_for_these = sys.argv[4].split(";")
+    except IndexError:
+        pass
+    print(force_for_these)
 
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                                          index_col=None, sep='\t')
     run_final_spots_preparation(datasets_parameters_df, data_centralized_folder,
-                               figures_centralized_folder, force_for_these=[])
+                               figures_centralized_folder,
+                                force_for_these=force_for_these)
 

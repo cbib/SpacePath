@@ -1,9 +1,13 @@
+# johaGL 2025
+# script for cleaning spots in semimanual fashion for specific tissues
+# usage example in `data_dps.sh`
 import os
 import pandas as pd
 import anndata as ad
 import scanpy as sc
 import matplotlib.pyplot as plt
 from typing import List
+import scipy.sparse.linalg as linalg
 import smpath.method as spm
 import json
 
@@ -50,7 +54,17 @@ def run_custom_spot_qual(datasets_parameters_df,
                 data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
             adata_mz = spm.NormalizeIntensities.run(adata_mz)  # just for computations, but not saved
 
-            sc.tl.pca(adata_mz, svd_solver="arpack")
+            try:
+                sc.tl.pca(adata_mz, svd_solver="arpack")
+            except linalg._eigen.arpack.ArpackError:
+                # unfrequent error, when the first column vector variance is zero.
+                # to rescue, dropping the zero variance features
+                Xdf = adata_mz.to_df()
+                feats_nonzero_var =  Xdf.loc[:, Xdf.var() != 0].columns.tolist()
+                adata_mz = adata_mz[:, feats_nonzero_var].copy()
+                del Xdf
+                sc.tl.pca(adata_mz, svd_solver="arpack")
+
             sc.pp.neighbors(adata_mz)
             nn_graph_genes = adata_mz.obsp["connectivities"]
             sq.gr.spatial_neighbors(adata_mz)
@@ -103,7 +117,7 @@ if __name__ == "__main__":
 
     datasets_parameters_df = datasets_parameters_df.loc[
         datasets_parameters_df['dataset_name'].isin(
-            [ "TD-Lipido-635", "TD-Lipido-636"  , "TD-Lipido-836", "TD-Lipido-827"]), :]  #
+            ["TD-Lipido-635", "TD-Lipido-636", "TD-Lipido-836", "TD-Lipido-827"]), :]  #
 
     weights_spatial_graph = {
         "TD-Lipido-635" : 0.5,
@@ -111,10 +125,9 @@ if __name__ == "__main__":
         "TD-Lipido-836" : 0.7,  # had to use this to force the internal areas not to fall in same cluster of external areas
         "TD-Lipido-827" : 0.6   # same as for line above
     }
+
     answer = input("continue? y/n")
     if answer in ["y", "yes"]:
         run_custom_spot_qual(datasets_parameters_df,
                              data_centralized_folder,
                              figures_centralized_folder )
-
-

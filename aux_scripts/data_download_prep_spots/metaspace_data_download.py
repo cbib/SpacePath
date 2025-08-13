@@ -1,3 +1,7 @@
+# johaGL 2025
+# script for downloading tissue slices of Spatial Metabolomics from METASPACE
+# usage example in `data_dps.sh`
+
 import sys
 import os
 import pandas as pd
@@ -39,7 +43,8 @@ def run_data_download(datasets_parameters_df, out_dir)-> None:
         if not os.path.exists(path_out):
             os.makedirs(path_out)
 
-        if not os.path.exists(expected_out_file):
+        if (metaspace_registry != "not provided"
+        ) and not os.path.exists(expected_out_file):
 
             assert len(set(annotations_to_use).intersection(
                 set(list(whole_api_versions.keys()))
