@@ -201,7 +201,7 @@ class SyncPathwaysAndAnnots:
             min_set_size: int=2,
             max_set_size: int=200,
             mode: str="mz_aware"  # or "default", but mz_aware is preferred
-            )-> Tuple[MetabolicPathways, MetabolomeAnnotations]:
+            )-> Tuple[MetabolicPathways, pd.DataFrame]:
         if not usable_id == pathwaysObj.molecule_id_type:
             logger.error(
                 "No same types of compound ids: %s and %s, respectively",
@@ -234,6 +234,7 @@ class ComputeAssignmentsWeights:
         coords = adata_mz.obsm.copy()
 
         return adataIds, coords
+
 
 class ComputePathwaysScores:
     config: ComputePathwaysScoresConfig
@@ -332,7 +333,7 @@ class ComputeMoleculesFamilies:
             {'moleculeIds': mol_similarities_result['identifiers'],
              'molecules_cluster': clusters})
 
-        unique_mz_nb = unique_mz_n = len(molecules_ids_df.loc[
+        unique_mz_nb = len(molecules_ids_df.loc[
             molecules_ids_df['moleculeIds'].isin(mol_similarities_result['identifiers']), 'mz'].unique())
 
         logger.info("the clusters are: %s",
