@@ -12,6 +12,9 @@ import scipy.sparse
 #import squidpy as sq
 from tqdm import tqdm
 from sklearn.utils import sparsefuncs
+from rdkit import DataStructs
+from rdkit import Chem
+from rdkit.Chem import AllChem
 
 
 LOGFILE = datetime.now().strftime("%y-%m-%-d_%H-%M-%S-%f.log")
@@ -32,6 +35,34 @@ def setup_logger(logger, prefix=''):
     logger.addHandler(file_handler)
 
     return logger
+
+
+def secured_trios(identifiers_validated: List[str],
+                     smiles_validated: List[str]) -> Tuple[
+        List[str],List[str], List[DataStructs.cDataStructs.ExplicitBitVect]
+]:
+    """
+    returns the lists of safely validated elements:
+        identifiers : e.g. ['HMDB005474523, ...]
+        smiles: e.g. ['COOHCOOHCOOH', ...]
+        fingerprints: list of RDKit.DataStructs objects (each object is a fingerprint)
+    the lists represent matched information (zippable)
+    """
+    fpgen = AllChem.GetRDKitFPGenerator()
+    smiles_final = list()
+    identifiers_final = list()
+    fingerprints_final = list()
+    for id, smi in zip(identifiers_validated, smiles_validated):
+        try:
+            chem_molecule = Chem.MolFromSmiles(smi)
+            fingerprint = fpgen.GetFingerprint(chem_molecule)
+            smiles_final.append(smi)
+            identifiers_final.append(id)
+            fingerprints_final.append(fingerprint)
+        except Exception as e:
+            print(e, "inappropriate smile for %s %s, skip", id, smi)
+
+    return identifiers_final, smiles_final, fingerprints_final
 
 
 def combine_frames_identical_columns(dfs_dict : Dict[str, pd.DataFrame]

@@ -259,6 +259,7 @@ class ComputePathwaysScores:
         return scores_df
 
 
+
 class ComputeMoleculesSimilarityMatrix:
     config: ComputeMoleculesSimilarityMatrixConfig
     @staticmethod
@@ -278,20 +279,20 @@ class ComputeMoleculesSimilarityMatrix:
         smiles_df = pd.concat(smiles_dfs)
         smiles_df = smiles_df.loc[~smiles_df['SMILES'].isnull(), :].copy()
 
-        (these_identifiers_entered, these_smiles_entered
+        (identifiers_validated, smiles_validated
          ) = pathways_methods.compounds_and_smiles_ordered(
             smiles_df, molecules_ids_list)
 
-        fpgen = AllChem.GetRDKitFPGenerator()
-        chem_molecules = [Chem.MolFromSmiles(k) for k in these_smiles_entered]
-        fps = [fpgen.GetFingerprint(x) for x in chem_molecules]
+        identifiers_validated, smiles_validated, fps = helpers.secured_trios(
+            identifiers_validated, smiles_validated
+        )
 
-        arr = np.zeros(shape=(len(these_identifiers_entered),
-                              len(these_identifiers_entered)))
+        arr = np.zeros(shape=(len(identifiers_validated),
+                              len(identifiers_validated)))
 
         logger.info("computing similarities for all pairs of SMILES")
-        for u in range(len(these_identifiers_entered)):
-            for v in range(u + 1, len(these_identifiers_entered)):
+        for u in range(len(identifiers_validated)):
+            for v in range(u + 1, len(identifiers_validated)):
                 tanimoto_similarity = DataStructs.TanimotoSimilarity(
                     fps[u],  fps[v])
                 arr[u, v] = tanimoto_similarity
@@ -302,8 +303,8 @@ class ComputeMoleculesSimilarityMatrix:
             arr[arr < config.threshold_similarity] = 0
 
         mol_similarities_result = {"array": arr,
-                                   "identifiers": these_identifiers_entered,
-                                   "smiles": these_smiles_entered}
+                                   "identifiers": identifiers_validated,
+                                   "smiles": smiles_validated}
 
         return mol_similarities_result
 
