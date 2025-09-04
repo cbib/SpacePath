@@ -25,6 +25,8 @@ from src.process_single_slice import save_top_plots, save_top_as_heterogeneous_f
 #                    clustering_parameters, SAMPLE, subfolder,
 #                    data_centralized_folder, plot_folder)
 
+
+# new:
 save_top_as_heterogeneous_files(pathways_types,
                    clustering_parameters, SAMPLE, subfolder,
                    data_centralized_folder, plot_folder)

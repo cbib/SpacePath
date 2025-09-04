@@ -649,11 +649,10 @@ def run_analysis_one_tissue(annotations_dict: Dict[str, str],
                             cutoff_tree: float,
                             min_family_size: int,  SAMPLE: str,
                             data_centralized_folder: str,
-                            figures_centralized_folder: str)-> None:
+                            figures_centralized_folder: str, mode:str)-> None:
     """
-    runs step by step the analysis for a single given tissue slice dataset.
+    Step by step analysis for a single specified tissue slice dataset.
     """
-
     logger.info('\nRunning sample: %s', SAMPLE)
 
     subfolder = SAMPLE
@@ -661,55 +660,64 @@ def run_analysis_one_tissue(annotations_dict: Dict[str, str],
     if not os.path.exists(plot_folder):
             os.mkdir(plot_folder)
 
-    annots_obj = spd.MetabolomeAnnotations(
-        name=SAMPLE, data_dir=data_centralized_folder,
-        subfolder=subfolder, annotation_files=annotations_dict)
-    annots_obj.load()  # load annotations with smpath library
+    if mode in ["all", "1", "2"]:
+        annots_obj = spd.MetabolomeAnnotations(
+            name=SAMPLE, data_dir=data_centralized_folder,
+            subfolder=subfolder, annotation_files=annotations_dict)
+        annots_obj.load()  # load annotations with smpath library
 
-    normalize_classify_and_save_anndata_mz(
-        annots_obj, offSample_cutoff, msm_cutoff, fdr_cutoff, moran_I_cutoff,
-        moran_padj_cutoff, SAMPLE, subfolder,
-        data_centralized_folder, plot_folder)
+    if mode in ["all", "1"]:
+        normalize_classify_and_save_anndata_mz(
+            annots_obj, offSample_cutoff, msm_cutoff, fdr_cutoff, moran_I_cutoff,
+            moran_padj_cutoff, SAMPLE, subfolder,
+            data_centralized_folder, plot_folder)
 
-    clean_annotations_and_save_tsv(annots_obj, pathways_types, SAMPLE, subfolder,
+    elif mode in ["all", "2"]:
+        clean_annotations_and_save_tsv(annots_obj, pathways_types, SAMPLE, subfolder,
                                    data_centralized_folder); del annots_obj  # obj no longer used: use clean .tsv files from now
 
+    elif mode in ["all", "3"]:
+        compute_clustering_of_spots(pathways_types, clustering_parameters,
+            SAMPLE, subfolder, data_centralized_folder, plot_folder)
 
-    compute_clustering_of_spots(pathways_types, clustering_parameters,
-        SAMPLE, subfolder, data_centralized_folder, plot_folder)
+    elif mode in ["all", "4"]:
+        compute_differential_analysis_of_mzs(pathways_types,
+             clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
 
-    compute_differential_analysis_of_mzs(pathways_types,
-         clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
+    elif mode in ["all", "5"]:
+        try:
+            compute_pathway_scores(pathways_types, min_pathway_size, SAMPLE,
+                 subfolder, data_centralized_folder)
+        except Exception as e:
+            logger.warning("failed compute_pathway_scores, %s", e)
 
-    try:
-        compute_pathway_scores(pathways_types, min_pathway_size, SAMPLE,
-             subfolder, data_centralized_folder)
-    except Exception as e:
-        logger.warning("failed compute_pathway_scores, %s", e)
+    elif mode in ["all", "6"]:
+        try:
+            compute_molecules_families(cutoff_tree,
+                   SAMPLE, subfolder, data_centralized_folder, plot_folder)
+        except Exception as e:
+            logger.warning("failed compute_molecules_families , %s", e)
 
-    try:
-        compute_molecules_families(cutoff_tree,
-               SAMPLE, subfolder, data_centralized_folder, plot_folder)
-    except Exception as e:
-        logger.warning("failed compute_molecules_families , %s", e)
+    elif mode in ["all", "7"]:
+        try:
+            compute_families_scores( min_family_size,
+                SAMPLE, subfolder, data_centralized_folder)
+        except Exception as e:
+            logger.warning("failed compute_families_scores , %s", e)
 
-    try:
-        compute_families_scores( min_family_size,
-            SAMPLE, subfolder, data_centralized_folder)
-    except Exception as e:
-        logger.warning("failed compute_families_scores , %s", e)
+    elif mode in ["all", "8"]:
+        try:
+            compute_differential_families_and_pathways(pathways_types,
+                clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
+        except Exception as e:
+            logger.warning("failed differential families %s", e)
 
-    try:
-        compute_differential_families_and_pathways(pathways_types,
-            clustering_parameters, SAMPLE, subfolder, data_centralized_folder)
-    except Exception as e:
-        logger.warning("failed differential families %s", e)
-    #
-    # try:
-    #     save_top_plots(pathways_types,
-    #                    clustering_parameters, SAMPLE, subfolder,
-    #                    data_centralized_folder, plot_folder)
-    # except Exception as e:
-    #     logger.warning("failed save_top_plots: %s", e)
+    # elif mode in ["all", "9"]:
+    #     try:
+    #         save_top_plots(pathways_types,
+    #                        clustering_parameters, SAMPLE, subfolder,
+    #                       data_centralized_folder, plot_folder)
+    #     except Exception as e:
+    #         logger.warning("failed save_top_plots: %s", e)
 
     logger.info("processed sample %s \n\n", SAMPLE)

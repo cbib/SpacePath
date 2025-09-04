@@ -43,10 +43,13 @@ def extract_params_per_dataset(row)-> (
             min_family_size)
 
 
-def process_tissues(input_file:str, data_dir:str, figures_dir:str)-> None:
+def process_tissues(input_file:str, data_dir:str, figures_dir:str,
+                    mode:str)-> None:
     """
-    parses the input dataframe having the specifics of the datasets
-     for each row representing a dataset, runs one analysis
+    - parses the input dataframe having the specifics of the input datasets
+        for each row representing a dataset.
+    - runs the selected mode of analysis for each dataset (if mode is "all")
+        all the complete analyses are run for all the input datasets
     """
     data_centralized_folder = data_dir
     figures_centralized_folder = figures_dir
@@ -69,4 +72,4 @@ def process_tissues(input_file:str, data_dir:str, figures_dir:str)-> None:
                                 pathways_types, min_pathway_size, cutoff_tree,
                                 min_family_size, SAMPLE,
                                 data_centralized_folder,
-                                figures_centralized_folder)
+                                figures_centralized_folder, mode)

@@ -1,9 +1,9 @@
 from unittest import TestCase
 import pandas as pd
-from mymethod.src.single_slice_helpers import (prepare_molecular_ids_df,
-                                               get_top_n_simple,
-                                               get_top_n,
-                                               differential_results_filter)
+from SPACEPATH.src.single_slice_helpers import (prepare_molecular_ids_df,
+                                                get_top_n_simple,
+                                                get_top_n,
+                                                differential_results_filter)
 from typing import List, Dict
 import numpy as np
 

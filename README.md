@@ -33,7 +33,7 @@ It was tested under Linux and MacOS environments.
 > The associated core library `smpath` offers rich functions for the pathway-based analysis of annotated spatial metabolomics data, and for exploiting unmapped features. It implements `sspa`, `rdkit`, `fastcluster`, among other powerful libraries.
 
 
-## Installing SPACEPATH 
+## Installation 
 
 The full installation process should take less than 15 minutes on a standard computer (dependencies included). 
 
@@ -63,18 +63,22 @@ pytest
 
 For subsequent use, just activate the environment (e.g. `micromamba activate smpath`) as it has all the requirements already installed for running SPACEPATH.
 
-# Using SMPATH
+# Using SPACEPATH
 
-The generic command line is:
+The generic command line to run the pipeline is:
 ```
-python -m mymethod $INPUT_FILE $DATA_FOLDER $FIGURES_FOLDER
+python -m SPACEPATH $input_file $data_folder $figures_folder
 ```
+which must be launched from the `SPACEPATH` folder
+
 ----
 
 # Documentation
 
 Documentation, examples of how to use our pipeline, and the specifics of the datasets used in the analyses 
 are provided in the [Wiki]() page.   
+
+The code organization is also explained in the Wiki page.
 
 -----------------------------------------------------------------------------------------------
   
