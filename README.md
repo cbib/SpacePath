@@ -21,22 +21,19 @@ Notably, SPACEPATH was applied on a collection of different types of healthy and
 _Note_: Currently, our method supports as input data, the datasets consisting of aligned and recalibrated spectra intensities alongside their annotations, that are obtained from the [METASPACE](https://metaspace2020.org/) output. 
 
 
-# Using SPACEPATH 
+# Installing SPACEPATH 
 
 ## System Requirements
 Running SPACEPATH requires an Unix environment with [python 3.10](http://www.python.org/). 
 It was tested under Linux and MacOS environments.
 
-
-**_Information about the method implementation_**
-
-Our method is implemented as a Pipeline that entirely depends on the new `smpath` library ([link](https://github.com/cbib/smpath)), which is very easy to install (see Installation section of this README).
+**_Information about the method implementation_**: SPACEPATH is a Pipeline that entirely depends on the new **`smpath`** library, which is very easy to install (see how to [Install](https://github.com/cbib/smpath?tab=readme-ov-file#installing-smpath) this core library).
 
 > [!NOTE]  
-> Our library `smpath` offers rich functions for the pathway-based analysis of annotated spatial metabolomics data, and for exploiting unmapped features. It implements `sspa`, `rdkit`, `fastcluster`, among other powerful libraries.
+> The associated core library `smpath` offers rich functions for the pathway-based analysis of annotated spatial metabolomics data, and for exploiting unmapped features. It implements `sspa`, `rdkit`, `fastcluster`, among other powerful libraries.
 
 
-## Installation 
+## Installing SPACEPATH 
 
 The full installation process should take less than 15 minutes on a standard computer (dependencies included). 
 
@@ -49,26 +46,24 @@ cd smpath
 poetry install
 pip install sspa==1.0.4
 ```
- 
+_Note_: the associated core library `smpath` which will be soon be packaged into PyPI to be installable via `pip`. 
 <details>
 
  <summary>Running unitary tests <sub><sup>(click to show/hide)</sup></sub>
  </summary>
  
-We include some unitary tests in this repository, but in essence this code is a Pipeline and not a package. The most relevant unitary tests are implemented in the core library `smpath` (which will be soon be packaged into PyPI to be installable via `pip`). Also, this project in active development. 
+We include some unitary tests in this repository, but in essence this code is a Pipeline and not a package. The most relevant unitary tests are implemented in the core library `smpath`. 
 ```
 cd SMPATH
 pytest
 ```
 </details>
  
-## After installation
+## After the install process
 
-For subsequent use just activate the environment (e.g. `micromamba activate smpath`) as it has all the requirements already installed for running METHOD.
-Then you can run the generic command of SMPATH (see Use case).
+For subsequent use, just activate the environment (e.g. `micromamba activate smpath`) as it has all the requirements already installed for running SPACEPATH.
 
-
-## Use case
+# Using SMPATH
 
 The generic command line is:
 ```
@@ -80,12 +75,6 @@ python -m mymethod $INPUT_FILE $DATA_FOLDER $FIGURES_FOLDER
 
 Documentation, examples of how to use our pipeline, and the specifics of the datasets used in the analyses 
 are provided in the [Wiki]() page.   
-
------------------------------------------------
-
-## Code organization
-
-The code organization is also explained in the Wiki page.
 
 -----------------------------------------------------------------------------------------------
   
