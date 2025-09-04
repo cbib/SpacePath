@@ -3,16 +3,14 @@
 
 smpath
 ===
-A library for spatial metabolomics pathway-based exploration
-
-
+A library that supports the pathway-based and molecular families exploration of annotated spatial metabolomics/lipidomics data
 
 # Introduction
 
-The `smpath` library offers methods for the pathway-based analysis of annotated Spatial Metabolomics data.
-Its use is demonstrated in the pipeline [LINK TO METHOD]()
+The `smpath` library offers methods for the comprehensive functional-oriented analysis of annotated spatial metabolomics data.
+This is the core library of the pipeline [SPACEPATH](https://github.com/cbib/SPACEPATH/tree/main)
 
-Moreover, when building a spatial metabolomics bioinformatic pipeline, **smpath** can be 
+Moreover, when building any spatial metabolomics bioinformatic pipeline, **smpath** can be 
 easily articulated with other popular Python libraries in the spatial omics world, such as `squidpy`, `scanpy`, `anndata`.
 💡
 
@@ -23,7 +21,6 @@ Within `smpath`, the computations dedicated to pathways-based analyses rely on p
 ____
 
 _Note_: Currently, the library supports as input data, the aligned spectra datasets and their annotations obtained via [METASPACE](https://metaspace2020.org/). Auxiliary scripts for data downloading and formatting, powered by `metaspace-converter` and `pyimzml`, are also provided.
-
 
 
 # Installing smpath 
@@ -76,7 +73,7 @@ pip install sspa==1.0.4`
 To sum up, the installation commands in the appropriate order are:
 
 ```commandline
-conda activate smpath OR source smpath/bin/activate   # example with conda OR venv for activating the environment
+conda activate smpath  # or `source smpath/bin/activate` if venv
 cd smpath
 poetry install   # installs this library
 pip install sspa==1.0.4    # required external library 
