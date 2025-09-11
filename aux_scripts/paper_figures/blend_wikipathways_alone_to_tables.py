@@ -27,11 +27,12 @@ if __name__ == "__main__":
 
     # define here my files and dirs
 
-    data_centralized_folder = "../../data"
-    figures_centralized_folder = "../../figures/"
+    data_centralized_folder = "../../../data"
+    assert os.path.exists("../../figs"), "Error, ../../figs must exist"
 
-    my_csv_table_path_1 = "../public-datasets-parameters.tsv"  #
-    my_csv_table_path_2 = "../private-datasets-parameters.tsv"  #
+
+    my_csv_table_path_1 = "../../datasets_parameters/public-datasets-parameters.tsv"  #
+    my_csv_table_path_2 = "../../datasets_parameters/private-datasets-parameters.tsv"  #
     df1 = pd.read_csv(my_csv_table_path_1, header=0,
                       index_col=None, sep='\t')
     df2 = pd.read_csv(my_csv_table_path_2, header=0,
@@ -55,7 +56,6 @@ if __name__ == "__main__":
         min_pathway_size = row["min_pathway_size"]
         print("\nSample: ", SAMPLE)
         subfolder = SAMPLE
-        plot_folder = os.path.join(figures_centralized_folder, SAMPLE)
         annotations_to_use = row["annotations_to_use"].split(" ")
         annotations_dict = annotation_types_to_file_names_dict(SAMPLE, annotations_to_use)
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
             pathwaysObj.model_copy(),
             annots_obj.df.copy(),
             usable_id="moleculeIds",
-            min_set_size=pwsizeONE,
+            min_set_size=2,  # todo: major change, verify result
             max_set_size=200 )
 
         my_new_dict[SAMPLE] += counts_per_orig_db(ann1_df)
@@ -133,11 +133,11 @@ if __name__ == "__main__":
         "HMDB ids in pathways", "LipidMaps ids in pathways",
         "KEGG ids in pathways"]
 
-    out_df1.to_csv(f"../figs/initial-IDSmix-pathways-psize{pwsizeONE}.csv")
+    out_df1.to_csv(f"../../figs/initial-IDSmix-pathways-psize{pwsizeONE}.csv")
 
     out_df2 = pd.DataFrame({
         "sample_name": name_sample,
         "mz_mapped_to_pathways":mz_mapped_to_pathways,
     "ratio_id_mz": compound_ids_to_mz_ratio_after_pathway_mapped,
     "pathways_number_final" : how_many_pathways    })
-    out_df2.to_csv(f"../figs/final-IDSmix-compounds-counts-psize{min_pathway_size}.csv")
+    out_df2.to_csv(f"../../figs/final-IDSmix-compounds-counts-psize{min_pathway_size}.csv")
