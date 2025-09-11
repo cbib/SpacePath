@@ -3,7 +3,8 @@ import logging
 import warnings
 
 import pandas as pd
-
+import squidpy as sq
+import matplotlib.pyplot as plt
 warnings.simplefilter('ignore',category=FutureWarning)
 from smpath.data import MetabolomeAnnotations
 from smpath.processing.measures_methods import compute_moran_i
