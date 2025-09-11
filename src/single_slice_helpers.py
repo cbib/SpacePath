@@ -18,6 +18,11 @@ def join_scores_adatas(
     """joins computed scores (anndata objects) in one single anndata object"""
     if not "FAMILIES" in pathways_types:
         pathways_types.append("FAMILIES")
+
+    if not os.path.exists(os.path.join(data_centralized_folder, subfolder,
+                 f'{SAMPLE}-scores-FAMILIES.h5ad')):
+        pathways_types = list(set(pathways_types) - {'FAMILIES'})
+
     list_of_scores_objects = list()
     list_of_dfs = list()
     for u in list(set(pathways_types)):
@@ -134,7 +139,7 @@ def get_top_n(group: pd.DataFrame, *args) -> pd.DataFrame:
     return sorted_group.head(ntop_per_cluster)
 
 
-def differential_results_filter(differential_results, lfc: float=0.8,
+def differential_results_filter(differential_results, abs_lfc: float=0.8,
                                 pvals_adj: float=0.05,
                                 ntop_per_cluster: Union[str, int]="auto",
                                 total_n_features:int=250,
@@ -146,7 +151,7 @@ def differential_results_filter(differential_results, lfc: float=0.8,
     up_n = int(ntop_per_cluster * up_down_proportion[0])
     down_n = int(ntop_per_cluster * up_down_proportion[1])
     tmp = differential_results.loc[(abs(differential_results[
-             'logfoldchanges']) >= lfc) & (
+             'logfoldchanges']) >= abs_lfc) & (
             differential_results['pvals_adj'] <= pvals_adj), :].copy()
 
     tmp = tmp.assign(abslfc=abs(tmp['logfoldchanges']),
