@@ -3,7 +3,7 @@ import numpy as np
 
 import squidpy as sq
 
-from single_slice_helpers import *
+#from single_slice_helpers import *
 
 import matplotlib.pyplot as plt
 

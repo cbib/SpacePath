@@ -26,8 +26,7 @@ warnings.simplefilter('ignore', category=FutureWarning)
 import squidpy as sq
 
 
-logging.getLogger().setLevel(logging.INFO)
-
+logger = logging.getLogger(__name__)
 
 def annotation_types_to_file_names_dict(SAMPLE, annotation_types_list):
     out_d = {}
@@ -58,7 +57,7 @@ def plot_spots(adata_mz, plot_out_path,
 
 
 def show_message(message)-> None:
-    logging.info(message)
+    logger.info(message)
 
 
 def custom_out_tissue(adata_mz, data_centralized_folder, subfolder, SAMPLE):

@@ -1,7 +1,0 @@
-dataset_name	metaspace_registry	annotations_to_use	in/out intensities for spot class	perform_spots_selection	offSample_cutoff	msm_cutoff	fdr_cutoff	Moran_I_cutoff	Moran_padj_cutoff	cluster_params	pathways_types	min_pathway_size	cut_tree_mol_families	min_family_size
-LP-kidney3	2024-09-28_15h43m16s	HMDB LipidMaps CoreMetabolome	1	YES	0.2	0.2	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-LP-liver-brca-mouse	2023-04-04_07h50m38s	HMDB CoreMetabolome	1	YES	0.2	0.2	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-LP-lung-mouse	2019-01-17_19h54m30s	HMDB LipidMaps	1	YES	0.2	0.2	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-LP-ovary-ca-mouse	2022-04-04_22h54m13s	HMDB LipidMaps CoreMetabolome	1	YES	0.2	0.2	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	1	4
-LP-brain-mouse-7	2025-07-30_17h35m47s	HMDB LipidMaps CoreMetabolome	1	YES	0.2	0.2	0.5	0.1	0.05	Kmeans:5	KEGG WIKI	2	1	4
-LP-brain-mouse-8	2025-07-30_17h59m25s	KEGG HMDB LipidMaps	1	YES	0.3	0.15	0.5	0.1	0.1	Kmeans:5	KEGG WIKI	2	1	4

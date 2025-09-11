@@ -4,7 +4,7 @@
 input_file="datasets_parameters/example-datasets-parameters.tsv"
 
 data_dir="../examples-sm-data"
-figures_dir="../figures"
+figures_dir="../examples-figures"
 
 
 # start

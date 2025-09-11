@@ -23,7 +23,9 @@ def main(input_file, data_dir, figures_dir, mode):
 
       INPUT_FILE: Relative or absolute path to the table in tab delimited format,
        where each dataset and user-defined parameters for its analysis are stored.
+
       DATA_DIR: Relative or absolute path, to the folder where the datasets are stored, e.g. data/.
+
       FIGURES_DIR: Relative or absolute path to output figures directory.
 
     \b

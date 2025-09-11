@@ -3,8 +3,9 @@ import pandas as pd
 import numpy as np
 import anndata as ad
 import scanpy as sc
+import time
 
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 
 from scipy.sparse import csr_matrix
 import smpath.method as spm
@@ -86,19 +87,27 @@ def score_as_adata(scores_df: pd.DataFrame,
 def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
                                              pws_obj,
                                              min_set_size,
-                                             type_abbr) -> ad.AnnData:
-    """uses smpath library to compute scores dataframe"""
+                                             type_abbr) -> Tuple[ad.AnnData, float]:
+    """
+    Uses smpath library to compute scores dataframe,
+       and wraps the scores into a new anndata object
+
+    returns: - anndata object
+             - computation time in seconds
+    """
     updated_config = spm.ComputePathwaysScoresConfig(type_abbr=type_abbr,
                                                      min_set_size=min_set_size)
+    t0 = time.time()
     scores_df = spm.ComputePathwaysScores.run(
         pws_obj.to_dict(), metabolites_computed_df, config=updated_config
     )
+    time_elapsed = time.time() - t0
     scores_adata = score_as_adata(scores_df,
                    pws_obj.sets_ids_df,
                    pws_obj.piled,
                    coords)
 
-    return scores_adata
+    return scores_adata, time_elapsed
 
 ## differential routine
 
@@ -187,7 +196,12 @@ def safe_load_processed_data(SAMPLE, subfolder, data_centralized_folder)->ad.Ann
 def read_clean_annotations(SAMPLE, pathways_types, subfolder,
                            data_centralized_folder)-> Dict[str, pd.DataFrame]:
     """provide the dictionary of annotations dataframes,
-     where the keys are the pathways_types"""
+     where the keys are the pathways_types
+     Note:  ignores FAMILIES for annotations loading, as the annotations
+             in such case are the same that served to 'WIKI' type of pathway
+     """
+    pathways_types = list(set(pathways_types) - {"FAMILIES"})
+
     annots_dict = {}
     for pw_type in pathways_types:
         tmpfi = os.path.join(data_centralized_folder,
@@ -199,9 +213,9 @@ def read_clean_annotations(SAMPLE, pathways_types, subfolder,
     return annots_dict
 
 
-def safe_load_data_and_clean_annotations(SAMPLE,
-                                         pathways_types,
-                                         subfolder, data_centralized_folder) ->(ad.AnnData, pd.DataFrame):
+def safe_load_data_and_clean_annotations(SAMPLE: str,
+                                         pathways_types: List[str],
+                                         subfolder:str, data_centralized_folder:str) ->(ad.AnnData, pd.DataFrame):
     """
     safely load mzs intensities (anndata) and annotations (dataframe):
      only good quality ions AND only clean annotations, for both objects
