@@ -18,9 +18,13 @@ for i_file in ${input_files_list[@]}; do
 
   echo ""
 
-  echo "Running custom spot quality classification, for TD tissues only"
-  echo "  this can be slow, answer 'n' or 'no' if already performed"
+  echo "Running custom spot quality classification, for selected tissues only"
+  echo "  (TD tissues) this can be slow, answer 'n' or 'no' if already performed"
   python3 spots_preclassif_TD.py  # no args
+
+  echo " (brain 7 tissue) if already performed, answer 'n'"
+  python3 spots_preclassif_LP7.py
+
 
   echo ""
   echo "Running spots classification, and if specified, discarding the spots of low quality"

@@ -35,12 +35,11 @@ def outside_tissue_spots__to_json(
 
 def run_custom_spot_qual(datasets_parameters_df,
                          data_centralized_folder,
-                         figures_centralized_folder):
+                         figures_centralized_folder, weights_spatial_graph):
     show_message("\nRunning custom spot classification as being OUTSIDE the tissue,"
           "this script does not changes the AnnData object, but only saves .json file with the list of bad spots")
 
     for i, row in datasets_parameters_df.iterrows():
-
         SAMPLE = row["dataset_name"]
         show_message(f"\nSample: {SAMPLE}")
         subfolder = SAMPLE
@@ -130,4 +129,4 @@ if __name__ == "__main__":
     if answer in ["y", "yes"]:
         run_custom_spot_qual(datasets_parameters_df,
                              data_centralized_folder,
-                             figures_centralized_folder )
+                             figures_centralized_folder, weights_spatial_graph )

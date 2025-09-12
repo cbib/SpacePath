@@ -117,14 +117,14 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
 ## differential routine
 
 def get_top_n_simple(group: pd.DataFrame, *args) -> pd.DataFrame:
-    ntop_per_cluster = args[0]
+    n_top_per_cluster = args[0]
     sorted_group = group.sort_values(
         by=['pvals_adj', 'abslfc'], ascending=[True, False])
-    return sorted_group.head(ntop_per_cluster)
+    return sorted_group.head(n_top_per_cluster)
 
 
 def get_top_n(group: pd.DataFrame, *args) -> pd.DataFrame:
-    ntop_per_cluster = args[0]
+    n_top_per_cluster = args[0]
     direction_type = args[1]
     sorted_group= pd.DataFrame()
     if direction_type == "up":
@@ -136,20 +136,21 @@ def get_top_n(group: pd.DataFrame, *args) -> pd.DataFrame:
         sorted_group = group.sort_values(
             by=['pvals_adj', 'logfoldchanges'], ascending=[True, True])
 
-    return sorted_group.head(ntop_per_cluster)
+    return sorted_group.head(n_top_per_cluster)
 
 
-def differential_results_filter(differential_results, abs_lfc: float=0.8,
+def differential_results_filter(differential_results,
+                                abs_lfc: float=0.8,
                                 pvals_adj: float=0.05,
-                                ntop_per_cluster: Union[str, int]="auto",
+                                n_top_per_cluster: Union[str, int]="auto",
                                 total_n_features:int=250,
                                 up_down_proportion:tuple=(0.7, 0.3)
                                 )-> pd.DataFrame:
-    if ntop_per_cluster == "auto":
-        ntop_per_cluster = int(total_n_features / len(
+    if n_top_per_cluster == "auto":
+        n_top_per_cluster = int(total_n_features / len(
             differential_results['group'].unique()))
-    up_n = int(ntop_per_cluster * up_down_proportion[0])
-    down_n = int(ntop_per_cluster * up_down_proportion[1])
+    up_n = int(n_top_per_cluster * up_down_proportion[0])
+    down_n = int(n_top_per_cluster * up_down_proportion[1])
     tmp = differential_results.loc[(abs(differential_results[
              'logfoldchanges']) >= abs_lfc) & (
             differential_results['pvals_adj'] <= pvals_adj), :].copy()

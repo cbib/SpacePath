@@ -67,7 +67,6 @@ def run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
     prep_paths = prep_paths[['source', 'target','theoretical_direction', 'pathway_id' ]].copy()
     prep_paths['value'] = width_edges_layer1  # the width of the edges layer 1
     prep_paths = prep_paths.reset_index(drop=True)
-    #  :)
     prep_mzs = prepare_mzs_for_plotting(mapping_info, diff_sets, diff_mz_relevant)
     prep_mzs['source'] = prep_mzs.pathway_id.str.cat(
         prep_mzs.pathway_name.str.slice(0, truncation_pw_name),
@@ -113,21 +112,21 @@ def run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
     )
     plt_fig = hv.render(sankey, backend='matplotlib')
     path_sankey_plot = os.path.join(figures_centralized_folder,
-                                    subfolder, f"{SAMPLE}-viz-holistic.pdf")
+                                    subfolder, f"{SAMPLE}-result-holistic.pdf")
     plt_fig.savefig(path_sankey_plot)
 
 
 def run_individual_mz_scatters(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
                                adata_mz,
-                      figures_centralized_folder, subfolder):
+                      figures_centralized_folder, subfolder)->None:
     mzs_df = prepare_mzs_for_plotting(mapping_info, diff_sets, diff_mz_relevant)
     mzs_df = mzs_df.drop_duplicates()
     plot_folder = os.path.join(figures_centralized_folder,
-                         subfolder)
+                         subfolder, "prominent")
     if mzs_df.shape[0] != 0:
         for i_mz in mzs_df['mz'].astype(str).unique().tolist():
-            inner_plot_path = os.path.join(plot_folder,
-                                           f'{SAMPLE}-result-signif-mz{i_mz}.png')
+            inner_plot_path = os.path.join(
+                plot_folder, f'{SAMPLE}-top-signif-mz{i_mz}.png')
             sq.pl.spatial_scatter(
                 adata_mz, color=[str(i_mz)], img=False,
                 title=f'$m/z$: {i_mz}',
@@ -138,7 +137,7 @@ def run_individual_mz_scatters(SAMPLE, diff_sets, mapping_info, diff_mz_relevant
             )
             plt.close()
     else:
-        print("sorry, nothing to print")
+        print("the selection of top ions yielded zero results")
 
 
 def truncate_df_with_text_last_cell(df, n):
@@ -153,40 +152,34 @@ def truncate_df_with_text_last_cell(df, n):
 
 
 def do_for_i_mz(i_mz_df, i_mz, out_plot ):
-
-    fig, (ax1) = plt.subplots(nrows=1, ncols=1)
-    fig.set_figheight(10)
-    fig.set_figwidth(22)
-    #fig.suptitle(sup_title, size=22)
-
-    ax1.set_axis_off()
-    start_y = 0.09
-
-    auto_height = i_mz_df.shape[0] * 0.8
+    auto_height = i_mz_df.shape[0] * 0.2
+    if i_mz_df.shape[0] <= 6:
+        auto_height = i_mz_df.shape[0] * 0.4
     if i_mz_df.shape[0] == 1:
-        auto_height = 0.11
-    if auto_height >= 1.2:
-        auto_height = 1.2
-    auto_width = 2
+        auto_height = i_mz_df.shape[0] * 0.7
 
-    # ax1.text(auto_width, 0.9, "Annotations",
-    #          rotation=270, va='center')
-
-    table = ax1.table(  # https://www.statology.org/seaborn-table/
+    auto_width = 3.5
+    fig, ax = plt.subplots(nrows=1, ncols=1,
+                              figsize=(auto_width+1, auto_height+1))
+    ax.set_axis_off()
+    table = ax.table(  # https://www.statology.org/seaborn-table/
         cellText=i_mz_df.values, rowLabels=None,
         colLabels=i_mz_df.columns,
-        bbox=(-0.08, start_y, auto_width, auto_height),
-        # [xmin, ymin, width, height]
-        colWidths=(0.35, 0.45, 0.3),
-        cellLoc='center'
-    )
+        bbox=(-0.08, 0.3, auto_width, auto_height),   # [xmin, ymin, w, h]
+        colWidths=(0.2, 0.43, 0.37),
+        cellLoc='center')
+
     table.auto_set_font_size(False)
     table.set_fontsize(19)
+    # Left-align the third column
+    for (row, col), cell in table.get_celld().items():
+        if col == 2:  # Third column (0-based index)
+            cell.set_text_props(ha='left')
     ##
-    fig.text(0.5, 0.01, f'm/z:{i_mz}', ha='center', fontsize=24)
+    fig.text(0.1, 0.03, f'$m/z$:{i_mz}', ha='left', fontsize=23)
     plt.tight_layout()
 
-    plt.savefig(out_plot)
+    plt.savefig(out_plot, pad_inches=0.5, bbox_inches='tight')
     plt.close()
 
 
@@ -197,16 +190,15 @@ def run_individual_tabular_plots(
     mzs_df = prepare_mzs_for_plotting(mapping_info, diff_sets,
                                       diff_mz_relevant)
     mzs_df = mzs_df.drop_duplicates()
-
-    print(mzs_df.head(1))
-    print(mapping_info.head(1))
-    print(diff_mz_relevant.head(1))
-    print(concatenated_clean_annotations.head(1))
+    # print(mzs_df.head(1))
+    # print(mapping_info.head(1))
+    # print(diff_mz_relevant.head(1))
+    # print(concatenated_clean_annotations.head(1))
     lili = mzs_df['mz'].astype(float).unique().tolist()
     for i_mz in lili:
         curr_mz_df = concatenated_clean_annotations.loc[
             concatenated_clean_annotations['mz'].astype(float) == float(i_mz), ['moleculeIds', 'moleculeNames']].copy()
-        curr_mz_df['moleculeNames'] = curr_mz_df['moleculeNames'].str.slice(0, 20)
+        curr_mz_df['moleculeNames'] = curr_mz_df['moleculeNames'].str.slice(0, 35)
         my_list_awsome = list()
         for mole_id in curr_mz_df['moleculeIds'].unique().tolist():
             the_pws = mapping_info.loc[mapping_info['moleculeIds'] == mole_id, 'pathway_id'].unique().tolist()
@@ -216,15 +208,21 @@ def run_individual_tabular_plots(
             my_list_awsome.append(', '.join(the_pws_trunc))
 
         curr_mz_df['pathway_id'] = my_list_awsome
+        curr_mz_df = curr_mz_df.loc[curr_mz_df["pathway_id"] != "",:].copy()
+        curr_mz_df = curr_mz_df.sort_values(by='moleculeIds', ascending=True)
         print(curr_mz_df.head())
-        LIMIT_TAB = 15
-        if curr_mz_df.shape[0] > LIMIT_TAB:
-            curr_mz_df = truncate_df_with_text_last_cell(curr_mz_df, LIMIT_TAB)
-        out_plot= os.path.join(
-            figures_centralized_folder, subfolder, f"{SAMPLE}-tab-plot-{i_mz}.pdf"
-        )
-        do_for_i_mz(curr_mz_df, i_mz,
-                    out_plot)
+        print(curr_mz_df["pathway_id"].unique())
+        if curr_mz_df.shape[0] > 0:
+            LIMIT_TAB = 15
+            if curr_mz_df.shape[0] > LIMIT_TAB:
+                curr_mz_df = truncate_df_with_text_last_cell(curr_mz_df, LIMIT_TAB)
+
+            out_plot= os.path.join(
+                figures_centralized_folder, subfolder, "prominent",
+                f"{SAMPLE}-tab-plot-{i_mz}.pdf"
+            )
+            do_for_i_mz(curr_mz_df, i_mz, out_plot)
+
 
 
       #

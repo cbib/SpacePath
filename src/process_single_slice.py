@@ -104,7 +104,7 @@ def display_minireport(top_differential, SAMPLE):
 def compute_differential_families_and_pathways(
         pathways_types: List[str], clustering_parameters: Dict[str, str|int|float],
         SAMPLE: str, subfolder: str, data_centralized_folder: str,
-        n_top_per_cluster: int=10) -> None:
+        n_top_per_cluster: int=25) -> None:
     if not "FAMILIES" in pathways_types:
         pathways_types.append("FAMILIES")
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
@@ -125,7 +125,7 @@ def compute_differential_families_and_pathways(
         joined, group_str=str_out)
 
     top_differential = differential_results_filter(
-        differential_results_by_cluster, ntop_per_cluster=n_top_per_cluster)
+        differential_results_by_cluster, n_top_per_cluster=n_top_per_cluster)
 
     # new : moran filter for the sets
     joined = compute_moran_i(joined)
@@ -188,9 +188,14 @@ def compute_families_scores( min_family_size,
 
 def compute_molecules_families(cutoff_tree,
                                SAMPLE, subfolder, data_centralized_folder,  plot_folder)->None:
-    top_differential = pd.read_csv(
+    np.random.seed(0)
+    top_differential_mzs = pd.read_csv(
         os.path.join(data_centralized_folder, subfolder,
                      f'{SAMPLE}-top-differential-mzs.tsv'), sep='\t', header=0)
+
+    # to ensure consistency of families,  refilter for 25 top mz per cluster
+    top_differential = differential_results_filter(top_differential_mzs,
+                                                   n_top_per_cluster=25)
 
     clean_annots_nokegg_ids = pd.read_csv(
         os.path.join(data_centralized_folder, subfolder,
@@ -271,7 +276,7 @@ def compute_pathway_scores( pathways_types, min_pathway_size,
 
 def compute_differential_analysis_of_mzs(pathways_types,
     clustering_parameters, SAMPLE,  subfolder, data_centralized_folder,
-                                         n_top_per_cluster=25
+                                         n_top_per_cluster=100  # new
 )-> None:
     adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
         SAMPLE, pathways_types, subfolder, data_centralized_folder
@@ -288,7 +293,7 @@ def compute_differential_analysis_of_mzs(pathways_types,
         adata_mz, group_str=str_out)
 
     top_differential = differential_results_filter(
-        differential_results_by_cluster, ntop_per_cluster=n_top_per_cluster)
+        differential_results_by_cluster, n_top_per_cluster=n_top_per_cluster)
 
     top_differential['mz'] = top_differential['names'].tolist()
     top_differential.to_csv(os.path.join(data_centralized_folder, subfolder,
