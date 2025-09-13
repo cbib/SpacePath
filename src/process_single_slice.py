@@ -503,7 +503,6 @@ def run_analysis_one_tissue(annotations_dict: Dict[str, str],
         except Exception as e:
             logger.warning("failed compute_pathway_scores, %s", e)
 
-
     if mode in ["all", "6"]:
         try:
             compute_molecules_families(cutoff_tree,

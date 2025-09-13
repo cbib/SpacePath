@@ -101,7 +101,7 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df, coords,
              - computation time in seconds
     """
     updated_config = spm.ComputePathwaysScoresConfig(type_abbr=type_abbr,
-                                                     min_set_size=min_set_size)
+                                                     min_entity=min_set_size)
     t0 = time.time()
     scores_df = spm.ComputePathwaysScores.run(
         pws_obj.to_dict(), metabolites_computed_df, config=updated_config

@@ -68,6 +68,7 @@ def run_visualization(clustering_parameters,
                       mz_spatially_relevant_n_limit,
                       mode):
     subfolder = SAMPLE
+    print("\n", SAMPLE)
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
 
     diff_sets = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
@@ -151,22 +152,32 @@ def run_visualization(clustering_parameters,
     print("unique mzs that passed significance filters AND MAPPED AND good Moran:")
     print(len(diff_mz_relevant['mz'].unique().tolist()))
     ##                  do sankey diagrams of cluster and pathways and mz
-    run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
+    try:
+        run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
                       figures_centralized_folder, subfolder)
+    except Exception as e:
+        print(e, "failed run alluvial")
 
     plot_folder = os.path.join(figures_centralized_folder,
-                 subfolder, "prominent")
+                               subfolder, "prominent")
     if not os.path.exists(plot_folder):
         os.makedirs(plot_folder)
 
-    # run_individual_mz_scatters(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
-    #                            adata_mz,
-    #                   figures_centralized_folder, subfolder)
-    # run_individual_tabular_plots(
-    #     SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
-    #     concatenated_clean_annotations,
-    #     figures_centralized_folder, subfolder
-    # )
+    try:
+        run_individual_mz_scatters(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
+                               adata_mz,
+                      figures_centralized_folder, subfolder)
+    except Exception as e:
+        print(e, "failed run scatters")
+
+    try:
+        run_individual_tabular_plots(
+            SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
+             concatenated_clean_annotations,
+             figures_centralized_folder, subfolder
+         )
+    except Exception as e:
+        print(e, "failed run tabular plots")
     # # DONE: in a distinct funcs    ##  mission: >>>>>> plot the top mz plots alone
 
 

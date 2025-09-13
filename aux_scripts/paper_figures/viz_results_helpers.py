@@ -210,7 +210,7 @@ def run_individual_tabular_plots(
         curr_mz_df['pathway_id'] = my_list_awsome
         curr_mz_df = curr_mz_df.loc[curr_mz_df["pathway_id"] != "",:].copy()
         curr_mz_df = curr_mz_df.sort_values(by='moleculeIds', ascending=True)
-        print(curr_mz_df.head())
+        #print(curr_mz_df.head())
         print(curr_mz_df["pathway_id"].unique())
         if curr_mz_df.shape[0] > 0:
             LIMIT_TAB = 15
