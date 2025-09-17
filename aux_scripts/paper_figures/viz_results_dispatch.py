@@ -131,11 +131,9 @@ def run_visualization(clustering_parameters,
 
     # ============ only good moran I mzs  ===========
     # mzs_moran_good = adata_mz.var.loc[adata_mz.var['I'] >= 0.3, 'mz'].astype(float).tolist()
-    # print("!!!!", len(mzs_moran_good))
+    # print("!!!!", len(mzs_moran_good))  #  for some tissues it is too stringent
 
-    # adata_mz.var.loc[adata_mz.var['I'] >= 0.3, 'mz'].astype(float).tolist()
-    # # Note: instead imposing a hard filter of I value, take the top 25 mzs
-
+    # instead imposing a hard filter of I value, take the top n mzs:
     top_moran_mzs = adata_mz.var.copy().sort_values(
         by='I', ascending=False).head(mz_spatially_relevant_n_limit).copy()
 
@@ -178,7 +176,7 @@ def run_visualization(clustering_parameters,
          )
     except Exception as e:
         print(e, "failed run tabular plots")
-    # # DONE: in a distinct funcs    ##  mission: >>>>>> plot the top mz plots alone
+    # DONE: in a distinct funcs    ##  mission: >>>>>> plot the top mz plots alone
 
 
 # use all above

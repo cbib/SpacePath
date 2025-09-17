@@ -4,6 +4,7 @@ import numpy as np
 import holoviews as hv
 from holoviews import opts, dim
 import matplotlib.pyplot as plt
+import seaborn as sns
 import squidpy as sq
 
 plt.rcParams.update({'font.size': 22})
@@ -96,8 +97,8 @@ def run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
         else ('sandybrown' if x == 1.0 else 'lightgray'))(x)
         for x in df['theoretical_direction'].astype(float).tolist()]
 
-    df.to_csv("check_data_sankey.csv")
-    #print("saved ! ")
+    #pastel_palette = sns.color_palette("pastel").as_hex()
+
     sankey = hv.Sankey(df,  ['source', 'target'], ['value', 'edge_colors'])
 
     sankey.opts(
@@ -108,7 +109,8 @@ def run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
         # height=600,  Option 'height' for Sankey type not valid for selected backend ('matplotlib')
         node_sort=False,
         node_padding=5,
-        show_values=False
+        show_values=False,
+        #cmap=pastel_palette  # this dis not work:   TypeError: unhashable type: '_ColorPalette'
     )
     plt_fig = hv.render(sankey, backend='matplotlib')
     path_sankey_plot = os.path.join(figures_centralized_folder,

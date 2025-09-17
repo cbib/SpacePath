@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+
 def transform2plot_v2(df, mode="all"):
     cols = [col for col in df.columns.tolist() if col.endswith(mode)]
     col_hmdb = [k for k in cols if k.startswith("HMDB")]
@@ -40,7 +41,7 @@ def transform2plot_v2(df, mode="all"):
 
 def bubble_plot_kegg_metabolite_id_conversion_success(
         df_pl, df_pl2, size_range_markers1, size_range_markers2) -> None:
-
+    sns.set_context("paper", font_scale=1.5)
     sns.set_style("whitegrid")
     plt.figure(figsize=(6, 11))
     ax = sns.scatterplot(df_pl, x="database", y="sample_name", size="amount",
@@ -67,6 +68,7 @@ def bubble_plot_kegg_metabolite_id_conversion_success(
 
 def bubble_plot_for_pathways(df_pl, df_pl3, size_range_markers1,
                              size_range_markers3, out_path) -> None:
+    sns.set_context("paper", font_scale=1.5)
     sns.set_style("whitegrid")
     plt.figure(figsize=(6, 11))
     ax = sns.scatterplot(df_pl, x="database", y="sample_name", size="amount",
@@ -116,6 +118,8 @@ df["ratio_mz_pathway_count"] = (df['mz_mapped_to_pathways'].to_numpy(
 
 df = df[['sample_name', 'ratio_id_mz', 'mz_mapped_to_pathways', 'pathways_number_final', 'ratio_mz_pathway_count', 'PType']]
 
+print("excluding from the plots the low quality datasets")
+
 bad_samples = df.loc[(df['ratio_id_mz'] > 2.25) | (
     df['pathways_number_final'] < 10) | (df['mz_mapped_to_pathways'] < 10) , "sample_name" ].unique()
 
@@ -133,7 +137,7 @@ datasmalls = ["TD-635-1-A", "TD-hemi-635-1-B", "LP-heart-mouse-2"]
 df.loc[df['sample_name'].isin(datasmalls), "data_type"] = "SmallMolecules"
 
 
-sns.set_theme(style="whitegrid")
+sns.set_theme(style="whitegrid",font_scale=1.3)
 #plt.figure(figsize=(60, 8))   # very difficult to set the dimensions, instead saving manually from display window
 
 g = sns.PairGrid(df,
