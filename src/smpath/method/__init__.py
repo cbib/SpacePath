@@ -66,10 +66,6 @@ class ClassifyMZProtocolConfig(MethodConfig):
     var_sim_cutoff: float = 1e-20
 
 
-class SyncPathwaysAndAnnotsConfig(MethodConfig): # todo: use this config ?
-    description: str = "parameters to synchronize pathways -or families of compounds- and annotations"
-
-
 class ComputePathwaysScoresConfig(MethodConfig):
     description: str = "parameters to compute the pathways scores"
     method: str = "sspa_kpca"
@@ -192,7 +188,6 @@ class ClassifyMZProtocol:
 
 
 class SyncPathwaysAndAnnots:
-    #config: SyncPathwaysAndAnnotsConfig  TODO : use ?
     @staticmethod
     def run(pathwaysObj: MetabolicPathways,
             annotations_df: pd.DataFrame,
@@ -319,7 +314,7 @@ class ComputeMoleculesFamilies:
         ) -> Dict[str, np.ndarray|pd.DataFrame|float]:
         logger.info("computing families of molecules, with config %s", yaml.dump(config.dict()))
         # make the hierarchical clustering reproducible
-        np.random.seed(42)
+        np.random.seed(0)
 
         distance_matrix = 1 - mol_similarities_result['array']
         # squareform saves memory by representing the matrix with the upper right triangle
