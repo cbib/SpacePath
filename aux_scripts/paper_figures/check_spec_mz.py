@@ -4,7 +4,7 @@ import anndata as ad
 import pandas as pd
 import squidpy as sq
 import matplotlib.pyplot as plt
-
+import seaborn as sns
 
 
 if __name__ == "__main__":
@@ -43,6 +43,7 @@ if __name__ == "__main__":
             print("attention, bad and good quality mzs are present in the object !")
 
             print(adata_mz.uns['norm'])
+            sns.set_context("paper", font_scale=1.5)
 
             if adata_mz.uns['norm'] == "TotalIonCount":
                 sq.pl.spatial_scatter(
