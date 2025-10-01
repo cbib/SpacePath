@@ -48,10 +48,10 @@ def join_clean_annotations_from_files(pathways_types: List[str],
     dfs_to_gather = list()
     for k in annots_dict.keys():
         if k == 'KEGG':
-            df = annots_dict[k][["KEGG", "moleculeNames"]]
-            df.columns = ["moleculeIds", "moleculeNames"]
+            df = annots_dict[k][["KEGG", "moleculeNames", "mz"]]
+            df.columns = ["moleculeIds", "moleculeNames", "mz"]
         elif k == 'WIKI':
-            df = annots_dict[k][["moleculeIds", "moleculeNames"]]
+            df = annots_dict[k][["moleculeIds", "moleculeNames", "mz"]]
         dfs_to_gather.append(df)
 
     gathered_annotations = pd.concat(dfs_to_gather, axis=0)

@@ -30,14 +30,20 @@ if __name__ == "__main__":
     data_centralized_folder = "../../../data"
     assert os.path.exists("../../figs"), "Error, ../../figs must exist"
 
+    # my_csv_table_path_1 = "../../datasets_parameters/public-datasets-parameters.tsv"  #
+    # my_csv_table_path_2 = "../../datasets_parameters/private-datasets-parameters.tsv"  #
+    # df1 = pd.read_csv(my_csv_table_path_1, header=0,
+    #                   index_col=None, sep='\t')
+    # df2 = pd.read_csv(my_csv_table_path_2, header=0,
+    #                   index_col=None, sep='\t')
+    # datasets_parameters_df = pd.concat([df1, df2])
 
-    my_csv_table_path_1 = "../../datasets_parameters/public-datasets-parameters.tsv"  #
-    my_csv_table_path_2 = "../../datasets_parameters/private-datasets-parameters.tsv"  #
-    df1 = pd.read_csv(my_csv_table_path_1, header=0,
-                      index_col=None, sep='\t')
-    df2 = pd.read_csv(my_csv_table_path_2, header=0,
-                      index_col=None, sep='\t')
-    datasets_parameters_df = pd.concat([df1, df2])
+    my_selection = "private"  # "public"   #  HERE SET THE CORRESPONDING
+
+    file_n = f"../../datasets_parameters/{my_selection}-datasets-parameters.tsv"
+    datasets_parameters_df = pd.read_csv(file_n, header=0,
+                                         index_col=None, sep='\t')
+
     datasets_parameters_df.reset_index(inplace=True)
     # start
 
@@ -133,11 +139,11 @@ if __name__ == "__main__":
         "HMDB ids in pathways", "LipidMaps ids in pathways",
         "KEGG ids in pathways"]
 
-    out_df1.to_csv(f"../../figs/initial-IDSmix-pathways-psize{pwsizeONE}.csv")
+    out_df1.to_csv(f"../../figs/initial-IDSmix-pathways-psize{pwsizeONE}-{my_selection}.csv")
 
     out_df2 = pd.DataFrame({
         "sample_name": name_sample,
         "mz_mapped_to_pathways":mz_mapped_to_pathways,
     "ratio_id_mz": compound_ids_to_mz_ratio_after_pathway_mapped,
     "pathways_number_final" : how_many_pathways    })
-    out_df2.to_csv(f"../../figs/final-IDSmix-compounds-counts-psize{min_pathway_size}.csv")
+    out_df2.to_csv(f"../../figs/final-IDSmix-counts-psize{min_pathway_size}-{my_selection}.csv")

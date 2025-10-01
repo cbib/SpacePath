@@ -34,16 +34,22 @@ if __name__ == "__main__":
     # define here my files and dirs
     data_centralized_folder = "../../../data"
 
-    my_csv_table_path_1 = "../../datasets_parameters/public-datasets-parameters.tsv"  #
-    my_csv_table_path_2 = "../../datasets_parameters/private-datasets-parameters.tsv"  #
+    # my_csv_table_path_1 = "../../datasets_parameters/public-datasets-parameters.tsv"  #
+    # my_csv_table_path_2 = "../../datasets_parameters/private-datasets-parameters.tsv"  #
 
     assert os.path.exists("../../figs"), "Error, ../../figs must exist"
 
-    df1 = pd.read_csv(my_csv_table_path_1, header=0,
+    # df1 = pd.read_csv(my_csv_table_path_1, header=0,
+    #                   index_col=None, sep='\t')
+    # df2 = pd.read_csv(my_csv_table_path_2, header=0,
+    #                   index_col=None, sep='\t')
+    # datasets_parameters_df = pd.concat([df1, df2])
+
+    my_selection = "private"   # "public"   #  HERE SET THE CORRESPONDING
+
+    file_n = f"../../datasets_parameters/{my_selection}-datasets-parameters.tsv"
+    datasets_parameters_df = pd.read_csv(file_n, header=0,
                       index_col=None, sep='\t')
-    df2 = pd.read_csv(my_csv_table_path_2, header=0,
-                      index_col=None, sep='\t')
-    datasets_parameters_df = pd.concat([df1, df2])
 
     # start
 
@@ -155,15 +161,17 @@ if __name__ == "__main__":
                        "LipidMaps in pathways",
                        "KEGG in pathways"  ]
 
-    out_df1.to_csv("../../figs/initial-ids-pathways-KEGG.csv")
-    print("saved", "../../figs/initial-ids-pathways-KEGG.csv")
+    out_df1.to_csv(f"../../figs/initial-ids-pathways-KEGG-{my_selection}.csv")
+    print("saved, table 1")
 
     out_df2 = pd.DataFrame({
         "sample_name": name_sample,
         "mz_mapped_to_pathways":mz_mapped_to_pathways,
     "ratio_keggid_mz": kegg_compound_ids_to_mz_ratio_after_pathway_mapped,
     "pathways_number_final" : how_many_pathways    })
-    out_df2.to_csv("../../figs/final-KEGG-compounds-counts.csv")
-    print("saved", "../../figs/final-KEGG-compounds-counts.csv")
+
+    out_df2.to_csv(f"../../figs/final-KEGG-compounds-counts-{my_selection}.csv")
+
+    print("saved, table 2")
 
 

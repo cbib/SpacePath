@@ -6,6 +6,23 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+def update_names_TD_samples(df):
+    names_dict = {'TD-Lipido-635': 'GB-x-lipids-1',
+                  'TD-Lipido-636': 'GB-x-lipids-2',
+    'TD-Lipido-827': 'GB-x-lipids-3',
+    'TD-Lipido-836': 'GB-x-lipids-4'
+    }
+    new_names_samples = list()
+    for u in df['sample_name'].tolist():
+        if u in list(names_dict.keys()):
+            v = names_dict[u]
+        else:
+            v = u
+        new_names_samples.append(v)
+    df['sample_name'] = new_names_samples
+
+    return df
+
 
 def transform2plot_v2(df, mode="all"):
     cols = [col for col in df.columns.tolist() if col.endswith(mode)]
@@ -40,10 +57,12 @@ def transform2plot_v2(df, mode="all"):
 
 
 def bubble_plot_kegg_metabolite_id_conversion_success(
-        df_pl, df_pl2, size_range_markers1, size_range_markers2) -> None:
+        df_pl, df_pl2, size_range_markers1, size_range_markers2,
+    fig_height
+) -> None:
     sns.set_context("paper", font_scale=1.5)
     sns.set_style("whitegrid")
-    plt.figure(figsize=(6, 11))
+    plt.figure(figsize=(6, fig_height))
     ax = sns.scatterplot(df_pl, x="database", y="sample_name", size="amount",
                          lw=0.4, sizes=size_range_markers1,
                          # sizes=(200, 1000),
@@ -62,15 +81,16 @@ def bubble_plot_kegg_metabolite_id_conversion_success(
                 top=True, right=True, left=True, bottom=True, offset=None,
                 trim=False)
     plt.tight_layout()
-    plt.savefig("../../figs/initial-ids-compounds-KEGG.pdf")
+    plt.savefig(f"../../figs/initial-ids-compounds-KEGG-{my_selection}.pdf")
     plt.close()
 
 
 def bubble_plot_for_pathways(df_pl, df_pl3, size_range_markers1,
-                             size_range_markers3, out_path) -> None:
+                             size_range_markers3, out_path,
+                             fig_height) -> None:
     sns.set_context("paper", font_scale=1.5)
     sns.set_style("whitegrid")
-    plt.figure(figsize=(6, 11))
+    plt.figure(figsize=(6, fig_height))
     ax = sns.scatterplot(df_pl, x="database", y="sample_name", size="amount",
                          lw=0.4, sizes=size_range_markers1,
                          # sizes=(200, 1000),
@@ -95,13 +115,22 @@ def bubble_plot_for_pathways(df_pl, df_pl3, size_range_markers1,
 
 
 ## start
+##  note: this script is a fast draft, more files loading at lines 201 and 236
 
 ###  dot plots (as PairGrid) comparing KEGG and WIKIPATHWAYS
 
+my_selection = "private"   # public
+min_pathway_size = 2
 print("dot plots (as PairGrid) comparing KEGG and WIKIPATHWAYS")
 
-df = pd.read_csv("../../figs/final-KEGG-compounds-counts.csv", index_col=None)
-df2 = pd.read_csv("../../figs/final-IDSmix-compounds-counts-psize2.csv", index_col=None)
+if my_selection == "public":
+    my_height = 9
+else:
+    my_height = 4.4
+
+
+df = pd.read_csv(f"../../figs/final-KEGG-compounds-counts-{my_selection}.csv", index_col=None)
+df2 = pd.read_csv(f"../../figs/final-IDSmix-counts-psize{min_pathway_size}-{my_selection}.csv", index_col=None)
 
 df = df[['sample_name', 'ratio_keggid_mz', 'mz_mapped_to_pathways', 'pathways_number_final']]
 df2 = df2[['sample_name', 'ratio_id_mz', 'mz_mapped_to_pathways', 'pathways_number_final']]
@@ -112,6 +141,7 @@ df['PType'] = "KEGG_pathways"
 df2['PType'] = "Wikipathways"
 
 df = pd.concat([df, df2])
+df = update_names_TD_samples(df)
 
 df["ratio_mz_pathway_count"] = (df['mz_mapped_to_pathways'].to_numpy(
 ) + 0.001) / (df['pathways_number_final'].to_numpy() + 0.001)
@@ -137,7 +167,7 @@ datasmalls = ["TD-635-1-A", "TD-hemi-635-1-B", "LP-heart-mouse-2"]
 df.loc[df['sample_name'].isin(datasmalls), "data_type"] = "SmallMolecules"
 
 
-sns.set_theme(style="whitegrid",font_scale=1.3)
+sns.set_theme(style="whitegrid",font_scale=1.4)
 #plt.figure(figsize=(60, 8))   # very difficult to set the dimensions, instead saving manually from display window
 
 g = sns.PairGrid(df,
@@ -168,13 +198,12 @@ plt.show()
 
 ## === bubble plots
 
-
-df = pd.read_csv("../../figs/initial-ids-pathways-KEGG.csv")
+df = pd.read_csv(f"../../figs/initial-ids-pathways-KEGG-{my_selection}.csv")  # open file
 df = df.replace(0, np.nan)
 
 # use the above classification 'bad_samples'
 df = df.loc[~df["sample_name"].isin(bad_samples), :]
-
+df = update_names_TD_samples(df)
 
 ### bubble plots of the translation of all types of identifiers to KEGG compounds ids
 
@@ -187,9 +216,10 @@ df_pl2 = transform2plot_v2(df, mode="ids")
 size_range_markers2 = (df_pl2['amount'].min() / 10,
                        df_pl2['amount'].max() / 10)
 
-bubble_plot_kegg_metabolite_id_conversion_success(df_pl, df_pl2, size_range_markers1, size_range_markers2)
-
-
+bubble_plot_kegg_metabolite_id_conversion_success(df_pl, df_pl2,
+                                                  size_range_markers1,
+                                                  size_range_markers2,
+                                                  fig_height=my_height)
 
 ###  bubble plots of the final mapping of all types of identifiers to KEGG pathways
 
@@ -197,18 +227,19 @@ print("bubble plots of the final mapping of all types of identifiers to KEGG pat
 df_pl3 = transform2plot_v2(df, mode="pathways")
 size_range_markers3 = (df_pl3['amount'].min() / 10, df_pl3['amount'].max() / 10)
 bubble_plot_for_pathways(df_pl, df_pl3, size_range_markers1,
-                         size_range_markers3, "../../figs/initial-ids-pathways-KEGG.pdf")
-
+                         size_range_markers3,
+                         f"../../figs/initial-ids-pathways-KEGG-{my_selection}.pdf",
+                         fig_height=my_height)
 
 
 ### WIKIPATHWAYS bubble plots
-df = pd.read_csv("../../figs/initial-IDSmix-pathways-psize1.csv")
+df = pd.read_csv(f"../../figs/initial-IDSmix-pathways-psize1-{my_selection}.csv")  # open file
 df = df.replace(0, np.nan)
 print(df.columns)
 df = df.loc[~df["sample_name"].isin(bad_samples), :]   # exclude bad_samples
+df = update_names_TD_samples(df)
 
-
-df_pl = transform2plot_v2(df, mode="tifiers")
+df_pl = transform2plot_v2(df, mode="identifiers")
 size_range_markers1 = (df_pl['amount'].min() / 10, df_pl['amount'].max() / 10)
 print(df_pl.head(10))
 print(df_pl['amount'].min())
@@ -217,7 +248,9 @@ df_pl2 = transform2plot_v2(df, mode="pathways")
 size_range_markers2 = (df_pl2['amount'].min() / 10, df_pl2['amount'].max() / 10)
 
 bubble_plot_for_pathways(df_pl, df_pl2, size_range_markers1,
-                         size_range_markers2, "../../figs/initial-ids-pws-WIKIPATHWAYS.pdf")
+                         size_range_markers2,
+                         f"../../figs/initial-ids-pws-WIKIPATHWAYS-{my_selection}.pdf",
+                         fig_height=my_height)
 
 
 
