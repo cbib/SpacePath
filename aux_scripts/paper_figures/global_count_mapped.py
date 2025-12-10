@@ -1,6 +1,7 @@
-#import smpath.data as spd
+import smpath.data as spd
 import pandas as pd
 import numpy as np
+import os
 
 my_selection = "public"
 min_pathway_size = 1
@@ -45,4 +46,32 @@ print("unmapped fraction overall: ", unmapped_fraction)
 print("===============")
 
 
+####### now test how many were now associated to families
+total_nb = df2['HMDB identifiers'].mean() + df2['LipidMaps identifiers'].mean()
+
+print("total number of hmdb and lm IDs", total_nb)
+set_ids_all_families = set()
+data_dir = "../../../data"
+
+my_selection = "public"
+
+file_n = f"../../datasets_parameters/{my_selection}-datasets-parameters.tsv"
+datasets_parameters_df = pd.read_csv(file_n, header=0,
+                                     index_col=None, sep='\t')
+for u in datasets_parameters_df['dataset_name'].tolist():
+    print(os.path.exists(os.path.join(data_dir, u, f'{u}-molecules_families.mmt')))
+    pathwaysObj = spd.MetabolicPathways(
+        data_dir=data_dir,
+        subfolder=u,
+        file=f"{u}-molecules_families.mmt"
+    )
+    pathwaysObj.molecule_id_type = "moleculeIds"
+    pathwaysObj.load()
+    tmp_dict = pathwaysObj.to_dict()
+    for innerkey in tmp_dict:
+        set_ids_all_families = set_ids_all_families.union(set(tmp_dict[innerkey]))
+
+print("overall total unique IDs in families:", len(set_ids_all_families))
+
+print("fraction families relative to all ids: ", total_nb / len(set_ids_all_families))
 
