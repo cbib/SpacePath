@@ -1,3 +1,11 @@
+#########################################################################
+# Very important requirement:
+# first run the quality tagging over ions, which saves adequate .h5ad object:
+#     python3 -m SPACEPATH $input_file $data_dir $figures_dir --mode 1
+# --
+# johaGL 2025
+#########################################################################
+
 import sys
 import os
 
@@ -12,7 +20,12 @@ from aux_scripts.data_download_prep_spots.spots_purge import annotation_types_to
 
 
 def counts_per_orig_db(annots_df):
-    # the .df attr of annots object has always the database of origin of the metabolites
+    """
+    Counts the total of UNIQUE compound identifiers, for each type of
+    nomenclature (HMDB, LipidMaps or KEGG identifiers).
+    Returns a list of integers, each integer corresponds to the amount of
+    UNIQUE identifiers respecting the order: HMDB, LipidMaps, KEGG
+    """
     out_l = [0, 0, 0]
     position_dict = {0: ["HMDB", "CoreMetabolome"], 1: ['LipidMaps'],
                      2: ["KEGG"]}
@@ -72,7 +85,6 @@ if __name__ == "__main__":
           "(both compound ids and pathways) across specified datasets."
           " Output: .csv files with counts")
 
-    pwsizeONE = 1  # constant
 
     for i, row in datasets_parameters_df.iterrows():
         SAMPLE = row["dataset_name"]
@@ -106,13 +118,12 @@ if __name__ == "__main__":
 
         my_new_dict[SAMPLE] += counts_per_orig_db(annots_obj.df)
 
-        initial_pws_dict = pathwaysObj.to_dict()  # reserver pour plustard ? simplement avoir les tailles des sets du départ.
 
         pws1, ann1_df = spm.SyncPathwaysAndAnnots.run(
             pathwaysObj.model_copy(),
             annots_obj.df.copy(),
             usable_id="KEGG",
-            min_set_size=2,  # todo: major change, check pertinence
+            min_set_size=1,
             max_set_size=200,
             mode="mz_aware"
         )
@@ -152,7 +163,9 @@ if __name__ == "__main__":
         my_new_dict, orient='index')
 
     out_df1.reset_index(inplace=True)
-    out_df1.columns = ["sample_name", "HMDB identifiers all", "LipidMaps identifiers all",
+    out_df1.columns = ["sample_name",
+                       "HMDB identifiers all",
+                       "LipidMaps identifiers all",
                        "KEGG identifiers all",
                        "HMDB ids having KEGG ids",
                        "LipidMaps ids having KEGG ids",
@@ -170,7 +183,7 @@ if __name__ == "__main__":
     "ratio_keggid_mz": kegg_compound_ids_to_mz_ratio_after_pathway_mapped,
     "pathways_number_final" : how_many_pathways    })
 
-    out_df2.to_csv(f"../../figs/final-KEGG-compounds-counts-{my_selection}.csv")
+    out_df2.to_csv(f"../../figs/crit-KEGG-compounds-counts-{my_selection}.csv")
 
     print("saved, table 2")
 

@@ -24,7 +24,7 @@ LP-cerebellum	2025-04-10_14h53m38s	HMDB LipidMaps	0.1	NO	0.97	0.3	0.5	0.08	0.1	k
 LP-brain-mouse-3	2023-09-29_18h44m00s	HMDB LipidMaps	0.2	YES	0.15	0.5	0.2	0.2	0.1	kmeans:5	KEGG WIKI	2	0.8	4		LP-brain-mouse-3
 LP-brain-mouse-7	2025-07-30_17h59m25s	HMDB LipidMaps CoreMetabolome	1	YES	0.4	0.002	0.5	0.1	0.1	Kmeans:6	KEGG WIKI	2	0.5	2		LP-brain-mouse-7
 LP-brain-mouse-8	2025-07-30_17h35m47s	KEGG HMDB LipidMaps	1	YES	0.35	0.1	0.5	0.1	0.5	leiden_sg:0.7	KEGG WIKI	2	0.5	2		LP-brain-mouse-8
-LP-kidney3	2024-09-28_15h43m16s	HMDB LipidMaps CoreMetabolome	1	YES	0.2	0.2	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	0.8	2		LP-kidney3
+LP-kidney3	2024-09-28_15h43m16s	HMDB LipidMaps CoreMetabolome	1	YES	0.2	0.15	0.5	0.01	0.05	kmeans:4	KEGG WIKI	2	0.5	2		LP-kidney3
 LP-liver-brca-mouse	2023-04-04_07h50m38s	HMDB CoreMetabolome	1	YES	0.2	0.2	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	0.8	2		LP-liver-brca-mouse
 LP-lung-mouse	2019-01-17_19h54m30s	HMDB LipidMaps	1	YES	0.2	0.2	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	0.8	2		LP-lung-mouse
 LP-ovary-ca-mouse	2022-04-04_22h54m13s	HMDB LipidMaps CoreMetabolome	1	YES	0.2	0.2	0.5	0.1	0.05	kmeans:4	KEGG WIKI	2	0.8	2		LP-ovary-ca-mouse

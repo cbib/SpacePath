@@ -1,3 +1,10 @@
+#########################################################################
+# Very important:
+# first run the quality tagging over ions, which saves adequate .h5ad object:
+#     python3 -m SPACEPATH $input_file $data_dir $figures_dir --mode 1
+# --
+# johaGL 2025
+#########################################################################
 import sys
 import os
 import pandas as pd
@@ -96,7 +103,7 @@ if __name__ == "__main__":
             pathwaysObj.model_copy(),
             annots_obj.df.copy(),
             usable_id="moleculeIds",
-            min_set_size=2,  # todo: major change, verify result
+            min_set_size=pwsizeONE,  # todo: major change, verify result
             max_set_size=200 )
 
         my_new_dict[SAMPLE] += counts_per_orig_db(ann1_df)
@@ -146,4 +153,4 @@ if __name__ == "__main__":
         "mz_mapped_to_pathways":mz_mapped_to_pathways,
     "ratio_id_mz": compound_ids_to_mz_ratio_after_pathway_mapped,
     "pathways_number_final" : how_many_pathways    })
-    out_df2.to_csv(f"../../figs/final-IDSmix-counts-psize{min_pathway_size}-{my_selection}.csv")
+    out_df2.to_csv(f"../../figs/crit-IDSmix-counts-psize{min_pathway_size}-{my_selection}.csv")
