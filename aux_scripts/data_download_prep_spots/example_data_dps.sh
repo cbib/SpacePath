@@ -1,10 +1,13 @@
 #!/bin/bash
 
+# running from curr location (aux_scripts/data_download_prep_spots)
+
+
 input_file="example-datasets-parameters.tsv"
 input_directory="../../datasets_parameters"
 
 data_dir="../../../examples-sm-data"
-figures_dir="../../../figures"
+figures_dir="../../../examples-figures"
 
 
 echo "Downloading datasets"

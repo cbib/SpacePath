@@ -14,6 +14,8 @@ from sklearn.cluster import KMeans
 
 import pickle
 
+import matplotlib as mpl   # for font setup for publication qual figs
+
 import smpath.processing.measures_methods as measures_methods
 
 from .single_slice_helpers import *
@@ -104,7 +106,7 @@ def display_minireport(top_differential, SAMPLE):
 def compute_differential_families_and_pathways(
         pathways_types: List[str], clustering_parameters: Dict[str, str|int|float],
         SAMPLE: str, subfolder: str, data_centralized_folder: str,
-        n_top_per_cluster: int=25) -> None:
+        n_top_per_cluster: int=30) -> None:  # before: n_top_per_cluster 25
     if not "FAMILIES" in pathways_types:
         pathways_types.append("FAMILIES")
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
@@ -145,7 +147,6 @@ def compute_differential_families_and_pathways(
                                          f'{SAMPLE}-top-differential-SETS.tsv'),
                             sep='\t', header=True, index=False)
     display_minireport(top_differential, SAMPLE)
-
 
 
 def compute_families_scores( min_family_size,
@@ -270,8 +271,7 @@ def compute_pathway_scores( pathways_types, min_pathway_size,
                                 f'{SAMPLE}-scores-{pw_type}.h5ad')
         scores_adata.write_h5ad(out_file)
         logger.info("scores saved to file %s", out_file)
-        #mapped_elements += scores_adata.uns['current_pathways_df']['mz'].unique(
-        #).tolist()
+
 
 
 def compute_differential_analysis_of_mzs(pathways_types,
@@ -303,16 +303,27 @@ def compute_differential_analysis_of_mzs(pathways_types,
 
 def plot_clustering_results(adata_mz, clustering_parameters,
                              SAMPLE, plot_folder) -> None:
+
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
+
     plot_out_path = os.path.join(plot_folder,
-                                 f'{SAMPLE}-clusters-{str_out}.png')
+                                 f'{SAMPLE}-clusters-{str_out}.pdf')
+
+    fig, ax = plt.subplots(1,1)
     sq.pl.spatial_scatter(
         adata_mz, color=[str_out], img=False,
         title="Clustering of spots",
         linewidth=0, edgecolors=(0,0,0,0),
         shape="circle",  size=1,#  'circle', 'square', 'hex'
-        save=os.path.abspath(plot_out_path),
-        dpi=600)
+        ax=ax
+    )
+    ax.collections[0].set_rasterized(True)
+
+    plt.savefig(os.path.abspath(plot_out_path),
+                format="pdf",
+                dpi=600,
+                bbox_inches='tight')
+
     plt.close()
     print("saved figure")
 
@@ -471,6 +482,12 @@ def run_analysis_one_tissue(annotations_dict: Dict[str, str],
     plot_folder = os.path.join(figures_centralized_folder, SAMPLE)
     if not os.path.exists(plot_folder):
             os.mkdir(plot_folder)
+
+    ##### these three lines are mandatory to comply with Nature journals #####
+
+    mpl.rcParams['font.family'] = "sans-serif"
+    mpl.rcParams['font.sans-serif'] = "Arial"
+    plt.rcParams.update({'font.size': 22})
 
     if mode in ["all", "1", "2"]:
         annots_obj = spd.MetabolomeAnnotations(

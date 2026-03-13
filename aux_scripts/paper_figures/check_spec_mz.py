@@ -59,7 +59,7 @@ def print_map(diff_sets_all, data_centralized_folder, subfolder, SAMPLE, pathway
 
 if __name__ == "__main__":
 
-    mysample = "LP-bladder-cancer"  #"LP-brain-mouse-5"
+    mysample = "Bladder-cancer-hum"     # "Brain-healthy-mouse"
     mymz = "690.506832" #"369.351578"
 
     # define here my files and dirs

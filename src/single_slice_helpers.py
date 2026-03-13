@@ -143,11 +143,11 @@ def differential_results_filter(differential_results,
                                 abs_lfc: float=0.8,
                                 pvals_adj: float=0.05,
                                 n_top_per_cluster: Union[str, int]="auto",
-                                total_n_features:int=250,
+                                total_n_features_out:int=250,
                                 up_down_proportion:tuple=(0.7, 0.3)
                                 )-> pd.DataFrame:
     if n_top_per_cluster == "auto":
-        n_top_per_cluster = int(total_n_features / len(
+        n_top_per_cluster = int(total_n_features_out / len(
             differential_results['group'].unique()))
     up_n = int(n_top_per_cluster * up_down_proportion[0])
     down_n = int(n_top_per_cluster * up_down_proportion[1])

@@ -7,12 +7,12 @@ my_selection = "public"
 min_pathway_size = 1
 
 
-df = pd.read_csv(f"../../figs/initial-ids-pathways-KEGG-{my_selection}.csv",
+df = pd.read_csv(f"../../figs/mapp-ids-pathways-KEGG-{my_selection}.csv",
                  header=0, index_col=0)
 df = df.replace(0, np.nan)
 
 df2 = pd.read_csv(
-    f"../../figs/initial-IDSmix-pathways-psize{min_pathway_size}-{my_selection}.csv",
+    f"../../figs/mapp-IDSmix-pathways-{my_selection}.csv",
 header=0, index_col=0)
 df2 = df2.replace(0, np.nan)
 

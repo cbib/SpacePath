@@ -29,10 +29,11 @@ datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
 
 datasets_parameters_df = datasets_parameters_df.loc[
     datasets_parameters_df['dataset_name'].isin(
-        ["LP-brain-mouse-7"]), :].copy()  #
+        ["Brain-healthy-mouse", "Brain-lmrange-mouse"]), :].copy()  #
 
 weights_spatial_graph = {
-    "LP-brain-mouse-7": 0.3,
+    "Brain-healthy-mouse": 0.3,
+    "Brain-lmrange-mouse" : 0.3
 }
 answer = input("continue? y/n")
 if answer in ["y", "yes"]:
