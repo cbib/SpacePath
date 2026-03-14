@@ -69,8 +69,8 @@ class Test(TestCase):
         }
         df = pd.DataFrame(data)
 
-        result = differential_results_filter(df, lfc=0.8, pvals_adj=0.05,
-                                             total_n_features=3)
+        result = differential_results_filter(df, abs_lfc=0.8, pvals_adj=0.05,
+                                             total_n_features_out=3)
         #  group   logfoldchanges  pvals_adj  abslfc
         #    A            0.9       0.01      0.9
         #    B           -1.2       0.04      1.2

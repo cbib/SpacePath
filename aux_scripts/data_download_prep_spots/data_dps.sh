@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# running from curr location (aux_scripts/data_download_prep_spots)
 
 input_files_list=("public-datasets-parameters.tsv" "private-datasets-parameters.tsv")
 input_directory="../../datasets_parameters"
@@ -22,8 +22,9 @@ for i_file in ${input_files_list[@]}; do
   echo "  (TD tissues) this can be slow, answer 'n' or 'no' if already performed"
   python3 spots_preclassif_TD.py  # no args
 
-  echo " (brain 7 tissue) if already performed, answer 'n'"
-  python3 spots_preclassif_LP7.py
+  echo "Running custom spot quality classification, for selected tissues only"
+  echo " (brain nat tissues) if already performed, answer 'n'"
+  python3 spots_preclassif_nat.py
 
 
   echo ""

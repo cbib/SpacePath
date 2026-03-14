@@ -5,296 +5,280 @@
 #########################################################################
 import sys
 import os
+from pathlib import Path
+from typing import Tuple
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib as mpl
 
 
 ###### these three lines are mandatory to comply with Nature journals ######
-import matplotlib as mpl
 mpl.rcParams['font.family'] = "sans-serif"
 mpl.rcParams['font.sans-serif'] = "Arial"
+plt.rcParams.update({'font.size': 22})
 
-# todo: add here the global plot params: Arial etc
-def update_names_TD_samples(df):
-    names_dict = {'TD-Lipido-635': 'GB-x-lipids-1',
-                  'TD-Lipido-636': 'GB-x-lipids-2',
-    'TD-Lipido-827': 'GB-x-lipids-3',
-    'TD-Lipido-836': 'GB-x-lipids-4'
-    }
-    new_names_samples = list()
-    for u in df['sample_name'].tolist():
-        if u in list(names_dict.keys()):
-            v = names_dict[u]
-        else:
-            v = u
-        new_names_samples.append(v)
-    df['sample_name'] = new_names_samples
+FIG_DIR = Path("../../figs")
 
-    return df
+# ---------------------------------------------------------------------
+# utilities
+# ---------------------------------------------------------------------
+
+def compute_marker_size_range(df: pd.DataFrame) -> Tuple[float, float]:
+    return df["amount"].min() / 10, df["amount"].max() / 10
 
 
-def transform2plot_v2(df, mode="all"):
-    cols = [col for col in df.columns.tolist() if col.endswith(mode)]
-    col_hmdb = [k for k in cols if k.startswith("HMDB")]
-    df1 = pd.melt(df, id_vars="sample_name",  # ,
-                  value_vars=col_hmdb[0], #"HMDB identifiers all",
-                  value_name="amount",
-                  var_name="to_drop")
-    df1['database'] = "HMDB"
-    df1 = df1.drop(columns=["to_drop"])
-    col_lipids = [k for k in cols if k.startswith("Lipid")]
-    df2 = pd.melt(df, id_vars="sample_name",
-                  value_vars=col_lipids[0], #"LipidMaps identifiers all",
-                  value_name="amount",
-                  var_name="to_drop")
-    df2['database'] = "LipidMaps"
-    df2 = df2.drop(columns=["to_drop"])
-
-    col_kegg = [k for k in cols if k.startswith("KEGG")]
-    df3 = pd.melt(df, id_vars="sample_name",  # ,
-                  value_vars=col_kegg[0],  # "HMDB identifiers all",
-                  value_name="amount",
-                  var_name="to_drop")
-    df3['database'] = "KEGG"
-
-    if not np.isnan(df3['amount'].to_numpy()).all():
-        df_pl = pd.concat([df1, df2, df3], axis=0)
-    else:
-        df_pl = pd.concat([df1, df2], axis=0)
-
-    return df_pl
+def load_csv(path: Path) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    return df.replace(0, np.nan)
 
 
-def bubble_plot_kegg_metabolite_id_conversion_success(
-        df_pl, df_pl2, size_range_markers1, size_range_markers2,
-        fig_width,  fig_height
+# ---------------------------------------------------------------------
+# dataframe transformations
+# ---------------------------------------------------------------------
+
+def transform_to_plot(df: pd.DataFrame, mode: str = "all") -> pd.DataFrame:
+    cols = [c for c in df.columns if c.endswith(mode)]
+
+    def melt_database(prefix: str, label: str) -> pd.DataFrame:
+        col = next(c for c in cols if c.startswith(prefix))
+        tmp = pd.melt(
+            df,
+            id_vars="sample_name",
+            value_vars=col,
+            value_name="amount",
+            var_name="tmp",
+        )
+        tmp["database"] = label
+        return tmp.drop(columns="tmp")
+
+    frames = [
+        melt_database("HMDB", "HMDB"),
+        melt_database("Lipid", "LipidMaps"),
+    ]
+
+    kegg_cols = [c for c in cols if c.startswith("KEGG")]
+    if kegg_cols:
+        df3 = melt_database("KEGG", "KEGG")
+        if not np.isnan(df3["amount"].to_numpy()).all():
+            frames.append(df3)
+
+    return pd.concat(frames)
+
+
+def compute_good_samples(selection: str, df: pd.DataFrame) -> np.ndarray:
+    tmp = df.loc[
+        (df["ratio_id_mz"] <= 2.2)
+        & (df["pathways_number_final"] >= 10)
+        & (df["mz_mapped_to_pathways"] >= 10)
+    ].copy()
+
+    if selection == "private":
+        tmp = tmp.loc[tmp["ratio_mz_pathway_count"] >= 1].copy()
+
+    good_samples = tmp["sample_name"].unique()
+    print("good tissues:\n", good_samples)
+    return good_samples
+
+# ---------------------------------------------------------------------
+# plotting
+# ---------------------------------------------------------------------
+
+def bubble_plot(
+    df_bg: pd.DataFrame,
+    df_fg: pd.DataFrame,
+    size_bg: Tuple[float, float],
+    size_fg: Tuple[float, float],
+    fig_size: Tuple[float, float],
+    color_fg: str,
+    out_path: Path,
 ) -> None:
+
     sns.set_context("paper", font_scale=1.5)
     sns.set_style("whitegrid")
-    plt.figure(figsize=(fig_width, fig_height))
-    ax = sns.scatterplot(df_pl, x="database", y="sample_name", size="amount",
-                         lw=0.4, sizes=size_range_markers1,
-                         # sizes=(200, 1000),
-                         color="silver", alpha=0.5,
-                         edgecolors="black")
-    ax.grid(color='grey', linestyle='--', alpha=0.7, zorder=1)
-    sns.scatterplot(df_pl2, ax=ax,
-                    x="database", y="sample_name", size="amount",
-                    lw=0.4, sizes=size_range_markers2,  # sizes=(15, 60),
-                    color="sandybrown", alpha=1,
-                    edgecolors="black").legend(loc="upper left", title="count",
-                                               bbox_to_anchor=(1,
-                                                               1.03))  # .02))
-    plt.margins(x=1)
-    sns.despine(fig=None, ax=None,
-                top=True, right=True, left=True, bottom=True, offset=None,
-                trim=False)
-    plt.tight_layout()
-    plt.savefig(f"../../figs/initial-ids-compounds-KEGG-{my_selection}.pdf")
-    plt.close()
 
+    plt.figure(figsize=fig_size)
 
-def bubble_plot_for_pathways(df_pl, df_pl3, size_range_markers1,
-                             size_range_markers3, out_path,
-                             fig_width, fig_height) -> None:
-    sns.set_context("paper", font_scale=1.5)
-    sns.set_style("whitegrid")
-    plt.figure(figsize=(fig_width, fig_height))
-    ax = sns.scatterplot(df_pl, x="database", y="sample_name", size="amount",
-                         lw=0.4, sizes=size_range_markers1,
-                         # sizes=(200, 1000),
-                         color="silver", alpha=0.5,
-                         edgecolors="black")
-    ax.grid(color='grey', linestyle='--', alpha=0.7, zorder=1)
-    sns.scatterplot(df_pl3, ax=ax,
-                    x="database", y="sample_name", size="amount",
-                    lw=0.4, sizes=size_range_markers3,  # sizes=(15, 60),
-                    color="darkcyan", alpha=1,
-                    edgecolors="black").legend(loc="upper left", title="count",
-                                               bbox_to_anchor=(1,
-                                                               1.03))  # .02))
+    ax = sns.scatterplot(
+        df_bg,
+        x="database",
+        y="sample_name",
+        size="amount",
+        sizes=size_bg,
+        color="silver",
+        alpha=0.5,
+        lw=0.4,
+        edgecolors="black",
+    )
+
+    ax.grid(color="grey", linestyle="--", alpha=0.7, zorder=1)
+
+    sns.scatterplot(
+        df_fg,
+        ax=ax,
+        x="database",
+        y="sample_name",
+        size="amount",
+        sizes=size_fg,
+        color=color_fg,
+        lw=0.4,
+        edgecolors="black",
+    ).legend(loc="upper left", title="count", bbox_to_anchor=(1, 1.03))
+
     plt.margins(x=1)
-    sns.despine(fig=None, ax=None,
-                top=True, right=True, left=True, bottom=True, offset=None,
-                trim=False)
+    sns.despine(top=True, right=True, left=True, bottom=True)
+
     plt.tight_layout()
     plt.savefig(out_path)
     plt.close()
 
 
-def good_samples_by_criteria(my_selection: str, df):
-    tmp = df.loc[(df['ratio_id_mz'] <= 2.2) & (
-            df['pathways_number_final'] >= 10) & (
-            df['mz_mapped_to_pathways'] >= 10),:].copy()
+def pairgrid_plot(df: pd.DataFrame) -> None:
 
-    if my_selection == 'private':   # avoid in the public cohort to keep Cerebellum tissue
-        tmp = tmp.loc[tmp['ratio_mz_pathway_count'] >= 1,:].copy()
+    sns.set_theme(style="whitegrid", font_scale=1.4)
 
-    good_samples = tmp["sample_name"].unique()
-    print("good tissues:\n", good_samples)
+    g = sns.PairGrid(
+        df,
+        x_vars=df.columns[1:5],
+        y_vars="sample_name",
+        height=10,
+        aspect=0.25,
+    )
 
-    return good_samples
+    g.map(
+        sns.stripplot,
+        data=df,
+        size=10,
+        orient="h",
+        jitter=False,
+        hue="PType",
+        palette="cividis",
+        linewidth=0.7,
+        edgecolor="black",
+    )
 
+    g.add_legend()
 
-## start
-##  note: this script is a fast draft, more files loading at lines
+    titles = [
+        "IDs per m/z",
+        "m/z mapped to pathways",
+        "pathways count",
+        "m/z count per pathway",
+    ]
 
-###  dot plots (as PairGrid) comparing KEGG and WIKIPATHWAYS
+    for ax, title in zip(g.axes.flat, titles):
+        ax.set(title=title)
+        ax.xaxis.grid(True)
+        ax.yaxis.grid(True)
 
-my_selection = "public"   #  private
-min_pathway_size = 2
-print("dot plots (as PairGrid) comparing KEGG and WIKIPATHWAYS")
-
-if my_selection == "public":
-    my_height = 9
-    my_width = 5.7
-else:
-    my_height = 3.3
-    my_width = 5.3
-
-
-df = pd.read_csv(f"../../figs/crit-KEGG-compounds-counts-{my_selection}.csv", index_col=None)
-df2 = pd.read_csv(f"../../figs/crit-IDSmix-counts-psize{min_pathway_size}-{my_selection}.csv", index_col=None)
-
-df = df[['sample_name', 'ratio_keggid_mz', 'mz_mapped_to_pathways', 'pathways_number_final']]
-df2 = df2[['sample_name', 'ratio_id_mz', 'mz_mapped_to_pathways', 'pathways_number_final']]
-df = df.replace(0, np.nan)
-df.columns = ['sample_name', 'ratio_id_mz', 'mz_mapped_to_pathways', 'pathways_number_final']
-
-df['PType'] = "KEGG_pathways"
-df2['PType'] = "Wikipathways"
-
-df = pd.concat([df, df2])
-df = update_names_TD_samples(df)
-
-df["ratio_mz_pathway_count"] = (df['mz_mapped_to_pathways'].to_numpy(
-) + 0.001) / (df['pathways_number_final'].to_numpy() + 0.001)
-
-df = df[['sample_name', 'ratio_id_mz', 'mz_mapped_to_pathways',
-         'pathways_number_final', 'ratio_mz_pathway_count', 'PType']]
-
-print("excluding from the plots the low quality datasets")
-
-good_samples = good_samples_by_criteria(my_selection, df)
-
-df = df.loc[df["sample_name"].isin(good_samples), :]
-
-print(df)
-
-kk = df['sample_name'] + '&' +df['PType']
-df.index = kk
-
-#df = df.loc[order_samples,: ]
-df['data_type'] = "Lipidomics"
-df.loc[df['sample_name'].str.startswith("MALDI"), "data_type"] = "SmallMolecules"
-datasmalls = ["TD-635-1-A", "TD-hemi-635-1-B", "LP-heart-mouse-2"]
-df.loc[df['sample_name'].isin(datasmalls), "data_type"] = "SmallMolecules"
+    sns.despine(left=True, bottom=True)
+    plt.show()
 
 
-sns.set_theme(style="whitegrid",font_scale=1.4)
-#plt.figure(figsize=(60, 8))   # very difficult to set the dimensions, instead saving manually from display window
+# ---------------------------------------------------------------------
+# main workflow
+# ---------------------------------------------------------------------
 
-g = sns.PairGrid(df,
-                 x_vars=df.columns[1:5], y_vars="sample_name",
-                 height=10,
-                 aspect=.25)
+def load_criteria_tables(selection: str) -> pd.DataFrame:
 
-# Draw a dot plot using the stripplot function
-g.map(sns.stripplot, data=df,  size=10, orient="h", jitter=False,
-hue="PType",
-      palette="cividis", linewidth=0.7, edgecolor="black"
-      )
-g.add_legend()
+    df_kegg = load_csv(FIG_DIR / f"crit-KEGG-compounds-counts-{selection}.csv")
+    df_mix = load_csv(FIG_DIR / f"crit-IDSmix-counts-{selection}.csv")
 
-# Use semantically meaningful titles for the columns
-titles = ["IDs per m/z", "m/z mapped to pathways", "pathways count", "m/z count per pathway"]
+    df_kegg = df_kegg[
+        ["sample_name", "ratio_keggid_mz", "mz_mapped_to_pathways", "pathways_number_final"]
+    ]
 
-for ax, title in zip(g.axes.flat, titles):
-    # Set a different title for each axes
-    ax.set(title=title)
-    # Make the grid horizontal instead of vertical
-    ax.xaxis.grid(True)
-    ax.yaxis.grid(True)
+    df_mix = df_mix[
+        ["sample_name", "ratio_id_mz", "mz_mapped_to_pathways", "pathways_number_final"]
+    ]
 
-sns.despine(left=True, bottom=True)
-#plt.savefig("../plot_wiki_vs_kegg.pdf")
-plt.show()
+    df_kegg.columns = [
+        "sample_name",
+        "ratio_id_mz",
+        "mz_mapped_to_pathways",
+        "pathways_number_final",
+    ]
 
+    df_kegg["PType"] = "KEGG_pathways"
+    df_mix["PType"] = "Wikipathways"
 
-## === bubble plots
+    df = pd.concat([df_kegg, df_mix])
 
-df = pd.read_csv(f"../../figs/initial-ids-pathways-KEGG-{my_selection}.csv")  # open file
-df = df.replace(0, np.nan)
+    df["ratio_mz_pathway_count"] = (
+        df["mz_mapped_to_pathways"] + 0.001
+    ) / (df["pathways_number_final"] + 0.001)
 
-df = update_names_TD_samples(df)
-df = df.loc[df["sample_name"].isin(good_samples), :]
-
-
-### bubble plots of the translation of all types of identifiers to KEGG compounds ids
-
-print("bubble plots of the translation of all types of identifiers to KEGG compounds ids")
-df_pl = transform2plot_v2(df, mode="all")
-size_range_markers1 = (df_pl['amount'].min() / 10,
-                       df_pl['amount'].max() / 10)
-
-df_pl2 = transform2plot_v2(df, mode="ids")
-size_range_markers2 = (df_pl2['amount'].min() / 10,
-                       df_pl2['amount'].max() / 10)
-
-bubble_plot_kegg_metabolite_id_conversion_success(df_pl, df_pl2,
-                                                  size_range_markers1,
-                                                  size_range_markers2,
-                                                  fig_width=my_width,
-                                                  fig_height=my_height)
-
-###  bubble plots of the final mapping of all types of identifiers to KEGG pathways
-
-print("bubble plots of the final mapping of all types of identifiers to KEGG pathways")
-df_pl3 = transform2plot_v2(df, mode="pathways")
-size_range_markers3 = (df_pl3['amount'].min() / 10, df_pl3['amount'].max() / 10)
-bubble_plot_for_pathways(df_pl, df_pl3, size_range_markers1,
-                         size_range_markers3,
-                         f"../../figs/initial-ids-pathways-KEGG-{my_selection}.pdf",
-                         fig_width=my_width,
-                         fig_height=my_height)
+    return df[["sample_name", "ratio_id_mz",
+            "mz_mapped_to_pathways",  "pathways_number_final",
+            "ratio_mz_pathway_count", "PType"]]
 
 
-### WIKIPATHWAYS bubble plots
-df = pd.read_csv(f"../../figs/initial-IDSmix-pathways-psize1-{my_selection}.csv")  # open file
-df = df.replace(0, np.nan)
-print(df.columns)
-df = update_names_TD_samples(df)
+def main(selection: str, only_passing_qc: bool) -> None:
 
-df = df.loc[df["sample_name"].isin(good_samples), :]   # exclude bad_samples
-df = update_names_TD_samples(df)
+    fig_size = (5.7, 9) if selection == "public" else (5.3, 3.3)
 
-df_pl = transform2plot_v2(df, mode="identifiers")
-size_range_markers1 = (df_pl['amount'].min() / 10, df_pl['amount'].max() / 10)
-print(df_pl.head(10))
-print(df_pl['amount'].min())
+    df = load_criteria_tables(selection)
 
-df_pl2 = transform2plot_v2(df, mode="pathways")
-size_range_markers2 = (df_pl2['amount'].min() / 10, df_pl2['amount'].max() / 10)
+    if only_passing_qc:
+        good_samples = compute_good_samples(selection, df)
+    else:
+        good_samples = df['sample_name'].tolist()   # all if not QC filter
 
-bubble_plot_for_pathways(df_pl, df_pl2, size_range_markers1,
-                         size_range_markers2,
-                         f"../../figs/initial-ids-pws-WIKIPATHWAYS-{my_selection}.pdf",
-                         fig_width=my_width,
-                         fig_height=my_height)
+    df = df.loc[df["sample_name"].isin(good_samples)]
+
+    df.index = df["sample_name"] + "&" + df["PType"]
+
+    pairgrid_plot(df)
+
+    # KEGG bubble plots
+    df_kegg = load_csv(FIG_DIR / f"mapp-ids-pathways-KEGG-{selection}.csv")
+    df_kegg = df_kegg.loc[df_kegg["sample_name"].isin(good_samples)]
+
+    df_pl = transform_to_plot(df_kegg, "all")
+    df_pl2 = transform_to_plot(df_kegg, "ids")
+    df_pl3 = transform_to_plot(df_kegg, "pathways")
+
+    bubble_plot(
+        df_pl,
+        df_pl2,
+        compute_marker_size_range(df_pl),
+        compute_marker_size_range(df_pl2),
+        fig_size,
+        "sandybrown",
+        FIG_DIR / f"mapp-ids-compounds-KEGG-{selection}.pdf",
+    )
+
+    bubble_plot(
+        df_pl,
+        df_pl3,
+        compute_marker_size_range(df_pl),
+        compute_marker_size_range(df_pl3),
+        fig_size,
+        "darkcyan",
+        FIG_DIR / f"mapp-ids-pathways-KEGG-{selection}.pdf",
+    )
+
+    # Wikipathways
+    df_wp = load_csv(FIG_DIR / f"mapp-IDSmix-pathways-{selection}.csv")
+    df_wp = df_wp.loc[df_wp["sample_name"].isin(good_samples)]
+
+    df_pl = transform_to_plot(df_wp, "identifiers")
+    df_pl2 = transform_to_plot(df_wp, "pathways")
+
+    bubble_plot(
+        df_pl,
+        df_pl2,
+        compute_marker_size_range(df_pl),
+        compute_marker_size_range(df_pl2),
+        fig_size,
+        "darkcyan",
+        FIG_DIR / f"mapp-ids-pws-WIKIPATHWAYS-{selection}.pdf",
+    )
+
+    print("done")
 
 
-
-print("done")
-
-
-# ancient chunk
-#df = df.loc[df['ratio_id_mz'] <= 2.2, : ].copy()
-#df = df.loc[df['pathways_number_final'] >= 5, :].copy()
-#df = df.loc[df['ratio_mz_pathway_count'] >=0.7,: ].copy()
-#df = df.loc[df['mz_mapped_to_pathways'] >= 5,: ].copy()
-
-# ancient chunk latest
-# bad_samples = df.loc[(df['ratio_id_mz'] > 2.2) | (
-#    df['pathways_number_final'] < 10) | (df['mz_mapped_to_pathways'] < 10) , "sample_name" ].unique()
+if __name__ == "__main__":
+    main(selection="private",  # set as "private" as needed
+         only_passing_qc=True)

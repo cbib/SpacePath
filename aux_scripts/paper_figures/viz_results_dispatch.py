@@ -13,8 +13,11 @@ from src.single_slice_helpers import join_scores_adatas
 from src.process_single_slice import (join_clean_annotations_from_dict,
                                       safe_load_data_and_clean_annotations
                                       )
-from viz_results_helpers import run_alluvial_plot, run_individual_mz_scatters, run_individual_tabular_plots
-
+from viz_results_helpers import (run_alluvial_plot,
+                                 run_individual_mz_scatters,
+                                 run_individual_tabular_plots
+                                 )
+from viz_constants import alluvial_n_to_display_dict as n_for_alluvial
 
 from src.dispatch_tissues_slices import extract_params_per_dataset
 
@@ -67,6 +70,7 @@ def run_visualization(clustering_parameters,
                       figures_centralized_folder, sets_relevant_n_limit,
                       mz_spatially_relevant_n_limit,
                       mode):
+
     subfolder = SAMPLE
     print("\n", SAMPLE)
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
@@ -149,7 +153,7 @@ def run_visualization(clustering_parameters,
 
     print("unique mzs that passed significance filters AND MAPPED AND good Moran:")
     print(len(diff_mz_relevant['mz'].unique().tolist()))
-    ##                  do sankey diagrams of cluster and pathways and mz
+    # sankey diagrams of cluster and pathways and mz
     try:
         run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
                       figures_centralized_folder, subfolder)
@@ -176,7 +180,7 @@ def run_visualization(clustering_parameters,
          )
     except Exception as e:
         print(e, "failed run tabular plots")
-    # DONE: in a distinct funcs    ##  mission: >>>>>> plot the top mz plots alone
+
 
 
 # use all above
@@ -203,12 +207,19 @@ def visualize_results_for_tissues(input_file, data_dir, figures_dir, mode=None):
          min_family_size
          ) = extract_params_per_dataset(row)
 
+        try:
+            n_max_elems = n_for_alluvial[SAMPLE]
+        except:
+            n_max_elems = 150   # default if not defined in 'constants.py'
+
+
         run_visualization(clustering_parameters,
                           pathways_types, min_pathway_size, cutoff_tree,
                           min_family_size, SAMPLE,
                           data_centralized_folder,
-                          figures_centralized_folder, sets_relevant_n_limit=100,
-                          mz_spatially_relevant_n_limit=100,  # todo : chekc if augmenting it is ok or not
+                          figures_centralized_folder,
+                          sets_relevant_n_limit=n_max_elems,
+                          mz_spatially_relevant_n_limit=n_max_elems,
                           mode=None)
 
 
