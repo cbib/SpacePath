@@ -3,21 +3,17 @@
 import os
 import logging
 import numpy as np
-from typing import List, Dict, Literal, Optional, Set, Tuple, Union
+from typing import List, Dict,  Tuple, Union
 
 import pandas as pd
 import anndata as ad
-from mypy.types import AnyType
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
-from pydantic import Extra
 
 from pathlib import Path
 
 from rdkit import DataStructs
-from rdkit import Chem
-from rdkit.Chem import AllChem
 
 from scipy.sparse import csr_matrix
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
@@ -130,7 +126,6 @@ class ClassifyMZProtocol:
     config: ClassifyMZProtocolConfig
     @staticmethod
     def run(adata_mz: ad.AnnData, annotations_obj: MetabolomeAnnotations,
-
             SAMPLE: str, plot_folder: str, config=ClassifyMZProtocolConfig()
             ) -> ad.AnnData:
         logger.info("Running %s", config.description)
@@ -220,13 +215,13 @@ class SyncPathwaysAndAnnots:
 class ComputeAssignmentsWeights:
     @staticmethod
     def run(adata_mz: ad.AnnData, clean_annotations: pd.DataFrame,
-            usable_id: str)-> Tuple[pd.DataFrame, np.array]:
+            usable_id: str)-> Tuple[pd.DataFrame, np.ndarray]:
         adata_mz = adata_mz[:, clean_annotations['mz'].astype(str).unique()].copy()
         X_df = measures_methods.compute_metabolites_probs_df(
             adata_mz, clean_annotations, usable_id)
         adataIds = measures_methods.build_identifiers_weights_df(
             adata_mz, X_df, clean_annotations, usable_id)
-        coords = adata_mz.obsm.copy()
+        coords = adata_mz.obsm['spatial'].copy()
 
         return adataIds, coords
 
@@ -240,7 +235,7 @@ class ComputePathwaysScores:
             config=ComputePathwaysScoresConfig()
             ) -> pd.DataFrame:
         logger.info("\n Will compute spot-wise Pathways Scores "
-                    "with the following config: %s", yaml.dump(config.dict()))
+                    "with the following config: %s", yaml.dump(config.model_dump()))
         if config.method == "sspa_kpca":
             logger.info(" using sspa library, credits: Wieder C et al., 2022")
         scores_df = pathways_methods.compute_pathways_scores(
@@ -261,7 +256,7 @@ class ComputeMoleculesSimilarityMatrix:
     def run(molecules_ids_list: List[str],
             config=ComputeMoleculesSimilarityMatrixConfig()
     )-> Dict[str, np.array|List[str]|List[str]]:
-        logger.info("computing similarity matrix with config %s", yaml.dump(config.dict()))
+        logger.info("computing similarity matrix with config %s", yaml.dump(config.model_dump()))
         molecules_ids_list = list(set(molecules_ids_list))
         smiles_dfs  = []
         pathways_methods.unzip_if_not_tsv(library_path, config.smiles_files)
@@ -312,7 +307,7 @@ class ComputeMoleculesFamilies:
             SAMPLE: str, subfolder: str, mydata_dir: str, plot_folder: str,
             config=ComputeMoleculesFamiliesConfig()
         ) -> Dict[str, np.ndarray|pd.DataFrame|float]:
-        logger.info("computing families of molecules, with config %s", yaml.dump(config.dict()))
+        logger.info("computing families of molecules, with config %s", yaml.dump(config.model_dump()))
         # make the hierarchical clustering reproducible
         np.random.seed(0)
 

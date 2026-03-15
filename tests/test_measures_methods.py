@@ -34,4 +34,37 @@ class Test(TestCase):
             np.array(np.around(result[3, :], 4)).flatten(
             ) == np.array([225.3017, 450.0783, 675.23])))
 
+    def test_compute_metabolite_probs(self):
+        a_mat = np.array([[100, 90, 300], [200, 45, 90], [100, 25, 81],
+                          [39, 17, 20], [13, 40, 71]])
+        obs = pd.DataFrame(
+            index=["spot1", "spot2", "spot3", "spot4", "spot5"])
+        my_mzs = ['400.55',  '577.5',  '700.33']
+        var = pd.DataFrame({'mz': my_mzs}, index=my_mzs)
+        adata_mz = ad.AnnData(X=csr_matrix(a_mat), obs=obs, var=var)
+        annots_df = pd.DataFrame({
+            "mz": np.array(['400.55', '400.55', '577.5', '700.33', '700.33']),
+            "moleculeIds": ['hmdbA', 'hmdbB', 'hmdbY', 'lmpV', 'lmpW']
+        })
+        result = pmm.compute_metabolites_probs_df(
+            adata_mz, annots_df, "moleculeIds", "mz")
+            #          hmdbA  hmdbB  hmdbY  lmpV  lmpW
+            # spot1    0.5    0.5    1.0   0.5   0.5
+            # spot2    0.5    0.5    1.0   0.5   0.5
+            # spot3    0.5    0.5    1.0   0.5   0.5
+            # spot4    0.5    0.5    1.0   0.5   0.5
+            # spot5    0.5    0.5    1.0   0.5   0.5
+        self.assertEqual(result.shape, (5, 5))
+        self.assertTrue(
+            np.all(result.loc['spot1',:].to_numpy() == np.array(
+                [0.5, 0.5, 1,0.5, 0.5 ])))
+
+
+
+
+
+
+
+
+
 

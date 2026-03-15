@@ -171,6 +171,17 @@ def custom_join_left(df1, df2, keycol: str='mz') -> Union[pd.DataFrame, None]:
         return None
 
 
+def reset_anndata_var_columns(adata_mz):
+    """resets adata.var columns if user re-runs analysis """
+    try:
+        columns_to_reset = set(adata_mz.var.columns.tolist()) - set(["mz"])
+        adata_mz.var = adata_mz.var.drop(columns=list(columns_to_reset))
+    except KeyError:
+        pass
+
+    return adata_mz
+
+
 def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
                                    mz_good_from_part_a: List[str],
                                    annotations_obj: MetabolomeAnnotations,
@@ -178,8 +189,9 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
                                    moran_padj_cutoff: float,
                                    var_sim_cutoff: float,
                                    n_neighs: int, n_perms: int
-) -> (pd.DataFrame, List[str], pd.DataFrame):
+) -> Tuple[pd.DataFrame, List[str], pd.DataFrame]:
     # prepare quality merged df
+    adata_mz = reset_anndata_var_columns(adata_mz)
     all_quality_df = adata_mz.var.copy()
     all_quality_df["mz"] = all_quality_df["mz"].astype(str).tolist()
     annotations_obj.mz_quality['mz'] = annotations_obj.mz_quality['mz'].astype(
