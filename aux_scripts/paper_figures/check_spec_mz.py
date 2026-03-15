@@ -9,10 +9,9 @@ import seaborn as sns
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from src.single_slice_helpers import join_scores_adatas
-from src.process_single_slice import (join_clean_annotations_from_files,
-                                      safe_load_data_and_clean_annotations
-                                      )
+from SpacePath.src import join_scores_adatas
+from SpacePath.src import (join_clean_annotations_from_files
+                           )
 
 
 
@@ -52,9 +51,30 @@ def print_map(diff_sets_all, data_centralized_folder, subfolder, SAMPLE, pathway
     else:
         print(mapping_info['pathway_id'].tolist())
 
-
-
     return 0
+
+def join_clean_annotations_from_files(pathways_types: List[str],
+                    SAMPLE: str, subfolder: str,
+                   data_centralized_folder: str)-> pd.DataFrame:
+    """
+    concatenates annotations for each element in pathways_types
+     (but not FAMILIES, as the annotations in this case are the same that served to 'WIKI' type of pathway)
+     in other words, concatenates KEGG and no-KEGG (that we coined 'WIKI') annotations
+    """
+    assert "FAMILIES" not in pathways_types, "Error, FAMILIES not allowed"
+    annots_dict = read_clean_annotations(SAMPLE, pathways_types,
+                                         subfolder, data_centralized_folder)
+    dfs_to_gather = list()
+    for k in annots_dict.keys():
+        if k == 'KEGG':
+            df = annots_dict[k][["KEGG", "moleculeNames", "mz"]]
+            df.columns = ["moleculeIds", "moleculeNames", "mz"]
+        elif k == 'WIKI':
+            df = annots_dict[k][["moleculeIds", "moleculeNames", "mz"]]
+        dfs_to_gather.append(df)
+
+    gathered_annotations = pd.concat(dfs_to_gather, axis=0)
+    return gathered_annotations
 
 
 if __name__ == "__main__":

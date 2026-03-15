@@ -1,7 +1,7 @@
 #########################################################################
 # Very important requirement:
 # first run the quality tagging over ions, which saves adequate .h5ad object:
-#     python3 -m SPACEPATH $input_file $data_dir $figures_dir --mode 1
+#     SpacePath $input_file $data_dir $figures_dir --mode 1
 # --
 # johaGL 2025
 #########################################################################
