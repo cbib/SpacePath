@@ -24,7 +24,7 @@ from viz_results_dispatch import visualize_results_for_tissues
 def main(input_file, data_dir, figures_dir, mode):
     """
     \b
-    Visualize the results of SPACEPATH:
+    Visualize the results of SpacePath:
        requires smpath with *holoviews* installed (pip install holoviews)
 
     \b

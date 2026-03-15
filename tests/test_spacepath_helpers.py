@@ -1,10 +1,11 @@
 from unittest import TestCase
 import pandas as pd
-from SPACEPATH.src.single_slice_helpers import (prepare_molecular_ids_df,
-                                                get_top_n_simple,
-                                                get_top_n,
-                                                differential_results_filter)
-from typing import List, Dict
+from SpacePath.src.helpers import (prepare_molecular_ids_df,
+                           get_top_n,
+                           differential_results_filter,
+                           score_as_adata,
+                           squidpy_differential_analysis)
+import anndata as ad
 import numpy as np
 
 
@@ -28,19 +29,6 @@ class Test(TestCase):
         self.assertNotIn(None, result['mz'].values)
         self.assertEqual(result.shape[0], len(result['mz'].unique()))
 
-    def test_get_top_n_simple(self):
-        data = {
-            'pvals_adj': [0.01, 0.9, 0.02, 0.01, 0.0001],
-            'abslfc': [10, 20, 15, 25, 5],
-            'cluster': ['A', 'A', 'A', 'A', 'A']
-        }
-        df = pd.DataFrame(data)
-        result = get_top_n_simple(df, 3)
-        self.assertEqual(len(result), 3)
-        self.assertEqual(result.iloc[0]['pvals_adj'],
-                         min(df['pvals_adj']))
-        sorted_pvals = sorted(df['pvals_adj'])
-        self.assertEqual(result.iloc[1]['pvals_adj'], sorted_pvals[1])
 
     def test_get_top_n(self):
         data = {
@@ -78,6 +66,41 @@ class Test(TestCase):
 
         self.assertTrue(all(abs(result['logfoldchanges']) >= 0.8))
         self.assertTrue(all(result['pvals_adj'] <= 0.05))
+
+    def test_score_as_adata(self):
+        scores_df = pd.DataFrame(data=np.array([[-2, 0, 1.4],
+                                                [0, 2, -4], [-2, 1, 0]]),
+                                 index=["x1y0", "x0y0", "x1y1"],
+                                 columns=['MolFam1', 'hsa97', 'WP99'])
+        sets_ids_df = pd.DataFrame(
+            {'pathway_id': ['hsa97', 'MolFam1', 'WP99'],
+             'pathway_name': ['fatty ac digest', 'PC(22:2)', 'oxylipins']})
+
+        pathways_piled = pd.DataFrame(
+            {'pathway_id': ['hsa97', 'MolFam1', 'WP99'],
+            'moleculeIds':  ['LM4545', 'LM1167', 'HMDB00'],
+             'mz': [888, 765, 934]})
+
+        coords = np.array(([1,0],[0,0],[1,1]))
+
+        result = score_as_adata(scores_df, sets_ids_df,
+            pathways_piled, coords)
+
+        self.assertTrue(
+            result.var.columns.tolist() == ['pathway_id', 'pathway_name'])
+        self.assertEqual(result.obsm['spatial'].shape[0], coords.shape[0])
+
+    def test_differential_analysis(self):
+        X = np.random.rand(20, 20)  # 20 cells, 20 lipids
+        obsdf = pd.DataFrame({
+            'kmeans3': np.random.choice(['cluster1', 'cluster2'], size=20)
+        })
+        adata = ad.AnnData(X=X, obs=obsdf)
+        result = squidpy_differential_analysis(
+            adata, group_str='kmeans3')
+
+        self.assertIsInstance(result, pd.DataFrame)
+        self.assertGreater(len(result), 0)
 
 
 

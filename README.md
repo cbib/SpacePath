@@ -1,33 +1,33 @@
  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
  
-SPACEPATH
+SpacePath
 ===
 A pathway-guided framework for deep exploration of Spatial Metabolomics and Lipidomics data
 
 
-This repository contains the code of the method SPACEPATH (Spatial omics exploration based on molecular families and metabolic pathways profiles), dedicated to the analysis of annotated Spatial Metabolomics and Lipidomics data. The code is also applicable to annotated datasets other than those included in our study.
+This repository contains the code of the method SpacePath (Spatial omics exploration based on molecular families and metabolic pathways profiles), dedicated to the analysis of annotated Spatial Metabolomics and Lipidomics data. The code is also applicable to annotated datasets other than those included in our study.
 
 # Introduction
 
-SPACEPATH is a novel bioinformatics framework designed to analyze spatial metabolomics and lipidomics in the context of metabolic pathways. It addresses challenges like compound identification ambiguities and incomplete pathway databases, enabling the mapping of metabolic processes onto tissue architecture.
+SpacePath is a novel bioinformatics framework designed to analyze spatial metabolomics and lipidomics in the context of metabolic pathways. It addresses challenges like compound identification ambiguities and incomplete pathway databases, enabling the mapping of metabolic processes onto tissue architecture.
 
-SPACEPATH's approach integrates pathway activity scores at the spatial resolution level, and investigates unmapped features with a strategy that exploits the molecular similarity between chemical entities. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping, and facilitating the interpretation of complex mass spectrometry imaging data. When applied to cancer tissues, SPACEPATH can enhance the understanding of tumor metabolism.
+SpacePath's approach integrates pathway activity scores at the spatial resolution level, and investigates unmapped features with a strategy that exploits the molecular similarity between chemical entities. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping, and facilitating the interpretation of complex mass spectrometry imaging data. When applied to cancer tissues, SpacePath can enhance the understanding of tumor metabolism.
 
 <img width="900" height="570" alt="Screenshot from 2025-07-22 15-06-39" src="https://github.com/user-attachments/assets/5a5bcc3b-d561-4ffc-b110-5fe0b40b75ca" />
 
 
-Notably, SPACEPATH was applied on a collection of different types of healthy and tumoral tissues, including glioblastoma. By integrating complex spatially resolved lipidomics data and functional sets expressed as pathways or families, the method provided valuable insights about the glioblastoma's metabolic organization, prompting a potential impact on biomarker discovery.
+Notably, SpacePath was applied on a collection of different types of healthy and tumoral tissues, including glioblastoma. By integrating complex spatially resolved lipidomics data and functional sets expressed as pathways or families, the method provided valuable insights about the glioblastoma's metabolic organization, prompting a potential impact on biomarker discovery.
 
 _Note_: Currently, our method supports as input data, the datasets consisting of aligned and recalibrated spectra intensities alongside their annotations, that are obtained from the [METASPACE](https://metaspace2020.org/) output. 
 
 
-# Installing SPACEPATH 
+# Installing SpacePath 
 
 ## System Requirements
-Running SPACEPATH requires an Unix environment with [python 3.10](http://www.python.org/). 
+Running SpacePath requires an Unix environment with [python 3.10](http://www.python.org/). 
 It was tested under Linux and MacOS environments.
 
-**_Information about the method implementation_**: SPACEPATH is a Pipeline that entirely depends on the new **`smpath`** library, which is very easy to install (see how to [Install](https://github.com/cbib/smpath?tab=readme-ov-file#installing-smpath) this core library).
+**_Information about the method implementation_**: SpacePath is a Pipeline that entirely depends on the new **`smpath`** library, which is very easy to install (see how to [Install](https://github.com/cbib/smpath?tab=readme-ov-file#installing-smpath) this core library).
 
 > [!NOTE]  
 > The associated core library `smpath` offers rich functions for the pathway-based analysis of annotated spatial metabolomics data, and for exploiting unmapped features. It implements `sspa`, `rdkit`, `fastcluster`, among other powerful libraries.
@@ -37,16 +37,24 @@ It was tested under Linux and MacOS environments.
 
 The full installation process should take less than 15 minutes on a standard computer (dependencies included). 
 
-1. First **clone `SPACEPATH`** in your workspace (`git clone git@github.com:cbib/SPACEPATH.git`) 
+1. First **clone `SpacePath`** in your workspace (`git clone git@github.com:cbib/SpacePath.git`) 
 2. also **clone `smpath`** in your workspace (`git clone git@github.com:cbib/smpath.git`)
 3. activate your virtual environment with poetry installed (visit [link](https://github.com/cbib/smpath)); 
-4. run:
+   - complete the environment:
+     ```
+     cd smpath
+     poetry install
+     pip install sspa==1.0.4
+     ```
+   _Note_: our associated core library `smpath` which will be soon be packaged 
+into PyPI to be installable via `pip` and the instructions will be easier very soon. 
+
+4. finally run:
 ```
-cd smpath
+cd $HOME/SpacePath   # adapt to your location
 poetry install
-pip install sspa==1.0.4
 ```
-_Note_: the associated core library `smpath` which will be soon be packaged into PyPI to be installable via `pip`. 
+
 <details>
 
  <summary>Running unitary tests <sub><sup>(click to show/hide)</sup></sub>
@@ -61,15 +69,15 @@ pytest
  
 ## After the install process
 
-For subsequent use, just activate the environment (e.g. `micromamba activate smpath`) as it has all the requirements already installed for running SPACEPATH.
+For subsequent use, just activate the environment (e.g. `micromamba activate smpath`) as it has all the requirements already installed for running SpacePath.
 
-# Using SPACEPATH
+# Using SpacePath
 
 The generic command line to run the pipeline is:
 ```
-python -m SPACEPATH $input_file $data_folder $figures_folder
+SpacePath $input_file $data_folder $figures_folder
 ```
-which must be launched from the `SPACEPATH` folder
+which must be launched from the `SpacePath` folder
 
 ----
 
