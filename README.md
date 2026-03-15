@@ -8,7 +8,7 @@ A library that supports the pathway-based and molecular families exploration of 
 # Introduction
 
 The `smpath` library offers methods for the comprehensive functional-oriented analysis of annotated spatial metabolomics data.
-This is the core library of the pipeline [SPACEPATH](https://github.com/cbib/SPACEPATH/tree/main)
+This is the core library of the pipeline [SpacePath](https://github.com/cbib/SpacePath/tree/main)
 
 Moreover, when building any spatial metabolomics bioinformatic pipeline, **smpath** can be 
 easily articulated with other popular Python libraries in the spatial omics world, such as `squidpy`, `scanpy`, `anndata`.
