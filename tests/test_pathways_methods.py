@@ -1,8 +1,9 @@
-from unittest import TestCase
 from typing import Dict, List
+from unittest import TestCase
+
 import numpy as np
 import pandas as pd
-# import anndata as ad
+
 import src.smpath.helpers as helpers
 import src.smpath.processing.pathways_methods as pathways_methods
 
@@ -63,7 +64,7 @@ class Test(TestCase):
     def test_compute_pathways_scores(self):
         metabolites_computed_w = pd.DataFrame(
             data=np.array([[600, 6477, 4545, 1e4],
-                          [1e4, 23423, 7000, 1e3],
+                           [1e4, 23423, 7000, 1e3],
                            [1e3, 95345, 1e4, 4353]]),
             columns=["lipid1", "lipid2", "lipid3", "lipid4"],
             index=["spotA", "spotB", "spotC"])
@@ -71,18 +72,22 @@ class Test(TestCase):
                      'Set3': ["lipid2", "lipid4", "lipid3"], 'Set4': ["lip9"]}
 
         result = pathways_methods.compute_pathways_scores(sets_dict,
-             metabolites_computed_w, method='sspa_kpca', min_entity=2,
-            n_groups_of_spots=30, threshold_n_spots_is_high=1000
-        )
+                                                          metabolites_computed_w,
+                                                          method='sspa_kpca',
+                                                          min_entity=2,
+                                                          n_groups_of_spots=30,
+                                                          threshold_n_spots_is_high=1000
+                                                          )
         result = result.round(4)
         self.assertListEqual(result.columns.tolist(),
                              ['Set1', 'Set3'])
         self.assertTrue(np.all(
-            result.loc['spotA',:].to_numpy() == np.array([-0.4661, 0.8059]))
+            result.loc['spotA', :].to_numpy() == np.array([-0.4661, 0.8059]))
         )
         self.assertTrue(np.all(
             result.loc['spotB', :].to_numpy() == np.array([0.8787, -0.3404])),
         )
         self.assertTrue(np.all(
-            result.loc['spotC', :].to_numpy() == np.array([-0.4126, -0.4654])),
+            result.loc['spotC', :].to_numpy() == np.array(
+                [-0.4126, -0.4654])),
         )

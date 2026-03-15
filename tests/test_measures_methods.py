@@ -1,10 +1,10 @@
 from unittest import TestCase
-from typing import Dict, List
+
+import anndata as ad
 import numpy as np
 import pandas as pd
-import anndata as ad
 from scipy.sparse import csr_matrix
-import src.smpath.helpers as helpers
+
 import src.smpath.processing.measures_methods as pmm
 
 
@@ -15,15 +15,13 @@ class Test(TestCase):
              [200.2, 500.7, 800.5],
              [0., 0., 0.],
              [300.4, 600.1, 900.3]]))
-        spots_names = ["s1", "s2", "s3", "s4"]
-        features_names = [84.66, 88.31, 150.55]
 
         result = pmm.tic_normalization(intensities_matrix)
         result = result.toarray()  # yes this method is correct, test ok
 
         self.assertTrue(np.all(
             np.array(np.around(result[0, :], 4)).flatten(
-                     ) == np.array([112.8906, 450.2023, 787.1431])))
+            ) == np.array([112.8906, 450.2023, 787.1431])))
         self.assertTrue(np.all(
             np.array(np.around(result[1, :], 4)).flatten(
             ) == np.array([180.0734, 450.3634, 720.0237])))
@@ -39,7 +37,7 @@ class Test(TestCase):
                           [39, 17, 20], [13, 40, 71]])
         obs = pd.DataFrame(
             index=["spot1", "spot2", "spot3", "spot4", "spot5"])
-        my_mzs = ['400.55',  '577.5',  '700.33']
+        my_mzs = ['400.55', '577.5', '700.33']
         var = pd.DataFrame({'mz': my_mzs}, index=my_mzs)
         adata_mz = ad.AnnData(X=csr_matrix(a_mat), obs=obs, var=var)
         annots_df = pd.DataFrame({
@@ -48,23 +46,13 @@ class Test(TestCase):
         })
         result = pmm.compute_metabolites_probs_df(
             adata_mz, annots_df, "moleculeIds", "mz")
-            #          hmdbA  hmdbB  hmdbY  lmpV  lmpW
-            # spot1    0.5    0.5    1.0   0.5   0.5
-            # spot2    0.5    0.5    1.0   0.5   0.5
-            # spot3    0.5    0.5    1.0   0.5   0.5
-            # spot4    0.5    0.5    1.0   0.5   0.5
-            # spot5    0.5    0.5    1.0   0.5   0.5
+        #          hmdbA  hmdbB  hmdbY  lmpV  lmpW
+        # spot1    0.5    0.5    1.0   0.5   0.5
+        # spot2    0.5    0.5    1.0   0.5   0.5
+        # spot3    0.5    0.5    1.0   0.5   0.5
+        # spot4    0.5    0.5    1.0   0.5   0.5
+        # spot5    0.5    0.5    1.0   0.5   0.5
         self.assertEqual(result.shape, (5, 5))
         self.assertTrue(
-            np.all(result.loc['spot1',:].to_numpy() == np.array(
-                [0.5, 0.5, 1,0.5, 0.5 ])))
-
-
-
-
-
-
-
-
-
-
+            np.all(result.loc['spot1', :].to_numpy() == np.array(
+                [0.5, 0.5, 1, 0.5, 0.5])))

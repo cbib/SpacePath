@@ -1,14 +1,15 @@
-from unittest import TestCase
-from typing import List, Dict
-import src.smpath.helpers as helpers
-
-import pandas as pd
-import numpy as np
-
 from pathlib import Path
+from typing import List
+from unittest import TestCase
+
+import numpy as np
+import pandas as pd
+
+import src.smpath.helpers as helpers
 
 module_path = Path(__file__).resolve()
 library_path = module_path.parent.parent
+
 
 class Test(TestCase):
 
@@ -106,7 +107,7 @@ class Test(TestCase):
         })
         result = helpers.pathways_and_annots_join(pws_piled, my_annotations,
                                                   mol_id_in_pws="KEGG")
-        # result : 
+        # result:
         #    pathway_id    KEGG      mz
         #    one        C00232    102.0317
         #    one        C09090    588.5665543
@@ -132,7 +133,6 @@ class Test(TestCase):
     def test_generate_coordinates_arr(self):
         coords_l: List[str] = ['x4_y1', 'x4_y2', 'x5_y3', 'x6_y8', 'x6_y9']
         result = helpers.generate_coordinates_arr(coords_l)
-        uf = result[:, 0]
         self.assertTrue(np.all(result[:, 0] == np.array([4, 4, 5, 6, 6])))
         self.assertTrue(np.all(result[:, 1] == np.array([1, 2, 3, 8, 9])))
 
@@ -161,10 +161,10 @@ class Test(TestCase):
 
     def test_purge_annotations(self):
         df = pd.DataFrame({
-            'moleculeIds': ["LMPK09000001", "LMPK09000036", "HMDB0014659" ,
+            'moleculeIds': ["LMPK09000001", "LMPK09000036", "HMDB0014659",
                             "HMDB0029611", "LMPK12010439", "LMFA01010018"],
-            'moleculeNames' : ["Monensin A", "Aureothin", "Albendazole",
-                               "Asparagusic acid", "Rosacyanin B", "Stearate"]
+            'moleculeNames': ["Monensin A", "Aureothin", "Albendazole",
+                              "Asparagusic acid", "Rosacyanin B", "Stearate"]
         })
         df = helpers.purge_annotations(df, discard_pharmaceuticals=True,
                                        discard_plant_compounds=True,
