@@ -58,6 +58,7 @@ def plot_spots(adata_mz, plot_out_path,
 
 def show_message(message)-> None:
     logger.info(message)
+    print(message)
 
 
 def custom_out_tissue(adata_mz, data_centralized_folder, subfolder, SAMPLE):

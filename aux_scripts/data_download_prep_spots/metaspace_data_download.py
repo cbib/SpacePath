@@ -62,7 +62,7 @@ def run_data_download(datasets_parameters_df, out_dir)-> None:
             show_message(f"Saved: {expected_out_file}")
             del out_df
         else:
-            show_message(f"{expected_out_file} exists, nothing to do")
+            show_message(f"Data already present!\n >> {expected_out_file}")
 
 
 if __name__ == "__main__":

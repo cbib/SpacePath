@@ -1,39 +1,23 @@
-
-import sys
 import os
+from typing import Dict
 import warnings
-from pathlib import Path
-import anndata as ad
 
-#__path__ = __import__('../../src').extend_path(__path__, __name__)
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))
+from SpacePath.api import (join_scores_adatas,
+                           safe_load_data_and_clean_annotations
+                           )
 
-from src.single_slice_helpers import join_scores_adatas
-from src.process_single_slice import (join_clean_annotations_from_dict,
-                                      safe_load_data_and_clean_annotations
-                                      )
 from viz_results_helpers import (run_alluvial_plot,
                                  run_individual_mz_scatters,
                                  run_individual_tabular_plots
                                  )
 from viz_constants import alluvial_n_to_display_dict as n_for_alluvial
 
-from src.dispatch_tissues_slices import extract_params_per_dataset
-
 warnings.simplefilter('ignore',category=FutureWarning)
 
 
 import numpy as np
 import pandas as pd
-
-import squidpy as sq
-from matplotlib.axes import Axes
-from typing import Union
-
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-
 
 np.random.seed(42)  # important to make the computations be reproducible
 
@@ -61,6 +45,27 @@ def filter_sets_per_cluster_for_plot(diff_copy_df, cluster_to_check,
 
     return diff_copy_df
 
+
+def join_clean_annotations_from_dict(annots_dict: Dict[str,pd.DataFrame],
+                )-> pd.DataFrame:
+    """
+    concatenates annotations for each element in pathways_types
+     (but not FAMILIES, as the annotations in this case are the same that served to 'WIKI' type of pathway)
+     in other words, concatenates KEGG and no-KEGG (that we coined 'WIKI') annotations
+    """
+
+    dfs_to_gather = list()
+    for k in annots_dict.keys():
+        if k == 'KEGG':
+            df = annots_dict[k][["KEGG", "moleculeNames", "mz"]]
+            df.columns = ["moleculeIds", "moleculeNames", "mz"]
+        elif k == 'WIKI':
+            df = annots_dict[k][["moleculeIds", "moleculeNames", "mz"]]
+        dfs_to_gather.append(df)
+
+    gathered_annotations = pd.concat(dfs_to_gather, axis=0)
+
+    return gathered_annotations
 
 
 def run_visualization(clustering_parameters,
@@ -103,10 +108,6 @@ def run_visualization(clustering_parameters,
                           f'{SAMPLE}-top-differential-mzs.tsv'),
                           sep='\t', header=0)
     pathways_types__for_annots = list(set(pathways_types) - {"FAMILIES"})
-
-    #concatenated_clean_annotations = join_clean_annotations_from_files(
-    #    pathways_types__for_annots, SAMPLE, subfolder, data_centralized_folder
-    #)
 
     adata_mz, annots_dict = safe_load_data_and_clean_annotations(SAMPLE,
                                          pathways_types__for_annots,
@@ -187,12 +188,15 @@ def run_visualization(clustering_parameters,
 
 def visualize_results_for_tissues(input_file, data_dir, figures_dir, mode=None):
     """
-    Assumes that SPACEPATH was already computed across the specified datasets
+    Assumes that SpacePath was already computed across the specified datasets
 
       - parses the input dataframe having the specifics of the input datasets
             for each row representing a dataset.
-      - runs the visualizations of the SPACEPATH results
+      - runs the visualizations of the SpacePath results
         """
+
+    from SpacePath.src.orchestrator import DatasetsProcessor as MultiSP
+
     data_centralized_folder = data_dir
     figures_centralized_folder = figures_dir
 
@@ -205,7 +209,7 @@ def visualize_results_for_tissues(input_file, data_dir, figures_dir, mode=None):
          moran_I_cutoff, moran_padj_cutoff, clustering_parameters,
          pathways_types, min_pathway_size, cutoff_tree,
          min_family_size
-         ) = extract_params_per_dataset(row)
+         ) =  MultiSP.extract_params_per_dataset(row)
 
         try:
             n_max_elems = n_for_alluvial[SAMPLE]

@@ -1,5 +1,4 @@
-import sys
-import os
+## entry point for the CLI
 import logging
 import click
 import warnings
@@ -13,10 +12,10 @@ import warnings
 @click.option('--mode', default="all")
 
 
-def main(input_file, data_dir, figures_dir, mode):
+def main_cli(input_file, data_dir, figures_dir, mode):
     """
     \b
-    'SPACEPATH': Spatial Metabolomics Exploration Based on Pathways and Families Profiles
+    'SpacePath': Spatial Metabolomics Exploration Based on Pathways and Families Profiles
 
     \b
     Positional arguments:
@@ -36,18 +35,25 @@ def main(input_file, data_dir, figures_dir, mode):
     click.echo(f'Data directory: {data_dir}')
     click.echo(f'Figures directory: {figures_dir}')
     click.echo(f'  --mode: {mode}')
-    # start
+
     try:
         if (input_file is not None) and (
             data_dir is not None
         ) and (figures_dir is not None):
             warnings.simplefilter('ignore', category=FutureWarning)
-            from src.dispatch_tissues_slices import process_tissues
-            process_tissues(input_file, data_dir, figures_dir, mode=mode)
+
+            # import class here to allow fast load and checks above
+            from SpacePath.src.orchestrator import DatasetsProcessor
+
+            multiple_analyses = DatasetsProcessor(
+                input_file=input_file, data_dir=data_dir,
+                figures_dir=figures_dir, mode=mode
+            )
+            multiple_analyses.process_tissues()
 
     except Exception as e:
         logging.error(e)
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    main_cli()

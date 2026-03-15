@@ -17,6 +17,6 @@ private*.tsv
 /aux_scripts/logs/
 /aux_scripts/data_download_prep_spots/logs/
 /aux_scripts/*/logs
-src/logs/
+SpacePath/src/logs/
 tests/logs
 logs
