@@ -1,21 +1,27 @@
 # johaGL
-# Get the aligned & recalibrated annotated data from Metaspace Server directly
+# Funcs to get the aligned & recalibrated annotated data from Metaspace Server
 #    which is preferred if the given raw imzML is unaligned & not-recalibrated
-import os
-from typing import List, Tuple
+# Usage only inside python scripting, in the SpacePath workflow
 
-from tqdm import tqdm
+import gc
+import logging
+from typing import Dict, List, Tuple
 
-import numpy as np
-import pandas as pd
 import anndata as ad
 
 from metaspace_converter import metaspace_to_anndata
+
+import numpy as np
+import pandas as pd
 from scipy.sparse import csr_matrix
+
 import smpath.helpers as helpers
+
 from smpath.constants import mz_decimal_places
-import gc
-import logging
+
+
+from tqdm import tqdm
+
 
 logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
@@ -28,8 +34,10 @@ def build_coord_names(df) -> List[str]:
     return list(pixels_names_l)
 
 
-def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr
-)->(set, List[pd.DataFrame], List[pd.DataFrame]):
+def adatas_to_matrices_list(
+        metaspace_registry: str,
+        api_versions: Dict[str, tuple], api_fdr: float
+) -> Tuple[set, List[pd.DataFrame], List[pd.DataFrame]]:
     matrices_dfs_list = []
     annotations_dfs_dict = {}
     all_mz_with_multiplets = list()
@@ -53,10 +61,12 @@ def adatas_to_matrices_list(metaspace_registry, api_versions, api_fdr
         all_mz_with_multiplets += list(mz_arr)
         del adata
 
-    return set(all_mz_with_multiplets), matrices_dfs_list, annotations_dfs_dict
+    return set(
+        all_mz_with_multiplets), matrices_dfs_list, annotations_dfs_dict
 
 
-def homogenize_rows_order_mx_dfs(mx_dfs) -> List[pd.DataFrame]:
+def homogenize_rows_order_mx_dfs(mx_dfs: List[pd.DataFrame]
+                                 ) -> List[pd.DataFrame]:
     matrices_dfs_list = [mx_dfs[0]]  # initialize with the first df
     ref_rownames = mx_dfs[0].index.tolist()
     for i in range(1, len(mx_dfs)):
@@ -68,20 +78,20 @@ def homogenize_rows_order_mx_dfs(mx_dfs) -> List[pd.DataFrame]:
 
 
 def yield_matrix_from_read_adatas(
-        ordered_unique_mzs, matrices_dfs_list) -> pd.DataFrame:
+        ordered_unique_mzs: List[float], matrices_dfs_list) -> pd.DataFrame:
     """yields matrix-dataframe with shape: coordinates x features"""
     united_mx_dict = {}
     spots_list = matrices_dfs_list[0].index.tolist()
     for mz in tqdm(ordered_unique_mzs):
-        if not mz in united_mx_dict.keys():
+        if mz not in united_mx_dict.keys():
             found_mz = None
             df_index = 0
             while (df_index < len(matrices_dfs_list)) and (found_mz is None):
                 try:
                     found_mz = matrices_dfs_list[df_index][mz].to_numpy()
-                    try:   # handle repeated rows if any (ok, checked)
+                    try:  # handle repeated rows if any (ok, checked)
                         if found_mz.shape[1] >= 2:
-                            found_mz = found_mz[:,0]
+                            found_mz = found_mz[:, 0]
                     except IndexError:
                         pass
                 except KeyError:
@@ -102,10 +112,13 @@ def yield_matrix_from_read_adatas(
 def get_unified_intensities_df(metaspace_registry: str, api_versions: dict,
                                api_fdr: float) -> Tuple[pd.DataFrame, dict]:
     """returns a df with shape: coordinates (rows) x features (columns)"""
-    logger.info("fetching data with metaspace-converter (T Alexandrov lab package)")
+    logger.info("fetching data with metaspace-converter "
+                "(T Alexandrov lab package)")
 
-    unique_mzs, matrices_dfs_list, annotations_dfs_dict = adatas_to_matrices_list(
-        metaspace_registry, api_versions, api_fdr)
+    (unique_mzs,
+     matrices_dfs_list,
+     annotations_dfs_dict) = adatas_to_matrices_list(metaspace_registry,
+                                                     api_versions, api_fdr)
     # note: annotations from Metaspace python API: no offSampleProb floats (instead only offSample bool)
     matrices_dfs_list = homogenize_rows_order_mx_dfs(matrices_dfs_list)
     ordered_unique_mzs = sorted(list(unique_mzs))
@@ -116,10 +129,9 @@ def get_unified_intensities_df(metaspace_registry: str, api_versions: dict,
 
 
 def save_quantifications_anndata(outdf, outfile) -> None:
-
     coordinates_arr = helpers.generate_coordinates_arr(list(outdf.index))
     out_obj = ad.AnnData(X=csr_matrix(outdf),
-                         obs=pd.DataFrame({"obs":outdf.index.tolist()},
+                         obs=pd.DataFrame({"obs": outdf.index.tolist()},
                                           index=outdf.index.tolist()),
                          var=pd.DataFrame(
                              {"mz": np.array(
@@ -127,12 +139,11 @@ def save_quantifications_anndata(outdf, outfile) -> None:
                              index=outdf.columns.tolist()
                          ),
                          obsm={"spatial": coordinates_arr})
-    out_obj.uns['spatial'] = {
-        'MY_SLICE7_NAME': {'scalefactors':
-                               {'fiducial_diameter_fullres': 100,
-                                'spot_diameter_fullres': 1,
-                                'tissue_hires_scalef': 0.5,
-                                'tissue_lowres_scalef': 0.5}}}
+    out_obj.uns['spatial'] = {'MY_SLICE7_NAME': {
+        'scalefactors': {'fiducial_diameter_fullres': 100,
+                         'spot_diameter_fullres': 1,
+                         'tissue_hires_scalef': 0.5,
+                         'tissue_lowres_scalef': 0.5}}}
     del outdf
     gc.collect()
     outfile = outfile + ".h5ad"
@@ -141,14 +152,11 @@ def save_quantifications_anndata(outdf, outfile) -> None:
 
 
 if __name__ == "__main__":
+    # for debugging with checkpoints in IDE
     metaspace_registry = "2023-10-24_17h13m08s"
     api_versions = {'HMDB': ("HMDB", "v4"),
-                   'LipidMaps': ("LipidMaps", "2017-12-12")}
+                    'LipidMaps': ("LipidMaps", "2017-12-12")}
     api_fdr = 0.5
-    out_dir = "../../../data"
-    filename = "basictest" # no extension
 
-    out_file = os.path.join(os.path.expanduser(out_dir),
-                            filename)
     out_df, annotations_dfs_dict = get_unified_intensities_df(
         metaspace_registry, api_versions, api_fdr)

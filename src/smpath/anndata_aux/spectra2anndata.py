@@ -1,47 +1,46 @@
 # johaGL 2024
+# Functions to transform imzML+ibd to anndata object
 # NOTE: requires imzML+ibd spectra already aligned & recalibrated
 #       if data is unaligned use 'matrix_from_metaspace' script
-# usage:
-#   spectra2anndata-v2.py $DATADIR $FILE_BASENAME $PREFIX $OUTDIR
-# where:
-#   $FILEBASENAME is the file name without extension
-#       Note: both files .imzML and .ibd must have same FILEBASENAME
-#   $OUTDIR is the relative path to output folder and must contain 'objects/'
-#       Note: outdir must exist and be one level below working dir
-
-# example (example data):
-#  cd $my_working_dir
-#  python spectra2anndata.py \
-#  ~/spatial_thesis/spatial_metabolomics/tutorial_publicdata/example_data \
-#  example_data ED output/objects
-
-import numpy as np
-import pandas as pd
-import anndata as ad
-import pyimzml.ImzMLParser as imzmlp
-from tqdm import tqdm
-import os
-import sys
-from scipy.sparse import csr_matrix
-from smpath.constants import mz_decimal_places
+# Usage: within in python scripting
 import gc
 import logging
+import os
+
+import anndata as ad
+
+import numpy as np
+
+import pandas as pd
+
+import pyimzml.ImzMLParser as imzmlp
+
+from scipy.sparse import csr_matrix
+
+from smpath.constants import mz_decimal_places
+
+from tqdm import tqdm
+
 logging.basicConfig(level=logging.INFO)
 
 
 def open_spectra(imzml_fn, ibd_fn):
     """"credits: pyimzml by Alexandrov team"""
     logging.info("Reading imzML + ibd files with pyimzML package.")
-    spectra_obj = imzmlp.ImzMLParser(filename=imzml_fn,
-            parse_lib=None,
-            ibd_file=open(ibd_fn, "rb"),
-            include_spectra_metadata=None)
+    spectra_obj = imzmlp.ImzMLParser(
+        filename=imzml_fn,
+        parse_lib=None,
+        ibd_file=open(ibd_fn, "rb"),
+        include_spectra_metadata=None)
     return spectra_obj
 
 
 def files2blocks(spectra_obj):
-    """returns  features (np.array) , coordinates (np.array) and intensities_df.
-    Note: intensities_df row names match perfectly -in content and order- to features list"""
+    """
+    returns  features (np.array) , coordinates (np.array) and intensities_df.
+    Note: intensities_df row names match perfectly
+    -in content and order- to features list
+    """
     mzs0, intensities = spectra_obj.getspectrum(0)
     coordinates_list = list()
     coord_str_list = list()
@@ -50,9 +49,10 @@ def files2blocks(spectra_obj):
     unwarped_data_message = ("ERROR: unaligned features (please perform data "
                              "correction and warping before using this tool)")
 
-    logging.info("Assembling intensities arrays into 2D array. Parsing %s pixels",
-          len(spectra_obj.coordinates))
-    for i in tqdm(range(0, len(spectra_obj.coordinates) )):  #
+    logging.info(
+        "Assembling intensities arrays into 2D array. Parsing %s pixels",
+        len(spectra_obj.coordinates))
+    for i in tqdm(range(0, len(spectra_obj.coordinates))):  #
         mzs, intensities = spectra_obj.getspectrum(i)
 
         assert len(np.array(mzs)) == len(np.array(mzs0)), (
@@ -61,7 +61,8 @@ def files2blocks(spectra_obj):
             unwarped_data_message)
 
         try:
-            if (intensities.shape[0] > 1) and (intensities.shape[1] == len(mzs)):
+            if (intensities.shape[0] > 1) and (
+                    intensities.shape[1] == len(mzs)):
                 intensities = intensities[0]
         except IndexError:
             pass
@@ -70,17 +71,16 @@ def files2blocks(spectra_obj):
             f'x{spectra_obj.coordinates[i][0]}_y{spectra_obj.coordinates[i][1]}')
         coordinates_list.append([spectra_obj.coordinates[i][0],
                                  spectra_obj.coordinates[i][1]])
-        intensities_list.append(intensities) 
-        # intensities_mx = np.vstack((intensities_mx, intensities))  # bad because makes multiple recomputation+realocation in memory of size-changing matrix
+        intensities_list.append(intensities)
     # end for
     intensities_mx = np.array(intensities_list)
     intensities_df = pd.DataFrame(intensities_mx.T)
     del intensities_mx
     features = np.around(np.array(mzs, dtype=float),
-              decimals=mz_decimal_places)
+                         decimals=mz_decimal_places)
     intensities_df.index = list(features)
     intensities_df.columns = coord_str_list
-           
+
     return np.array(coordinates_list), features, intensities_df
 
 
@@ -91,14 +91,11 @@ def load_run(data_dir, base_filename, output_dir):
     ibd_fn = os.path.join(data_dir, f"{base_filename}.ibd")
 
     spectra = open_spectra(imzml_fn, ibd_fn)
-    coordinates_arr, features, intensities_df = files2blocks(
-        spectra
-    )
+    coordinates_arr, features, intensities_df = files2blocks(spectra)
 
     del spectra
     gc.collect()
-
-    adata = ad.AnnData(X = csr_matrix(intensities_df.T),
+    adata = ad.AnnData(X=csr_matrix(intensities_df.T),
                        obs=pd.DataFrame(
                            {"obs": intensities_df.columns.tolist()},
                            index=intensities_df.columns.tolist()),
@@ -106,7 +103,8 @@ def load_run(data_dir, base_filename, output_dir):
                            {"mz": features},
                            index=features
                        ),
-                       obsm={"spatial": coordinates_arr} )
+                       obsm={"spatial": coordinates_arr})
+
     del intensities_df
     gc.collect()
     adata.uns['spatial'] = {
@@ -122,10 +120,7 @@ def load_run(data_dir, base_filename, output_dir):
 
 
 if __name__ == "__main__":
-    logging.info("Converts imz+ibd files into anndata object, and saves it to file")
-
-
-    load_run(data_dir=sys.argv[1], base_filename=sys.argv[2],
-              output_dir=sys.argv[3])
-
-    #load_run("rawdata/MYSAMPLE", "MYSAMPLE", "data/MYSAMPLE")
+    # only for debugging with checkpoints in IDE
+    load_run("rawdata/MY-DEMO-SAMPLE",
+             "MY-DEMO-SAMPLE",
+             "data/MY-DEMO-SAMPLE")
