@@ -60,23 +60,16 @@ micromamba create -f smpath_env.yaml
 
 </details>
 
-After activating your virtual environment, **clone this repository**, locate yourself within (`cd smpath`) and run
-```
-poetry install
-```
-and install the external library `sspa`:
-```
-pip install sspa==1.0.4`
-```
-
-To sum up, the installation commands in the appropriate order are:
+Currently `smpath` is installable from this GitHub `git clone git@github.com:cbib/smpath.git`.
+The installation commands in the appropriate order are:
 
 ```commandline
-conda activate smpath  # or `source smpath/bin/activate` if venv
+conda activate smpath  # or `source smpath/bin/activate` if venv, to activate the environment
 cd smpath
 poetry install   # installs this library
 pip install sspa==1.0.4    # required external library 
 ```
+
 
 ## After installation
 
