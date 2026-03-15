@@ -11,7 +11,7 @@ The `smpath` library offers methods for the comprehensive functional-oriented an
 This is the core library of the pipeline [SpacePath](https://github.com/cbib/SpacePath/tree/main)
 
 Moreover, when building any spatial metabolomics bioinformatic pipeline, **smpath** can be 
-easily articulated with other popular Python libraries in the spatial omics world, such as `squidpy`, `scanpy`, `anndata`.
+easily articulated with other popular Python libraries in the _spatial omics_ world, such as `squidpy`, `scanpy`, `anndata` and more 
 💡
 
 **What is inside?**
@@ -48,13 +48,12 @@ python3 -m venv smpath
 source smpath/bin/activate  # activate
 pip install poetry==2.1.3
 ```
-* with conda, miniconda, micromamba or mamba (command examples below use micromamba):
+* alternatiely, with conda, miniconda, micromamba or mamba (command examples below use micromamba):
   
-Use the following command:
 ```
 micromamba create -n smpath python=3.10.18 -c conda-forge poetry==2.1.3
 ```
-Or use the provided .yaml file that is located at <code>smpath/tools/smpath_env.yaml</code> :
+* or use the provided .yaml file that is located at <code>smpath/tools/smpath_env.yaml</code> :
 ```
 micromamba create -f smpath_env.yaml  
 ```
