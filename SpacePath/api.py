@@ -123,7 +123,7 @@ def compute_families_scores(min_family_size,
 
 def compute_molecules_families(cutoff_tree, SAMPLE, subfolder,
                                data_centralized_folder, plot_folder) -> None:
-    np.random.seed(0)
+    np.random.seed(42)
     top_differential_mzs = pd.read_csv(
         os.path.join(data_centralized_folder, subfolder,
                      f'{SAMPLE}-top-differential-mzs.tsv'), sep='\t',
@@ -264,7 +264,7 @@ def compute_clustering_of_spots(
     sc.tl.pca(datacopy, svd_solver="arpack")
     if clustering_parameters['choice'] == "kmeans":
         user_k = int(clustering_parameters['numeric_parameter'])
-        kmeans = KMeans(n_clusters=user_k, random_state=0).fit(
+        kmeans = KMeans(n_clusters=user_k, random_state=42).fit(
             datacopy.obsm['X_pca'])
         the_labels_str_l = kmeans.labels_.astype(str)
     elif clustering_parameters['choice'] == "leiden_sg":

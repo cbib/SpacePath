@@ -55,7 +55,7 @@ def run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
     """
     # do a 'source' 'target' dataframe with all the types of information
     # for cluster,Pathway edges, depending on logfc: up 1, down 0
-    np.random.seed(0)
+    np.random.seed(42)
     truncation_pw_name = 50
 
     delim_merged_pw_name = "  "
