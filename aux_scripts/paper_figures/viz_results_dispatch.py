@@ -1,3 +1,4 @@
+import gc
 import os
 from typing import Dict
 import warnings
@@ -225,6 +226,7 @@ def visualize_results_for_tissues(input_file, data_dir, figures_dir, mode=None):
                           sets_relevant_n_limit=n_max_elems,
                           mz_spatially_relevant_n_limit=n_max_elems,
                           mode=None)
+        gc.collect()
 
 
 # if __name__ == "__main__":

@@ -1,7 +1,7 @@
 # Orchestration of operations for the CLI interface
 # This also demonstrates how to use the SpacePath Workflow as an API
 # johaGL 2026
-
+import gc
 import warnings
 
 warnings.simplefilter('ignore', category=FutureWarning)
@@ -243,3 +243,5 @@ class DatasetsProcessor:
                 self.data_dir, self.figures_dir, self.mode
             )
             analysis_one_tissue.run()
+
+            gc.collect()
