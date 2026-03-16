@@ -80,7 +80,7 @@ def unzip_if_not_tsv(library_path, smiles_files) -> None:
 def spots_groups_by_random_choice(spots_names: List[str],
                                   n_groups: int = 4) -> Dict[int, List[str]]:
     """randomly assort the spots into n_groups, without resampling"""
-    np.random.seed(0)
+    np.random.seed(42)
     seen_list = []
     n_spots_by_group = int(len(spots_names) / n_groups)
     residual_n = len(spots_names) % n_groups

@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from datetime import datetime
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd

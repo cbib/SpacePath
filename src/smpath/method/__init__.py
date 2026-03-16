@@ -327,7 +327,7 @@ class ComputeMoleculesFamilies:
         logger.info("computing families of molecules, with config %s",
                     yaml.dump(config.model_dump()))
         # make the hierarchical clustering reproducible
-        np.random.seed(0)
+        np.random.seed(42)
 
         distance_matrix = 1 - mol_similarities_result['array']
         # squareform saves memory by representing the matrix with the upper right triangle
