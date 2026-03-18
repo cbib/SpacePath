@@ -66,7 +66,7 @@ class Test(TestCase):
             ['pathway-one', 'pathway-two', 'pathway-three'],
             result.iloc[:, 1].tolist())
 
-    def test_purge_pathways(self):  #
+    def test_purge_pathways(self):
         data = [
             ['IDpath1', 'Fatty Oxidation', 'm1', 'm3', 'm4', 'm6', np.nan],
             ['IDpath2', 'Meiosis', 'm2', 'm3', np.nan, np.nan, np.nan],

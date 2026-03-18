@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
 import anndata as ad
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -145,11 +146,14 @@ class ClassifyMZProtocol:
         logger.info(
             f"  a total of %s ions pass MSM, offSample and FDR cutoffs.",
             len(set(mz_good_from_part_a)))
-        text_notice = f"valid $m/z$\n n = {len(mz_good_from_part_a)}"
-        sviz.plot_mz_given_quality_metrics(annotations_obj.mz_quality, SAMPLE,
-                                           plot_folder, config.msm_cutoff,
-                                           config.offSample_cutoff,
-                                           text_notice)
+
+        metr_fig = sviz.plot_mz_given_quality_metrics(
+            annotations_obj.mz_quality, SAMPLE, config.msm_cutoff,
+            config.offSample_cutoff,
+            text_notice=f"valid $m/z$\n n = {len(mz_good_from_part_a)}"
+        )
+        plt.savefig(os.path.join(plot_folder, f"{SAMPLE}-msm_&_out.pdf"))
+        plt.close()
         logger.info("  saved plot (MSM, offSample, FDR) to %s", plot_folder)
         adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(
             mz_good_from_part_a)
@@ -164,6 +168,7 @@ class ClassifyMZProtocol:
                     config.moran_I_cutoff, config.moran_padj_cutoff)
         logger.info(
             "  metrics are only computed for the ions that passed the 'Part a'.")
+
         all_quality_df, mz_good_part_b, moran_mz_df = measures_methods.part_b__mz_quality_by_autocorr(
             adata_mz, mz_good_from_part_a, annotations_obj,
             config.moran_I_cutoff, config.moran_padj_cutoff,
@@ -171,11 +176,13 @@ class ClassifyMZProtocol:
             config.n_neighs_for_graph,
             config.n_perms_moran_calc)
 
-        text_notice = f"valid $m/z$: n = {len(mz_good_part_b)}"
-        sviz.plot__moran_info(moran_mz_df, plot_folder,
-                              SAMPLE,
-                              text_notice, config.moran_I_cutoff,
-                              config.moran_padj_cutoff)
+        mor_fig = sviz.plot__moran_info(
+            moran_mz_df, SAMPLE, moran_I_cutoff=config.moran_I_cutoff,
+            moran_padj_cutoff=config.moran_padj_cutoff,
+            text_notice=f"valid $m/z$: n = {len(mz_good_part_b)}",
+        )
+        plt.savefig(os.path.join(plot_folder, f"{SAMPLE}-moran_scores.pdf"))
+        plt.close()
         logger.info("  saved plot (autocorrelation) to %s", plot_folder)
 
         adata_mz.uns["history"]['features_n_after_mz_clean_2'] = len(

@@ -1,12 +1,13 @@
 import os
-
+from typing import Dict, List
 import matplotlib.pyplot as plt
+import matplotlib as matplotlib
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
 
-def categorize_intervals(values) -> np.ndarray:
+def categorize_intervals(values: np.ndarray) -> np.ndarray:
     """
     Categorize an array of values into specified intervals.
     """
@@ -29,28 +30,30 @@ def categorize_intervals(values) -> np.ndarray:
     return np.array(categorical_labels)
 
 
-def plot_mz_given_quality_metrics(df, SAMPLE, plot_folder,
-                                  msm_cutoff, offSample_cutoff,
-                                  text_notice) -> None:
+def plot_mz_given_quality_metrics(
+        df: pd.DataFrame, SAMPLE: str,
+        msm_cutoff: float, offSample_cutoff: float, text_notice: str
+) -> matplotlib.axes:
+
     fdr_categories = ['0.05', '0.1', '0.2', '0.5']
     df['FDR'] = categorize_intervals(df['fdr'].astype(float).to_numpy())
     df['FDR'] = pd.Categorical(df['FDR'].tolist(),
                                categories=fdr_categories)
     sns.set_theme(style="whitegrid", font_scale=1.2)
     mypalette = ["#580F41", "#74414D", "#907359", "#cfcb94"]
-    ax = sns.scatterplot(df.loc[df['FDR'] == '0.5', :],
+    fig = sns.scatterplot(df.loc[df['FDR'] == '0.5', :],
                          x="msm", y="rawOffSampleProb",
                          hue="FDR", alpha=.9, zorder=1,
                          s=30,
                          palette=sns.color_palette(mypalette, len(mypalette)),
                          legend=False)
     sns.scatterplot(df.loc[df['FDR'] != '0.5', :],
-                    ax=ax, x="msm", y="rawOffSampleProb",
+                    ax=fig, x="msm", y="rawOffSampleProb",
                     hue="FDR", alpha=.9, zorder=2,
                     s=30,
                     palette=sns.color_palette(mypalette, len(mypalette)),
                     legend=True)
-    ax.legend(loc="upper left", title="FDR",
+    fig.legend(loc="upper left", title="FDR",
               bbox_to_anchor=(1, 1.03))  # .02))
     plt.xlim(-0.04, 1.04)
     plt.ylim(-0.04, 1.04)
@@ -58,15 +61,16 @@ def plot_mz_given_quality_metrics(df, SAMPLE, plot_folder,
     plt.axhline(y=offSample_cutoff, color='teal', linestyle='--', lw=0.8)
     plt.title(SAMPLE + '\n', fontsize=18)
     plt.text(x=1.1, y=0.1, s=text_notice,
-             fontsize=15)  # bbox=dict(facecolor='white', alpha=0.5))
+             fontsize=15)
     plt.tight_layout()
-    fileoutplotstr = os.path.join(plot_folder, f"{SAMPLE}-msm_&_out.pdf")
-    plt.savefig(fileoutplotstr)
-    plt.close()
+
+    return fig
 
 
-def plot__moran_info(df, plot_folder, SAMPLE, text_notice,
-                     moran_I_cutoff, moran_padj_cutoff) -> None:
+
+def plot__moran_info(df: pd.DataFrame, SAMPLE: str, text_notice: str,
+                     moran_I_cutoff: float, moran_padj_cutoff: float
+                     ) -> matplotlib.axes:
     df["log_var_sim"] = np.log(df["var_sim"].to_numpy())
     df['padj class'] = f" > {moran_padj_cutoff}"
     df.loc[df["pval_sim_fdr_bh"] <= moran_padj_cutoff,
@@ -86,23 +90,33 @@ def plot__moran_info(df, plot_folder, SAMPLE, text_notice,
     fig.legend(loc="upper left", title="$p_{adj}$ class")
     plt.title(SAMPLE + "\n" + text_notice + "\n")
     plt.tight_layout()
-    fileoutplotstr = os.path.join(plot_folder, f"{SAMPLE}-moran_scores.pdf")
-    plt.savefig(fileoutplotstr)
-    plt.close()
+
+    return fig
 
 
 def save_families_plot(fig_obj: sns.matrix.ClusterGrid, SAMPLE,
                        plot_folder) -> None:
+    """
+    saves clustermap of molecules families in pdf format
+    """
     fig_obj
     plt.savefig(
-        os.path.join(plot_folder, f"{SAMPLE}-hierarchy-molecules.png"),
-        dpi=400)
+        os.path.join(plot_folder, f"{SAMPLE}-hierarchy-molecules.pdf"),
+        format='pdf',
+        dpi=400
+    )
     plt.close()
 
 
-def plot_families(molecules_ids_df, mol_similarities_result,
+def plot_families(molecules_ids_df: pd.DataFrame,
+                  mol_similarities_result: Dict[
+        str, np.array | List[str] | List[str]],
                   computed_dendrogram
                   ) -> sns.matrix.ClusterGrid:
+    """
+    formats inputs, where computed_dendrogram is the output of scipy linkage,
+    and runs 'customized_sns_clustermap'
+    """
     tmp = molecules_ids_df.loc[molecules_ids_df['moleculeIds'].isin(
         mol_similarities_result['identifiers']
     ), ["moleculeIds", "moleculeNames"]].copy()
@@ -121,8 +135,17 @@ def plot_families(molecules_ids_df, mol_similarities_result,
     return fig_obj
 
 
-def customized_sns_clustermap(arr_df,
+def customized_sns_clustermap(arr_df: pd.DataFrame,
                               computed_dendrogram) -> sns.matrix.ClusterGrid:
+    """
+    this is the core function of visualization.plot_families()
+    parameters:
+      arr_df: array-like dataframe with distances values.
+      computed_dendrogram:  the output of scipy linkage.
+
+    computes clustermap (heatmap with dendrogram) with combined vectorial
+    and raster elements to ensure lightweight output figure
+    """
     fig_obj = sns.clustermap(arr_df, figsize=(12.5, 11),
                              row_linkage=computed_dendrogram,
                              col_linkage=computed_dendrogram,
@@ -130,8 +153,9 @@ def customized_sns_clustermap(arr_df,
                              dendrogram_ratio=0.15,
                              cbar_pos=(0.07, 0.84, .015, .14),
                              xticklabels=False)
-    plt.text(-1.7, 0.23, "similarity index", rotation=90)
 
+    fig_obj.ax_heatmap.collections[0].set_rasterized(True)
+    plt.text(-1.7, 0.23, "similarity index", rotation=90)
     fig_obj.ax_row_dendrogram.set_visible(False)
     fig_obj.ax_heatmap.set_ylabel("")
 
