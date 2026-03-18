@@ -8,7 +8,7 @@ import pandas as pd
 import src.smpath.helpers as helpers
 
 module_path = Path(__file__).resolve()
-library_path = module_path.parent.parent
+test_purpose_libr_path = module_path.parent.parent
 
 
 class Test(TestCase):
@@ -169,7 +169,7 @@ class Test(TestCase):
         df = helpers.purge_annotations(df, discard_pharmaceuticals=True,
                                        discard_plant_compounds=True,
                                        discard_other_non_animal=True,
-                                       library_path=library_path)
+                                       library_path=test_purpose_libr_path)
 
         self.assertEqual(df.shape, (1, 2))
         self.assertTrue(np.all(df.values[0] == np.array(

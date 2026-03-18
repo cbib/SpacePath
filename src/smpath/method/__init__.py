@@ -181,7 +181,7 @@ class ClassifyMZProtocol:
             moran_padj_cutoff=config.moran_padj_cutoff,
             text_notice=f"valid $m/z$: n = {len(mz_good_part_b)}",
         )
-        plt.savefig(os.path.join(plot_folder, f"{SAMPLE}-moran_scores.pdf"))
+        plt.savefig(os.path.join(plot_folder, f"{SAMPLE}-moran_filters.pdf"))
         plt.close()
         logger.info("  saved plot (autocorrelation) to %s", plot_folder)
 
