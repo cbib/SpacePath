@@ -76,10 +76,10 @@ def run_visualization(clustering_parameters,
                       figures_centralized_folder, sets_relevant_n_limit,
                       mz_spatially_relevant_n_limit,
                       mode):
+    """script to produce alluvial plots for publications"""
 
     subfolder = SAMPLE
     print("\n", SAMPLE)
-    str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
 
     diff_sets = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
                             f'{SAMPLE}-top-differential-SETS.tsv'),
@@ -92,15 +92,13 @@ def run_visualization(clustering_parameters,
                                 data_centralized_folder)
 
     mapping_info = scores_concatenated.uns['current_pathways_df']
-    # print(mapping_info.head())
-    """ 
+    """ mapping info:
              pathway_id   moleculeIds          mz
         0     WP1403   HMDB0003540  461.165659
         1     WP1403   HMDB0000122  294.165962
         2      WP167  LMFA03010021  430.306419
         3      WP167  LMFA03020023  432.322069
         """
-    #print("clusters : ", diff_sets['group'].unique().tolist())
     ## check how many unique pathways come out in general
     print("number of unique pathways that passed significance filters:")
     print(len(diff_sets['group'].unique().tolist()))
@@ -116,8 +114,7 @@ def run_visualization(clustering_parameters,
                                          data_centralized_folder)
     concatenated_clean_annotations = join_clean_annotations_from_dict(
         annots_dict)
-    # print(concatenated_clean_annotations.head())
-    """
+    """ concatenated_clean_annotations:
          moleculeIds                                 moleculeNames
     0      C11284                          3-Indolebutyric acid
     1      C07359                            3-keto-Digoxigenin
@@ -125,7 +122,6 @@ def run_visualization(clustering_parameters,
     3      C05474  3a,11b,21-Trihydroxy-20-oxo-5b-pregnan-18-al
     4      C05471                               Dihydrocortisol
     """
-
     ## check how many unique mz come out in general
     print("unique mzs that passed significance filters:")
     print(len(diff_mz['mz'].unique().tolist()))
@@ -134,10 +130,6 @@ def run_visualization(clustering_parameters,
     diff_mz_relevant = diff_mz.loc[ diff_mz['mz'].astype(float).isin(
         mapping_info['mz'].astype(float).tolist()
     ), : ].copy()
-
-    # ============ only good moran I mzs  ===========
-    # mzs_moran_good = adata_mz.var.loc[adata_mz.var['I'] >= 0.3, 'mz'].astype(float).tolist()
-    # print("!!!!", len(mzs_moran_good))  #  for some tissues it is too stringent
 
     # instead imposing a hard filter of I value, take the top n mzs:
     top_moran_mzs = adata_mz.var.copy().sort_values(

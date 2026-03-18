@@ -39,7 +39,6 @@ class Test(TestCase):
         df = pd.DataFrame(data)
         result1 = get_top_n(df, 3, "down")
         result2 = get_top_n(df, 7, "up")
-        print(result2)
         self.assertTrue(np.all(np.around(
             result1['logfoldchanges'].to_numpy(), 0) == np.array(
             [-15, -10, -5]

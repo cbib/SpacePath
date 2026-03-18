@@ -183,7 +183,6 @@ if __name__ == "__main__":
         force_for_these = sys.argv[4].split(";")
     except IndexError:
         pass
-    print(force_for_these)
 
     datasets_parameters_df = pd.read_csv(my_csv_table_path, header=0,
                                          index_col=None, sep='\t')

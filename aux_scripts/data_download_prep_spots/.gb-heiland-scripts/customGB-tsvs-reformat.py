@@ -69,7 +69,6 @@ def shift_all_matrices_to_right_and_save(dict_of_dfs, dict_of_mz_arrs,
                                          min_value, out_dir):
     """shifts to avoid negative floats
     and saves adata objects files"""
-    print("shifting all matrices to the right")
     for k in dict_of_dfs.keys():
         df = dict_of_dfs[k]
         mz_arr = dict_of_mz_arrs[k]
@@ -106,9 +105,8 @@ for i, r in cool.iterrows():
 
 dict_of_dfs = dict()
 dict_of_mz_arrs = dict()
-print("finding the min value of all the matrices")
 min_value = 999  # arbitrary initial value 999
-for k in samples:
+for k in samples:  #  finding the min value of all the matrices
     df = pd.read_csv(
         os.path.join(data_centralized_folder, "heiland-msi",
                      "ancient",

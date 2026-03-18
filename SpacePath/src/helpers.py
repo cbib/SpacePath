@@ -4,13 +4,17 @@ from typing import Dict, List, Tuple, Union
 
 import anndata as ad
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+
 import numpy as np
 import pandas as pd
 import scanpy as sc
+import seaborn as sns
 import smpath.data as spd
 import smpath.method as spm
 import squidpy as sq
 from scipy.sparse import csr_matrix
+
 
 
 def join_scores_adatas(
@@ -194,20 +198,49 @@ def squidpy_differential_analysis(adata: ad.AnnData,
     return differential_results_by_cluster
 
 
-def plot_clustering_results(adata_mz, clustering_parameters,
-                            SAMPLE, plot_folder) -> None:
+def safe_insert_clusters_column(adata: ad.AnnData, clusters_df: pd.DataFrame,
+                                column_interest: str='kmeans-5', spots='obs'):
+    """
+    inserts clusters column into anndata.obs from an external dataframe
+    :param adata: anndata.AnnData
+    :param clusters_df: dataframe with two columns, e.g. ['obs', 'kmeans-5']
+    :param column_interest: string column name to insert into anndata.obs
+    :param spots: string column name that has the spots names as strings
+    """
+    adata.obs = adata.obs.assign(**{spots: adata.obs.index.tolist()})
+    clusters_df = clusters_df.drop_duplicates()
+    clusters_df.index = clusters_df[spots].tolist()
+    # sort entire dataframe to match with adata.obs
+    clusters_df = clusters_df.T[adata.obs[spots].tolist()].T.copy()
+
+    ordered_categories_clusters: List[int] = np.sort(
+        clusters_df[column_interest].unique()
+    ).tolist()
+
+    adata.obs = adata.obs.assign(**{column_interest : pd.Categorical(
+        clusters_df[column_interest].tolist(),
+        categories=ordered_categories_clusters)})
+
+    return adata
+
+
+def plot_clustering_results(adata_mz, clustering_parameters, SAMPLE,
+                            plot_folder, colors_spots: List[str]) -> None:
     """Saves figure of clustering results"""
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
 
     plot_out_path = os.path.join(plot_folder,
                                  f'{SAMPLE}-clusters-{str_out}.pdf')
 
+    colors_spots = colors_spots[:adata_mz.obs[str_out].nunique()]
+
     fig, ax = plt.subplots(1, 1)
     sq.pl.spatial_scatter(
         adata_mz, color=[str_out], img=False,
         title="Clustering of spots",
         linewidth=0, edgecolors=(0, 0, 0, 0),
-        shape="circle", size=1,  # 'circle', 'square', 'hex'
+        shape="circle", size=1.15,  # 'circle', 'square', 'hex'
+        palette=ListedColormap(colors_spots),
         ax=ax
     )
     ax.collections[0].set_rasterized(True)
@@ -217,13 +250,22 @@ def plot_clustering_results(adata_mz, clustering_parameters,
                 dpi=600,
                 bbox_inches='tight')
     plt.close()
+
     print("saved figure")
 
 
 def compute_leiden__weighted_by_spatial_graph(
         datacopy, resolution_param, alpha_gr=0.25
 ) -> Tuple[ad.AnnData, List[str]]:
-    """Compute spatial graph when required by Leiden community detection"""
+    """
+    Computes Leiden community detection algorithm for the spots clustering
+
+    :param datacopy: a copy of the anndata object with the norm intensities
+    :param resolution_param: resolution parameter for the Leiden algorithm
+    :param alpha_gr: the weight of the spatial graph
+
+    follows 'spatial domains' instructions as in www.sc-best-practices.org
+    """
     try:
         sc.pp.neighbors(datacopy, n_pcs=20)
     except:
@@ -232,7 +274,7 @@ def compute_leiden__weighted_by_spatial_graph(
     sq.gr.spatial_neighbors(datacopy)
     nn_graph_space = datacopy.obsp["spatial_connectivities"]
 
-    alpha = alpha_gr  # the weight of the spatial graph
+    alpha = alpha_gr
     joint_graph = (1 - alpha) * nn_graph_genes + alpha * nn_graph_space
     sc.tl.leiden(datacopy,
                  adjacency=joint_graph,

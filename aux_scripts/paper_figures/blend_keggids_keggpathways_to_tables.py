@@ -92,7 +92,6 @@ def process_sample(row, me_refmap, pathways_obj, data_dir):
     adata_mz = ad.read_h5ad(
         filename=os.path.join(data_dir, SAMPLE, f'{SAMPLE}.h5ad'))
 
-    print("MANDATORY: taking away bad quality m/z")
     adata_mz = adata_mz[:, adata_mz.var.loc[
         adata_mz.var['final_quality'] == "good", "mz"].astype(str).tolist()]
 

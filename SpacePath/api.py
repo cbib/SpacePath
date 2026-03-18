@@ -10,7 +10,9 @@ from sklearn.cluster import KMeans
 
 import pickle
 
-from SpacePath.src.constants import pathways_files_location_info
+from SpacePath.src.constants import (pathways_files_location_info,
+                                     options_palette_supported)
+
 from SpacePath.src.helpers import *
 
 logger = logging.getLogger(__name__)
@@ -48,10 +50,10 @@ def compute_differential_families_and_pathways(
     clusters_df = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
                                            f'{SAMPLE}-clusters-{str_out}.txt'),
                               header=0)
-    scores_merged.obs[str_out] = pd.Categorical(clusters_df[str_out].tolist(),
-                                                categories=clusters_df[
-                                                    str_out].unique())
 
+    scores_merged = safe_insert_clusters_column(scores_merged,
+                                                clusters_df,
+                                                str_out)
     #  shift to avoid negative values
     scores_merged.X = csr_matrix(
         scores_merged.X.todense() + abs(scores_merged.X.min().min()))
@@ -226,11 +228,11 @@ def compute_differential_analysis_of_mzs(pathways_types,
     clusters_df = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
                                            f'{SAMPLE}-clusters-{str_out}.txt'),
                               header=0)
-    adata_mz.obs[str_out] = pd.Categorical(clusters_df[str_out].tolist(),
-                                           categories=clusters_df[
-                                               str_out].unique())
+
+    adata_mz = safe_insert_clusters_column(adata_mz, clusters_df, str_out)
+
     sc.pp.log1p(adata_mz)
-    print("computing the differential abundances of all the m/z features,"
+    logger.info("computing the differential abundances of all the m/z features,"
           " cluster to cluster, for all clusters")
     differential_results_by_cluster = squidpy_differential_analysis(
         adata_mz, group_str=str_out)
@@ -277,8 +279,9 @@ def compute_clustering_of_spots(
     adata_mz.obs[["obs", str_out]].to_csv(
         os.path.join(data_centralized_folder, subfolder,
                      f'{SAMPLE}-clusters-{str_out}.txt'), index=False)
-    plot_clustering_results(adata_mz, clustering_parameters, SAMPLE,
-                            plot_folder)
+    plot_clustering_results(
+        adata_mz, clustering_parameters, SAMPLE, plot_folder,
+        colors_spots=options_palette_supported["colorblindness"])
 
 
 def clean_annotations_and_save_tsv(annots_obj: spd.MetabolomeAnnotations,

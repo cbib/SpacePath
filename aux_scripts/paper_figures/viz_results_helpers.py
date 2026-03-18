@@ -11,7 +11,7 @@ import matplotlib as mpl
 ###### these  lines are mandatory to comply with Nature journals ######
 mpl.rcParams['font.family'] = "sans-serif"
 mpl.rcParams['font.sans-serif'] = "Arial"
-plt.rcParams.update({'font.size': 18})
+plt.rcParams.update({'font.size': 24})
 
 hv.extension('matplotlib')   # for saving as .pdf, the alluvial plot
 
@@ -103,21 +103,20 @@ def run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
         else ('sandybrown' if x == 1.0 else 'silver'))(x)
         for x in df['theoretical_direction'].astype(float).tolist()]
 
-    #pastel_palette = sns.color_palette("pastel").as_hex()
-
     sankey = hv.Sankey(df,  ['source', 'target'], ['value', 'edge_colors'])
 
     sankey.opts(
         edge_color='edge_colors',
         node_width=20,  # 4x the default (default is usually 10)
         label_position='right',
-        # width=800,  Option 'width' for Sankey type not valid for selected backend ('matplotlib')
-        # height=600,  Option 'height' for Sankey type not valid for selected backend ('matplotlib')
+        # width=500,  # not valid for selected backend ('matplotlib')
+        # height=800,  # not valid for selected backend ('matplotlib')
         node_sort=False,
         node_padding=5,
         show_values=False,
-        #cmap=pastel_palette  # this dis not work:   TypeError: unhashable type: '_ColorPalette'
+        cmap='Pastel1_r'
     )
+
     plt_fig = hv.render(sankey, backend='matplotlib')
     path_sankey_plot = os.path.join(figures_centralized_folder,
                                     subfolder, f"{SAMPLE}-result-holistic.pdf")
@@ -127,6 +126,9 @@ def run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
 def run_individual_mz_scatters(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
                                adata_mz,
                       figures_centralized_folder, subfolder)->None:
+
+    plt.rcParams.update({'font.size': 28})
+
     mzs_df = prepare_mzs_for_plotting(mapping_info, diff_sets, diff_mz_relevant)
     mzs_df = mzs_df.drop_duplicates()
     plot_folder = os.path.join(figures_centralized_folder,
@@ -202,24 +204,23 @@ def do_for_i_mz(i_mz_df, i_mz, out_plot ):
 
 
 def run_individual_tabular_plots(
-        SAMPLE, diff_sets, mapping_info, diff_mz_relevant, concatenated_clean_annotations,
-        figures_centralized_folder, subfolder
+        SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
+        concatenated_clean_annotations, figures_centralized_folder, subfolder
     ):
     mzs_df = prepare_mzs_for_plotting(mapping_info, diff_sets,
                                       diff_mz_relevant)
     mzs_df = mzs_df.drop_duplicates()
-    # print(mzs_df.head(1))
-    # print(mapping_info.head(1))
-    # print(diff_mz_relevant.head(1))
-    # print(concatenated_clean_annotations.head(1))
+
     lili = mzs_df['mz'].astype(float).unique().tolist()
     for i_mz in lili:
         curr_mz_df = concatenated_clean_annotations.loc[
-            concatenated_clean_annotations['mz'].astype(float) == float(i_mz), ['moleculeIds', 'moleculeNames']].copy()
+            concatenated_clean_annotations['mz'].astype(
+                float) == float(i_mz), ['moleculeIds', 'moleculeNames']].copy()
         curr_mz_df['moleculeNames'] = curr_mz_df['moleculeNames'].str.slice(0, 35)
         my_list_awsome = list()
         for mole_id in curr_mz_df['moleculeIds'].unique().tolist():
-            the_pws = mapping_info.loc[mapping_info['moleculeIds'] == mole_id, 'pathway_id'].unique().tolist()
+            the_pws = mapping_info.loc[mapping_info['moleculeIds'] == mole_id,
+                'pathway_id'].unique().tolist()
             the_pws_trunc = the_pws.copy()
             if len(the_pws) > 3:
                 the_pws_trunc = the_pws[:3] + ["..."]
@@ -228,7 +229,6 @@ def run_individual_tabular_plots(
         curr_mz_df['pathway_id'] = my_list_awsome
         curr_mz_df = curr_mz_df.loc[curr_mz_df["pathway_id"] != "",:].copy()
         curr_mz_df = curr_mz_df.sort_values(by='moleculeIds', ascending=True)
-        #print(curr_mz_df.head())
         print(curr_mz_df["pathway_id"].unique())
         if curr_mz_df.shape[0] > 0:
             LIMIT_TAB = 15

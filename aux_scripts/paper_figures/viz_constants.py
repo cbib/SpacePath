@@ -30,4 +30,6 @@ alluvial_n_to_display_dict = {
     'Kidney-xenogr-2': 100,
     'Kidney-xenogr-1': 100,
     'Brain-lmrange-mouse': 100,
+    'example-corn-root': 150,
+    'example-cerebellum': 100
 }

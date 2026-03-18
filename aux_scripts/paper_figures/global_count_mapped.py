@@ -18,8 +18,7 @@ df2 = df2.replace(0, np.nan)
 
 
 uu = 99
-print(df.head())
-print(df2.head())
+
 
 ## compute the global fraction mapped for KEGG pathways
 global_KEGG_mapped =  (df['HMDB in pathways'].mean(
