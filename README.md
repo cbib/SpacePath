@@ -63,7 +63,7 @@ micromamba create -f smpath_env.yaml
 Currently `smpath` is installable from this GitHub `git clone git@github.com:cbib/smpath.git`.
 The installation commands in the appropriate order are:
 
-```commandline
+```
 conda activate smpath  # or `source smpath/bin/activate` if venv, to activate the environment
 cd smpath
 poetry install   # installs this library

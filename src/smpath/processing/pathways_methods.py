@@ -65,7 +65,7 @@ def compounds_and_smiles_ordered(smiles_df, molecules_ids_list
 
 
 def unzip_if_not_tsv(library_path, smiles_files) -> None:
-    """internally unzips heavy shiped folder of SMILES mappings"""
+    """internally unzips heavy shipped folder of SMILES mappings"""
     smiles_folder = os.path.join(library_path, "resources", "SMILES")
     for type_smile_file in smiles_files.keys():
         smile_file = smiles_files[type_smile_file]

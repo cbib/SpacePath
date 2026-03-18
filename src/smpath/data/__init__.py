@@ -43,7 +43,7 @@ class Dataset(BaseModel, extra='allow'):
 class MetaboliteIdsMappings(BaseModel, extra='allow'):
     data_dir: str
     subfolder: str
-    delimiter: str = '\t'  # we provide tab delimited .tsv viles
+    delimiter: str = '\t'  # we provide tab delimited .tsv files
     mapping_files: Dict[str, str]  # list with basename.extension
     table: pd.DataFrame = pd.DataFrame()
     style_desired: str = "KEGG"
