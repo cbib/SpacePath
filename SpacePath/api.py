@@ -10,7 +10,8 @@ from sklearn.cluster import KMeans
 
 import pickle
 
-from SpacePath.src.constants import pathways_files_location_info
+from SpacePath.src.constants import pathways_files_location_info, custom_palette
+
 from SpacePath.src.helpers import *
 
 logger = logging.getLogger(__name__)
@@ -278,7 +279,7 @@ def compute_clustering_of_spots(
         os.path.join(data_centralized_folder, subfolder,
                      f'{SAMPLE}-clusters-{str_out}.txt'), index=False)
     plot_clustering_results(adata_mz, clustering_parameters, SAMPLE,
-                            plot_folder)
+                            plot_folder, custom_palette=custom_palette)
 
 
 def clean_annotations_and_save_tsv(annots_obj: spd.MetabolomeAnnotations,

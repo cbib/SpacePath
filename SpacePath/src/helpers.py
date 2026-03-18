@@ -4,13 +4,17 @@ from typing import Dict, List, Tuple, Union
 
 import anndata as ad
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+
 import numpy as np
 import pandas as pd
 import scanpy as sc
+import seaborn as sns
 import smpath.data as spd
 import smpath.method as spm
 import squidpy as sq
 from scipy.sparse import csr_matrix
+
 
 
 def join_scores_adatas(
@@ -194,13 +198,27 @@ def squidpy_differential_analysis(adata: ad.AnnData,
     return differential_results_by_cluster
 
 
-def plot_clustering_results(adata_mz, clustering_parameters,
-                            SAMPLE, plot_folder) -> None:
+def get_set2_colors(n):
+    """cyclic palette if more than 20 clusters"""
+    base = sns.color_palette("tab20")
+    # repeat colors until we have at least n
+    repeated = (base * ((n // len(base)) + 1))[:n]
+
+    return repeated
+
+
+def plot_clustering_results(adata_mz, clustering_parameters, SAMPLE,
+                            plot_folder, custom_palette) -> None:
     """Saves figure of clustering results"""
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
 
     plot_out_path = os.path.join(plot_folder,
                                  f'{SAMPLE}-clusters-{str_out}.pdf')
+
+    if len(adata_mz.obs[str_out].unique().tolist()) <= len(custom_palette):
+        final_palette = custom_palette[:adata_mz.obs[str_out].nunique()]
+    else:
+        final_palette = get_set2_colors(adata_mz.obs[str_out].nunique())
 
     fig, ax = plt.subplots(1, 1)
     sq.pl.spatial_scatter(
@@ -208,6 +226,7 @@ def plot_clustering_results(adata_mz, clustering_parameters,
         title="Clustering of spots",
         linewidth=0, edgecolors=(0, 0, 0, 0),
         shape="circle", size=1,  # 'circle', 'square', 'hex'
+        palette= ListedColormap(final_palette),
         ax=ax
     )
     ax.collections[0].set_rasterized(True)
@@ -223,7 +242,15 @@ def plot_clustering_results(adata_mz, clustering_parameters,
 def compute_leiden__weighted_by_spatial_graph(
         datacopy, resolution_param, alpha_gr=0.25
 ) -> Tuple[ad.AnnData, List[str]]:
-    """Compute spatial graph when required by Leiden community detection"""
+    """
+    Computes Leiden community detection algorithm for the spots clustering
+
+    :param datacopy: a copy of the anndata object with the norm intensities
+    :param resolution_param: resolution parameter for the Leiden algorithm
+    :param alpha_gr: the weight of the spatial graph
+
+    follows 'spatial domains' instructions as in www.sc-best-practices.org
+    """
     try:
         sc.pp.neighbors(datacopy, n_pcs=20)
     except:
@@ -232,7 +259,7 @@ def compute_leiden__weighted_by_spatial_graph(
     sq.gr.spatial_neighbors(datacopy)
     nn_graph_space = datacopy.obsp["spatial_connectivities"]
 
-    alpha = alpha_gr  # the weight of the spatial graph
+    alpha = alpha_gr
     joint_graph = (1 - alpha) * nn_graph_genes + alpha * nn_graph_space
     sc.tl.leiden(datacopy,
                  adjacency=joint_graph,
