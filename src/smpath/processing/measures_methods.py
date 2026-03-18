@@ -356,7 +356,7 @@ def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
     :return:
     """
 
-    def give_sum_array(adata_mz, mz_list) -> np.array:
+    def give_sum_array(adata_mz, mz_list) -> np.ndarray:
         tmp = adata_mz[:, mz_list].copy()
         sarray = tmp.X.sum(axis=1)
 

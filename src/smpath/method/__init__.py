@@ -152,7 +152,7 @@ class ClassifyMZProtocol:
             config.offSample_cutoff,
             text_notice=f"valid $m/z$\n n = {len(mz_good_from_part_a)}"
         )
-        plt.savefig(os.path.join(plot_folder, f"{SAMPLE}-msm_&_out.pdf"))
+        plt.savefig(os.path.join(plot_folder, f"{SAMPLE}-msm_prefilters.pdf"))
         plt.close()
         logger.info("  saved plot (MSM, offSample, FDR) to %s", plot_folder)
         adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(

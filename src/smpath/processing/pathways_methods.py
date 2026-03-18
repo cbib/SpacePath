@@ -65,6 +65,7 @@ def compounds_and_smiles_ordered(smiles_df, molecules_ids_list
 
 
 def unzip_if_not_tsv(library_path, smiles_files) -> None:
+    """internally unzips heavy shiped folder of SMILES mappings"""
     smiles_folder = os.path.join(library_path, "resources", "SMILES")
     for type_smile_file in smiles_files.keys():
         smile_file = smiles_files[type_smile_file]
@@ -112,7 +113,7 @@ def compute_kpca(sets__df: pd.DataFrame,
     :param sets__df: pathways or sets df, each row is a set (see sspa)
     :param metabolites_computed_w: the data with the weights as a dataframe
        consisting of m rows (samples) and n columns (features)
-    :parm min_entity: the minimal size of the set to do the computation
+    :param min_entity: the minimal size of the set to do the computation
 
     :returns: Computed scores as a dataframe
     """
@@ -147,7 +148,7 @@ def reshape_pathways_for_kpca(pathways_dict) -> pd.DataFrame:
 
 def compute_kpca_on_spot_groups(sets__df, metabolites_computed_w,
                                 groups_d: Dict[int, list],
-                                min_entity: int) -> Dict[int, dict]:
+                                min_entity: int) -> Dict[int, pd.DataFrame]:
     kpca_scores_d = dict()
     for k in groups_d.keys():
         sys.stdout.write(".")
@@ -200,6 +201,7 @@ def compute_pathways_scores(pathways_dict: Dict[str, List[str]],
         x4_y0          0.0          0.0          0.0
     :param n_groups_of_spots: how many groups of spots to form and process,
        when the number of spots is superior to threshold_n_spots_is_high
+    :param min_entity: minimal number of elements (metabolites) per set
     Returns:
        scores in a df with shape (spots (rows), set_names (columns))
     Note: the quantities are log transformed as recommended by sspa

@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from datetime import datetime
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -111,7 +111,13 @@ def purge_annotations(df_notranslated: pd.DataFrame,
                       discard_pharmaceuticals: bool,
                       discard_plant_compounds: bool,
                       discard_other_non_animal: bool,
-                      library_path: str) -> pd.DataFrame:
+                      library_path: Union[str, Any]) -> pd.DataFrame:
+    """
+    Cleans annotations by species origin:
+     - using internal curated lists, and
+     - using user defined booleans on the type of molecules to retain
+     note: library_path (Path or str) obeys to the internal package structure
+    """
     ids_col = "moleculeIds"
     f_picker = {"pharma": {'istrue': discard_pharmaceuticals,
                            'file': "pharmaceuticals.tsv"},
@@ -398,7 +404,7 @@ def pws_piled_to_dict(pws_piled_mz, pathway_id: str, mz_or_identity_col: str
     return out
 
 
-def generate_coordinates_arr(pixels_names_l: List[str]) -> np.array:
+def generate_coordinates_arr(pixels_names_l: List[str]) -> np.ndarray:
     """expects each name in the form 'xXX_yYY', e.g. 'x88_y99'"""
     coord_l = list()
     for k in pixels_names_l:  # eg k = 'x00_y00'

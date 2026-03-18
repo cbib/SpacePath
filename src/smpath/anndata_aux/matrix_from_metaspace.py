@@ -37,7 +37,7 @@ def build_coord_names(df) -> List[str]:
 def adatas_to_matrices_list(
         metaspace_registry: str,
         api_versions: Dict[str, tuple], api_fdr: float
-) -> Tuple[set, List[pd.DataFrame], List[pd.DataFrame]]:
+) -> Tuple[set, List[pd.DataFrame], Dict[str, pd.DataFrame]]:
     matrices_dfs_list = []
     annotations_dfs_dict = {}
     all_mz_with_multiplets = list()
