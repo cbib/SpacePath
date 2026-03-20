@@ -78,14 +78,14 @@ def compute_metabolites_probs_df(adata_mz: ad.AnnData,
         the_ids_here = annots_df.loc[
             annots_df[mz_col] == a_mz, usable_id].unique().tolist()
         n = len(the_ids_here)
-        for kid in the_ids_here:
+        for k_id in the_ids_here:
             registered_prob = 0.0
-            if kid in preX_probs.keys():
-                registered_prob = preX_probs[kid][0]
+            if k_id in preX_probs.keys():
+                registered_prob = preX_probs[k_id][0]
             # attribute the best probability between registered (if any) and current
             compound_probability = max(registered_prob, 1 / n)
             res = i_arr * np.repeat(compound_probability, len(i_arr))
-            preX_probs[kid] = np.array(res, dtype=np.float32)
+            preX_probs[k_id] = np.array(res, dtype=np.float32)
 
     X_metabolites_probs_df = pd.DataFrame(preX_probs)
     X_metabolites_probs_df.index = X_mz_binary_df.index
@@ -166,7 +166,7 @@ def custom_join_left(df1, df2, keycol: str = 'mz') -> Union[
     pd.DataFrame, None]:
     df1 = df1.copy()
     df2 = df2.copy()
-    df2[keycol] = df2[keycol].astype(str)
+    df2 = df2.assign(**{keycol: df2[keycol].astype(str)})
     df2 = df2.drop_duplicates(subset=keycol)
     df2 = df2.set_index(keycol)
     try:
@@ -175,7 +175,7 @@ def custom_join_left(df1, df2, keycol: str = 'mz') -> Union[
         # np.all(df2.index.astype(str).to_numpy(
         # ) == df1[keycol].astype(str).to_numpy())
         for col in df2.columns:
-            df1[col] = df2[col]
+            df1 = df1.assign(**{col: df2[col].tolist()})
         return df1
     except KeyError:
         logger.error("fatal (no match), custom_join_left impossible!")
@@ -210,8 +210,7 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
     all_quality_df = adata_mz.var.copy()
     all_quality_df["mz"] = all_quality_df["mz"].astype(str).tolist()
     annotations_obj.mz_quality['mz'] = annotations_obj.mz_quality[
-        'mz'].astype(
-        str).tolist()
+        'mz'].astype(str).tolist()
     all_quality_df = custom_join_left(
         all_quality_df, annotations_obj.mz_quality[
             ['mz', annotations_obj.msm_column,
@@ -250,6 +249,7 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
         moran_mz_df['var_sim'] >= var_sim_cutoff].copy()
 
     moran_mz_df['mz'] = moran_mz_df.index.astype(str).tolist()
+
     all_quality_df = pd.merge(all_quality_df,
                               moran_mz_df[
                                   ['mz', 'I', 'pval_sim_fdr_bh', 'var_sim']],
@@ -259,7 +259,7 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
                 all_quality_df['pval_sim_fdr_bh'] <= moran_padj_cutoff),
         "mz"].astype(str).tolist()
 
-    all_quality_df['quality_autocorr'] = 'bad'
+    all_quality_df = all_quality_df.assign(quality_autocorr='bad')
     all_quality_df.loc[
         all_quality_df['mz'].astype(str).isin(mz_to_keep_part2),
         'quality_autocorr'] = "good"
@@ -271,7 +271,7 @@ def adata_mz_insert_full_quality(adata_mz: ad.AnnData, moran_mz_df,
                                  all_quality_df) -> ad.AnnData:
     adata_mz.uns['moranI'] = moran_mz_df
 
-    all_quality_df['final_quality'] = "bad"
+    all_quality_df = all_quality_df.assign(final_quality="bad")
     all_quality_df.loc[(all_quality_df['quality_msm_off_fdr'] == "good") & (
             all_quality_df['quality_autocorr'] == "good"), 'final_quality'
     ] = "good"

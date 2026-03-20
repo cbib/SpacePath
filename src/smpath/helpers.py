@@ -160,8 +160,8 @@ def convert_metabo_annots_tokegg(
     common_notkegg_database = set(annotdf['database'].unique()).intersection(
         set(mappings_ref_ids['database'].unique()))
     for cd in list(common_notkegg_database):
-        tmp_df = annotdf.loc[annotdf['database'] == cd, :]
-        tmp_ref = mappings_ref_ids.loc[mappings_ref_ids['database'] == cd, :]
+        tmp_df = annotdf.loc[annotdf['database'] == cd, :].copy()
+        tmp_ref = mappings_ref_ids.loc[mappings_ref_ids['database'] == cd, :].copy()
         joined = pd.merge(tmp_df, tmp_ref, left_on=molecule_ids_col,
                           right_on='initial_id_unconverted', how='left')
         joined = joined.assign(database=joined.database_y)
@@ -170,7 +170,7 @@ def convert_metabo_annots_tokegg(
         dfs_list.append(joined)
     # end for
     if usable_id in annotdf['database'].unique():
-        kegg_tmp_df = annotdf.loc[annotdf['database'] == usable_id, :]
+        kegg_tmp_df = annotdf.loc[annotdf['database'] == usable_id, :].copy()
         kegg_tmp_df = kegg_tmp_df.assign(KEGG=kegg_tmp_df[molecule_ids_col])
         dfs_list.append(kegg_tmp_df)
 
@@ -197,14 +197,14 @@ def identify_multi_mz_to_one_compound(annotdf: pd.DataFrame,
 
 
 def compute_compounds_n_per_mz(var_df, ann_df, mz_col, id_col):
-    nn = list()
+    average_number_id_per_mz = list()
     for i, row in var_df.iterrows():
         mzfloat = float(row[mz_col])
         ids_l = ann_df.loc[
             ann_df[mz_col].astype(float) == mzfloat, id_col].unique()
-        nn.append(len(ids_l))
+        average_number_id_per_mz.append(len(ids_l))
 
-    var_df['compound_ids_n__per_mz'] = nn
+    var_df = var_df.assign(compound_ids_n__per_mz=average_number_id_per_mz)
 
     return var_df
 
@@ -243,7 +243,7 @@ def get_approved_mz_id_pairs(ann_df: pd.DataFrame, var_df: pd.DataFrame,
         count_df['size'] >= 2, id_col].unique()
     var_df = var_df.loc[var_df['compound_ids_n__per_mz'] >= 1, :]
     for one_id in compounds_multiassigned:
-        multi_annot_df = ann_df.loc[ann_df[id_col] == one_id, :]
+        multi_annot_df = ann_df.loc[ann_df[id_col] == one_id, :].copy()
         curr_qual = var_df.loc[var_df[mz_col].astype(float).isin(
             multi_annot_df[mz_col].astype(float)), :].copy()
         if 'I' in curr_qual.columns:
@@ -315,7 +315,7 @@ def purge_pathways(gmt_df, not_metabolic_reactions_pathways: List[str],
     gmt_df = gmt_df.dropna(axis=1, how="all")  # drop if entire column is NaN
 
     # part 2:
-    gmt_df["bad"] = 0
+    gmt_df = gmt_df.assign(bad=0)
     gmt_df["lower"] = gmt_df.iloc[:, 1].str.lower()  # column 1 has the names
     gmt_df.loc[gmt_df["lower"].str.contains(
         "|".join(not_metabolic_reactions_pathways), regex=True), "bad"] = 1

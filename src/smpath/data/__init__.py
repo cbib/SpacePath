@@ -74,7 +74,7 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
             if map_key == "LIPID_MAPS":  # old lipidmaps version, assimilate
                 map_key = "LipidMaps"
 
-            df['database'] = map_key
+            df = df.assign(database=map_key)
             df.columns = ["initial_id_unconverted", self.style_desired,
                           "database"]
             dfs_dict[map_key] = df
@@ -150,14 +150,15 @@ class MetabolomeAnnotations(Dataset):
                 df = df[[self.mz_col, self.formula_col, self.molecule_ids_col,
                          self.molecule_names_col]]
 
-            df[self.mz_col] = np.around(df[self.mz_col].to_numpy(),
-                                        decimals=mz_decimal_places)
+            df = df.assign(
+                **{self.mz_col: np.around(df[self.mz_col].to_numpy(),
+                decimals=mz_decimal_places)})
             df = df.dropna(how="all")
             if anno_key == "custom_kegg":
                 anno_key = "KEGG"
             elif anno_key == "LIPID_MAPS":  # assimilate to LipidMaps
                 anno_key = "LipidMaps"
-            df['database'] = anno_key
+            df = df.assign(database=anno_key)
             dfs_dict[anno_key] = df
 
         self.preloaded = \

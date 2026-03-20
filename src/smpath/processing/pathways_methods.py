@@ -167,7 +167,7 @@ def gather_scores_dfs_dict(kpca_scores_d: Dict[int, pd.DataFrame],
         absent_expected_cols = list(
             set(expected_cols) - set(df.columns.tolist()))
         for aec in absent_expected_cols:
-            df[aec] = np.nan
+            df = df.assign(**{aec: np.nan})
         return df
 
     columns_set = set()
