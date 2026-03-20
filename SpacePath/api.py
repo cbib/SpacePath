@@ -281,7 +281,7 @@ def compute_clustering_of_spots(
                      f'{SAMPLE}-clusters-{str_out}.txt'), index=False)
     plot_clustering_results(
         adata_mz, clustering_parameters, SAMPLE, plot_folder,
-        colors_spots=options_palette_supported["colorblindness"])
+        colors_spots=options_palette_supported["default"])
 
 
 def clean_annotations_and_save_tsv(annots_obj: spd.MetabolomeAnnotations,
