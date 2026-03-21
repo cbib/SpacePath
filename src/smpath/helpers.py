@@ -108,23 +108,30 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
     return df_out
 
 
-def lipid_has_odd_n_carb(lipid_name: str, cutoff_n_carbons: int) -> bool:
+def lipid_has_odd_n_carb(lipid_name: str|Any, cutoff_n_carbons: int) -> bool:
     """
     True if:
      - the total sum of carbons of the lipid chains is odd, and
      - the global nb of carbons in the whole lipid structure is <= cutoff
     """
-    chains = re.findall(r'(\d+:\d+)', lipid_name)
+    out_bool = False
+    if isinstance(lipid_name, str):
+        try:
+            chains = re.findall(r'(\d+:\d+)', lipid_name)
+            carbon_n_list = []
+            for chain in chains:
+                carbon_n_list.append(chain.split(':')[0])
 
-    carbon_n_list = []
-    for chain in chains:
-        carbon_n_list.append(chain.split(':')[0])
+            carbon_sum = np.sum(np.array(carbon_n_list, dtype=np.int32))
+            if (carbon_sum % 2 != 0) and (carbon_sum <= cutoff_n_carbons):
+                out_bool = True
+        except TypeError:
+            pass
+        except Exception as e:
+            pass
 
-    carbon_sum = np.sum(np.array(carbon_n_list, dtype=np.int32))
-    if (carbon_sum % 2 != 0) and (carbon_sum <= cutoff_n_carbons):
-        return True
-    else:
-        return False
+    return out_bool
+
 
 
 def odd_n_carb_lipids_to_df(
@@ -465,10 +472,15 @@ def generate_coordinates_arr(pixels_names_l: List[str]) -> np.ndarray:
 
 def is_log_transformed(
         sparse_matrix: Union[scipy.sparse.csr_matrix, np.array]) -> bool:
-    if sparse_matrix.min().min() < 0:
-        return True
+    """
+    fast check if log-transformation was applied on a given matrix, but this
+    is only valid if the log was applied on gamma distributed values
+    """
+    response_log_trans: bool = False
+    if sparse_matrix.min().min() < 0:  # negative values, likely log already
+        response_log_trans = True
 
-    return False
+    return response_log_trans
 
 
 def yield_clean_noalias_ids(annots_with_aliases_df) -> List[str]:
