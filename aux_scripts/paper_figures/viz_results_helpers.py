@@ -111,7 +111,7 @@ def run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
         label_position='right',
         # width=500,  # not valid for selected backend ('matplotlib')
         # height=800,  # not valid for selected backend ('matplotlib')
-        node_sort=False,
+        node_sort=False,  # sorts by node degree, not preferred
         node_padding=5,
         show_values=False,
         cmap='Pastel1_r'

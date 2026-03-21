@@ -1,11 +1,12 @@
 
 
 alluvial_n_to_display_dict = {
-    'Brain-demyel-mouse': 300,
+    'Brain-demyel-mouse': 200,
+    'Cerebellum-mouse': 170,
+    'Bladder-cancer-hum': 220,
+    'Brain-healthy-mouse': 350,
     'Kidney-mouse': 300,
     'Liver-brca-mouse': 300,
-    'Cerebellum-mouse': 300,
-    'Bladder-cancer-hum': 300,
     'MALDI_248_T': 900,
     'MALDI_259_T': 900,
     'MALDI_260_T': 900,
@@ -20,7 +21,6 @@ alluvial_n_to_display_dict = {
     'Heart-aorta-mouse': 100,
     'Gut-mouse': 100,
     'Brain-sgt-rat': 100,
-    'Brain-healthy-mouse': 100,
     'Brain-wt1-mouse': 100,
     'Brain-trv-mouse': 100,
     'Heart-sgt-mouse': 100,
