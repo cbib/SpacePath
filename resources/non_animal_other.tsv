@@ -147,3 +147,55 @@ HMDB0003371	L-Ribulose	E coli
 LMPK10000001	Sterigmatocystin	Aspergillus
 LMPK10000003	7-O-Methylsterigmatocystin	Aspergillus
 LMPK08000001	Rabelomycin	Streptomyces olivaceus
+LMGP04040005	1-(8-[3]-ladderane-octanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	
+LMGP02080003	1-(8-[3]-ladderane-octanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	
+LMFA01140004	8-[5]-ladderane-octanoic acid	Planctomycetes
+LMFA01140006	8-[3]-ladderane-octanoic acid	Planctomycetes
+LMGL01020026	2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02030025	1-(14-methyl-pentadecanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02030026	1-hexadecanyl-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02030027	1-(10-methyl-hexadecanyl-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02030028	1-(9,14-dimethyl-pentadecanyl-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02030029	1-(6-[5]-ladderane-hexanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02030030	1-(8-[5]-ladderane-octanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02030031	1-(8-[3]-ladderane-octanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02030032	1-tetradecanyl-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02030033	1-(15-methyl-tridecanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02070004	1-(14-methyl-pentadecanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02070005	1-(10-methyl-hexadecanoyl-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02070006	1-(9,14-dimethyl-pentadecanoyl-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02070007	1-(6-[5]-ladderane-hexanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02070008	1-(8-[5]-ladderane-octanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGL02070009	1-(8-[3]-ladderane-octanoyl-2-(8-[3]-ladderane-octanyl)-sn-glycerol	Planctomycetes
+LMGP01040088	1-(6-[5]-ladderane-hexanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01040089	1-(8-[5]-ladderane-octanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01040090	1-(6-[3]-ladderane-hexanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01040091	1-(8-[3]-ladderane-octanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01040092	1-hexadecanyl-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01040093	1-(10-methylhexadecanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01040094	1-tetradecanyl-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01060026	2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phosphocholine	Planctomycetes
+LMGP01080001	1-(6-[5]-ladderane-hexanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01080002	1-(8-[5]-ladderane-octanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01080003	1-(6-[3]-ladderane-hexanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01080004	1-(8-[3]-ladderane-octanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP01080005	1-tetradecanoyl-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphocholine	Planctomycetes
+LMGP02040014	1-(8-[5]-ladderane-octanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	Planctomycetes
+LMGP02040015	1-tetradecanyl-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	Planctomycetes
+LMGP02040017	1-(8-[3]-ladderane-octanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	Planctomycetes
+LMGP02060001	2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phosphoethanolamine	Planctomycetes
+LMGP02080001	1-(6-[5]-ladderane-hexanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	Planctomycetes
+LMGP02080002	1-(8-[5]-ladderane-octanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	Planctomycetes
+LMGP02080003	1-(8-[3]-ladderane-octanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	Planctomycetes
+LMGP02080004	1-(10-methyl-hexadecanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	Planctomycetes
+LMGP02080005	1-tetrahexanoyl-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	Planctomycetes
+LMGP02080008	1-(6-[3]-ladderane-hexanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycerophosphoethanolamine	Planctomycetes
+LMGP04040002	1-(6-[5]-ladderane-hexanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	Planctomycetes
+LMGP04040003	1-tetradecanyl-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	Planctomycetes
+LMGP04040004	1-(8-[5]-ladderane-octanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	Planctomycetes
+LMGP04040005	1-(8-[3]-ladderane-octanyl)-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	Planctomycetes
+LMGP04040006	1-(8-[5]-ladderane-octanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	Planctomycetes
+LMGP04110001	1-tetradecanoyl-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	Planctomycetes
+LMGP04110002	1-(6-[5]-ladderane-hexanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	Planctomycetes
+LMGP04110003	1-(6-[3]-ladderane-hexanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	Planctomycetes
+LMGP04110004	1-(8-[3]-ladderane-octanoyl)-2-(8-[3]-ladderane-octanyl)-sn-glycero-3-phospho-(1'-sn-glycerol)	Planctomycetes

@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import sys
 from datetime import datetime
 from typing import Any, Dict, List, Tuple, Union
@@ -107,10 +108,51 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
     return df_out
 
 
+def lipid_has_odd_n_carb(lipid_name: str, cutoff_n_carbons: int) -> bool:
+    """
+    True if:
+     - the total sum of carbons of the lipid chains is odd, and
+     - the global nb of carbons in the whole lipid structure is <= cutoff
+    """
+    chains = re.findall(r'(\d+:\d+)', lipid_name)
+
+    carbon_n_list = []
+    for chain in chains:
+        carbon_n_list.append(chain.split(':')[0])
+
+    carbon_sum = np.sum(np.array(carbon_n_list, dtype=np.int32))
+    if (carbon_sum % 2 != 0) and (carbon_sum <= cutoff_n_carbons):
+        return True
+    else:
+        return False
+
+
+def odd_n_carb_lipids_to_df(
+        df: pd.DataFrame, name_col: str, cutoff_n_carbons: int
+) -> pd.DataFrame:
+    """
+    Determines if the lipids in the dataframe are
+    highly likely to be of ruminant gut microbiota or bacterial origin.
+    Note: An odd number of carbon atoms is frequent in ruminant gut microbiota
+          and the sum of carbons (all chains) in such a lipid is max 17
+          doi:10.1096/fasebj.8.15.8001737, 10.1016/j.anifeedsci.2006.06.017
+
+    Returns a dataframe where only such lipids are present.
+    """
+    df = df.assign(odd_lipid=df[name_col].apply(
+        lambda x: lipid_has_odd_n_carb(x, cutoff_n_carbons)))
+    df = df.loc[df['odd_lipid'] == True, :].copy()
+
+    return df
+
+
 def purge_annotations(df_notranslated: pd.DataFrame,
                       discard_pharmaceuticals: bool,
                       discard_plant_compounds: bool,
                       discard_other_non_animal: bool,
+                      discard_odd_lipids: bool,
+                      cutoff_odd_n_carb: int,
+                      ids_col: str, name_col: str,
                       library_path: Union[str, Any]) -> pd.DataFrame:
     """
     Cleans annotations by species origin:
@@ -118,7 +160,6 @@ def purge_annotations(df_notranslated: pd.DataFrame,
      - using user defined booleans on the type of molecules to retain
      note: library_path (Path or str) obeys to the internal package structure
     """
-    ids_col = "moleculeIds"
     f_picker = {"pharma": {'istrue': discard_pharmaceuticals,
                            'file': "pharmaceuticals.tsv"},
                 "plant": {'istrue': discard_plant_compounds,
@@ -126,6 +167,7 @@ def purge_annotations(df_notranslated: pd.DataFrame,
                 "other": {'istrue': discard_other_non_animal,
                           'file': "non_animal_other.tsv"}
                 }
+
     for k in f_picker:
         if f_picker[k]['istrue']:
             tmp_df = pd.read_csv(
@@ -134,6 +176,12 @@ def purge_annotations(df_notranslated: pd.DataFrame,
             df_notranslated = df_notranslated.loc[
                 ~df_notranslated[ids_col].isin(tmp_df[ids_col]),
                 :].copy()
+
+    if discard_odd_lipids:
+        odd_lipids_df = odd_n_carb_lipids_to_df(
+            df_notranslated, name_col, cutoff_n_carbons=cutoff_odd_n_carb)
+        df_notranslated = df_notranslated.loc[~df_notranslated[ids_col].isin(
+            odd_lipids_df[ids_col])]
 
     return df_notranslated
 
@@ -481,3 +529,4 @@ def aliases_handler(aliases_df, anno_df, usable_id: str) -> List[str]:
     accepted_ids = yield_clean_noalias_ids(annots_aliases)
 
     return accepted_ids
+

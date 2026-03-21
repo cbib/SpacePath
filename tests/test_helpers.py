@@ -169,6 +169,10 @@ class Test(TestCase):
         df = helpers.purge_annotations(df, discard_pharmaceuticals=True,
                                        discard_plant_compounds=True,
                                        discard_other_non_animal=True,
+                                       discard_odd_lipids=True,
+                                       cutoff_odd_n_carb=17,
+                                       ids_col="moleculeIds",
+                                       name_col="moleculeNames",
                                        library_path=test_purpose_libr_path)
 
         self.assertEqual(df.shape, (1, 2))

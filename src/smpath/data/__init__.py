@@ -119,6 +119,8 @@ class MetabolomeAnnotations(Dataset):
     discard_plant_compounds: bool = True
     discard_pharmaceuticals: bool = True
     discard_other_non_animal: bool = True
+    discard_odd_n_carb_lipids: bool = True
+    cutoff_n_carb: int = 17  # used in combination with odd lipids filtering
 
     def load(self):
         logger.info("Loading annotations for dataset: '%s'", self.name)
@@ -175,7 +177,9 @@ class MetabolomeAnnotations(Dataset):
         self.no_translated = helpers.purge_annotations(
             self.no_translated, self.discard_pharmaceuticals,
             self.discard_plant_compounds, self.discard_other_non_animal,
-            library_path=library_path)
+            self.discard_odd_n_carb_lipids, self.cutoff_n_carb,
+            self.molecule_ids_col, self.molecule_names_col,
+             library_path=library_path)
         logger.info(" success, annotations loaded (attr `.no_translated`)")
 
     def pull_mz_quality_df(self):
