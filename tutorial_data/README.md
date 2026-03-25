@@ -1,6 +1,6 @@
 # Datasets for using the `smpath` library
 
-Datasets are provided, as examples of spatial metabolomics/lipidomics acquisitions, 
+Datasets are provided, consisting of examples of spatial metabolomics/lipidomics acquisitions, 
 through the public Zenodo registry [https://zenodo.org/records/19113236](https://zenodo.org/records/19113236). 
 
 > **Important:**
