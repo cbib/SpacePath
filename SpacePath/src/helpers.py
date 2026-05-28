@@ -327,11 +327,13 @@ def safe_load_data_and_clean_annotations(SAMPLE: str,
                                          pathways_types: List[str],
                                          subfolder: str,
                                          data_centralized_folder: str
-                                         ) -> Tuple[ad.AnnData, pd.DataFrame]:
+) -> Tuple[ad.AnnData, Dict[str,pd.DataFrame]]:
     """
     safely load mzs intensities (anndata) and annotations (dataframe):
      only good quality ions AND only clean annotations, for both objects
     """
+    pathways_types = list(set(pathways_types) - {"FAMILIES"})
+
     adata_mz = safe_load_processed_data(SAMPLE, subfolder,
                                         data_centralized_folder)
     annots_dict = read_clean_annotations(SAMPLE, pathways_types, subfolder,
