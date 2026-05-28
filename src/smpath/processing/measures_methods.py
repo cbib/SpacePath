@@ -96,7 +96,7 @@ def compute_metabolites_probs_df(adata_mz: ad.AnnData,
 # normalization of m/z's (ions) and autocorrelation
 
 def tic_normalization(
-        intensity_matrix: Union[csr_matrix, np.array]) -> np.matrix:
+        intensity_matrix: Union[csr_matrix, np.ndarray]) -> np.matrix:
     """
     Perform Total Ion Count (TIC) normalization on a raw 2D intensity matrix
     of m/z features

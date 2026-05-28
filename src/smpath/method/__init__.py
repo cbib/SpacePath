@@ -155,6 +155,10 @@ class ClassifyMZProtocol:
         plt.savefig(os.path.join(plot_folder, f"{SAMPLE}-msm_prefilters.pdf"))
         plt.close()
         logger.info("  saved plot (MSM, offSample, FDR) to %s", plot_folder)
+
+        if not 'history' in list(adata_mz.uns.keys()):
+            adata_mz.uns['history'] = {}
+
         adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(
             mz_good_from_part_a)
 
