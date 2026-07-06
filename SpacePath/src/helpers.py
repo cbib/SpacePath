@@ -188,11 +188,11 @@ def squidpy_differential_analysis(adata: ad.AnnData,
                             groups='all',
                             reference='rest',
                             method='wilcoxon',
-                            key_added="top_feats_by_cluster",
+                            key_added="feats_by_cluster",
                             corr_method='benjamini-hochberg')
 
     differential_results_by_cluster = sc.get.rank_genes_groups_df(
-        adata, key="top_feats_by_cluster",
+        adata, key="feats_by_cluster",
         group=None)  # returns all groups
 
     return differential_results_by_cluster
