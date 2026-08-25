@@ -222,8 +222,9 @@ class MetabolomeAnnotations(Dataset):
             logger.error('The .usable_id must be "KEGG". Aborted.')
             raise ValueError
         assert np.all(np.array(list(ref_table.columns)) == np.array(
-            columns_kegg_conversion_expected)), "Metabolite reference"
-        f" mappings columns must be {columns_kegg_conversion_expected}"
+            columns_kegg_conversion_expected)), (
+            f"Metabolite reference mappings columns must be {columns_kegg_conversion_expected}"
+        )
         try:
             self.df = helpers.convert_metabo_annots_tokegg(
                 self.no_translated, ref_table,
