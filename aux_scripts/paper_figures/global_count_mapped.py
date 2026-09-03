@@ -123,13 +123,21 @@ for data_type in data_types:
 # Final report over both types of data collections
 print()
 print("=========== Final report ==============")
+print("coverage by canonical pathways alone, max:",
+      np.max([sets_coverage_dict["private"]['cov canonical'],
+       sets_coverage_dict["public"]["cov canonical"]]))   #  max 0.0136
+
 print("coverage by canonical pathways alone, avg over public and private data:",
       (sets_coverage_dict["private"]['cov canonical'] +
        sets_coverage_dict["public"]["cov canonical"]) / 2)
 
-print("coverage by canonical pathways:", sets_coverage_dict["public"]["cov canonical"])
-print("coverage by KEGG:", sets_coverage_dict["public"]["cov canonical KEGG"])
-print("coverage by WIKI:", sets_coverage_dict["public"]["cov canonical WIKI"])
+print("coverage by KEGG:",
+      (sets_coverage_dict["private"]['cov canonical KEGG'] +
+       sets_coverage_dict["public"]["cov canonical KEGG"]) / 2)
+
+print("coverage by WIKI:",
+      (sets_coverage_dict["private"]['cov canonical WIKI'] +
+       sets_coverage_dict["public"]["cov canonical WIKI"]) / 2)
 
 
 print("coverage by all sets: pathways and SpacePath families:",
@@ -139,9 +147,5 @@ print("=======================================")
 
 
 # =========== Final report ==============
-# coverage by canonical pathways alone, avg over public and private data: 0.010021301068816345
-# coverage by canonical pathways: 0.013642159610309982
-# coverage by KEGG: 0.014645172735152668
-# coverage by WIKI: 0.012639146485467297
-# coverage by all sets: pathways and SpacePath families: 0.24052133108897328
+
 # =======================================
