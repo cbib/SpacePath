@@ -48,7 +48,9 @@ for data_type in data_types:
 
     canonical_coverage_avg = (global_KEGG_mapped + global_WIKI_mapped) / 2
 
-    sets_coverage_dict[data_type] = {'cov canonical' : canonical_coverage_avg}
+    sets_coverage_dict[data_type] = {'cov canonical' : canonical_coverage_avg,
+                                     'cov canonical KEGG': global_KEGG_mapped,
+                                     'cov canonical WIKI': global_WIKI_mapped}
 
     ####### now test how many were now associated to families or pathways or both
     fractions_coverage_families_list = list()
@@ -125,9 +127,10 @@ print("coverage by canonical pathways alone, avg over public and private data:",
       (sets_coverage_dict["private"]['cov canonical'] +
        sets_coverage_dict["public"]["cov canonical"]) / 2)
 
-print("coverage by canonical pathways alone, max:",
-      np.max([sets_coverage_dict["private"]['cov canonical'],
-       sets_coverage_dict["public"]["cov canonical"]]))
+print("coverage by canonical pathways:", sets_coverage_dict["public"]["cov canonical"])
+print("coverage by KEGG:", sets_coverage_dict["public"]["cov canonical KEGG"])
+print("coverage by WIKI:", sets_coverage_dict["public"]["cov canonical WIKI"])
+
 
 print("coverage by all sets: pathways and SpacePath families:",
       (sets_coverage_dict["private"]['cov all sets avg'] +
@@ -137,6 +140,8 @@ print("=======================================")
 
 # =========== Final report ==============
 # coverage by canonical pathways alone, avg over public and private data: 0.010021301068816345
-# coverage by canonical pathways alone, max: 0.013642159610309982
+# coverage by canonical pathways: 0.013642159610309982
+# coverage by KEGG: 0.014645172735152668
+# coverage by WIKI: 0.012639146485467297
 # coverage by all sets: pathways and SpacePath families: 0.24052133108897328
 # =======================================
