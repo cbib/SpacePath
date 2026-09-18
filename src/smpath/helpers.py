@@ -19,7 +19,10 @@ LOGFILE = datetime.now().strftime("%y-%m-%-d_%H-%M-%S-%f.log")
 
 
 def setup_logger(logger, prefix=''):
-    """parameters for the log file"""
+    """Set up logger only if not already configured"""
+    if logger.handlers:
+        return logger
+
     if not os.path.exists(os.path.join(os.getcwd(), "logs")):
         os.makedirs(os.path.join(os.getcwd(), "logs"))
 
@@ -50,15 +53,19 @@ def secured_trios(identifiers_validated: List[str],
     smiles_final = list()
     identifiers_final = list()
     fingerprints_final = list()
-    for id, smi in zip(identifiers_validated, smiles_validated):
+    for identifier, smi in zip(identifiers_validated, smiles_validated):
         try:
             chem_molecule = Chem.MolFromSmiles(smi)
+            if chem_molecule is None:
+                logger.warning("Invalid SMILES for %s: '%s', skipping", identifier, smi)
+                continue
             fingerprint = fpgen.GetFingerprint(chem_molecule)
             smiles_final.append(smi)
-            identifiers_final.append(id)
+            identifiers_final.append(identifier)
             fingerprints_final.append(fingerprint)
-        except Exception as e:
-            print(e, "inappropriate smile for %s %s, skip", id, smi)
+        except (ValueError, TypeError, AttributeError) as e:
+            logger.warning("Failed to process SMILES for %s ('%s'): %s",
+                           identifier, smi, str(e))
 
     return identifiers_final, smiles_final, fingerprints_final
 
@@ -126,9 +133,10 @@ def lipid_has_odd_n_carb(lipid_name: str|Any, cutoff_n_carbons: int) -> bool:
             if (carbon_sum % 2 != 0) and (carbon_sum <= cutoff_n_carbons):
                 out_bool = True
         except TypeError:
-            pass
-        except Exception as e:
-            pass
+            pass  # Expected for non-lipid names, not an error
+        except ValueError as e:
+            logger.debug("Could not parse carbon count from '%s': %s",
+                         lipid_name, e)
 
     return out_bool
 

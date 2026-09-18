@@ -12,4 +12,4 @@ src/.ipynb_checkpoints/
 /resources/SMILES/HMDB-SMILES_05-07-24.tsv
 # note that HMDB SMILES tsv is too big. It is uploaded as zip
 *.log
-/logs/
+logs/

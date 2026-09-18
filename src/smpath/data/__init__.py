@@ -59,13 +59,21 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
             set(list(self.mapping_files.keys()))))
         for map_key in admitted_keys:
             logger.info(" loading %s", map_key)
+            file_path = os.path.join(self.data_dir, self.subfolder,
+                    self.mapping_files[map_key])
             try:
-                df = pd.read_csv(os.path.join(
-                    self.data_dir, self.subfolder,
-                    self.mapping_files[map_key]),
-                    sep=self.delimiter, header=0)
+                df = pd.read_csv(file_path, sep=self.delimiter, header=0)
+            except FileNotFoundError:
+                logger.error("Mapping file not found: %s", file_path)
+                raise
+            except pd.errors.EmptyDataError:
+                logger.error("Mapping file is empty: %s", file_path)
+                raise
             except Exception as e:
-                logger.info("Error (read_csv): \n %s", e)
+                logger.error("Failed to read mapping file '%s': %s", map_key, e)
+                raise
+
+
 
             self.check_expectations_map2(df, map_key)
             df = df.dropna()
@@ -132,15 +140,23 @@ class MetabolomeAnnotations(Dataset):
             set(list(self.annotation_files.keys()))))
 
         for anno_key in admitted_keys:
+            file_path = os.path.join(self.data_dir, self.subfolder,
+                self.annotation_files[anno_key])
             try:
                 df = pd.read_csv(
-                    os.path.join(
-                        self.data_dir, self.subfolder,
-                        self.annotation_files[anno_key]),
+                    file_path,
                     comment='#',  # override any comment (metaspace does)
                     sep=self.delimiter, header=0)
+            except FileNotFoundError:
+                logger.error("Annotation file not found: %s", file_path)
+                raise
+            except pd.errors.EmptyDataError:
+                logger.error("Annotation file is empty: %s", file_path)
+                raise
             except Exception as e:
-                logger.info("Error (read_csv): \n %s", e)
+                logger.error("Failed to read annotation file '%s': %s",
+                             anno_key, e)
+                raise
 
             self.check_expectations_2(df)
             try:
