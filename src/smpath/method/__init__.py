@@ -56,7 +56,7 @@ class ClassifyMZProtocolConfig(MethodConfig):
     n_perms_moran_calc: Union[int, str] = "auto"  # for Moran's I
     msm_cutoff: float = 0.5
     offSample_cutoff: float = 0.2
-    fdr_cutoff: float = 0.2,
+    fdr_cutoff: float = 0.2
     moran_I_cutoff: float = 0.1
     moran_padj_cutoff: float = 0.1
     var_sim_cutoff: float = 1e-20
