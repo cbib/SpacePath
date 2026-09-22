@@ -4,7 +4,7 @@ from typing import List
 mz_decimal_places = 6
 
 supported_annotations: List[str] = ["LipidMaps",
-                                    "LIPID_MAPS",  # ancient db version too
+                                    "LIPID_MAPS",
                                     "CoreMetabolome",
                                     "HMDB",
                                     "Swisslipids",

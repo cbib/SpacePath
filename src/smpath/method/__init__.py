@@ -118,7 +118,9 @@ class NormalizeIntensities:
                     logger.info("Intensities already normalised, "
                                 "check .uns['norm'] and .layers['raw_X']")
             except Exception as e:
-                logger.critical("Error %s \ncould not normalise", e)
+                logger.critical("Normalization failed: %s", e)
+                raise RuntimeError(
+                    f"Could not normalize intensities: {e}") from e
         else:
             logger.error("%s is not supported", config.method)
 
