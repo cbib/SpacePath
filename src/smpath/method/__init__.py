@@ -86,7 +86,7 @@ class ComputeMoleculesFamiliesConfig(MethodConfig):
     method: str = "HierarchicalClustering"
     cutoff_tree: float = 1
     method_linkage: str = "ward"
-    metric_linkage: str = "cosine"
+    # metric never used because 'squareform' pretreated matrix is the input
 
 
 # 2) the methods using the configs above
@@ -345,10 +345,7 @@ class ComputeMoleculesFamilies:
         distance_matrix = 1 - mol_similarities_result['array']
         # squareform saves memory by representing the matrix with the upper right triangle
         computed_dendrogram = linkage(squareform(distance_matrix),
-                                      method=config.method_linkage,
-                                      # it is 'ward' by default
-                                      metric=config.metric_linkage
-                                      # it is cosine by default
+                                      method=config.method_linkage
                                       )
         clusters = fcluster(computed_dendrogram,
                             t=config.cutoff_tree, criterion='distance')
