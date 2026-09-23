@@ -225,10 +225,10 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
         if copy_mz.uns['moranI'].shape[0] != len(mz_good_from_part_a):
             del copy_mz.uns['moranI']
     except KeyError:
-        pass
+        pass  # Expected if moranI not present yet
     except Exception as e:
-        logger.error(e)
-        pass
+        logger.warning("Error checking moranI cache, will recompute: %s", e)
+        # Continue execution - moranI will be recomputed
 
     if "moranI" not in list(copy_mz.uns.keys()):
         if not helpers.is_log_transformed(copy_mz.X):

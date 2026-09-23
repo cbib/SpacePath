@@ -73,8 +73,6 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
                 logger.error("Failed to read mapping file '%s': %s", map_key, e)
                 raise
 
-
-
             self.check_expectations_map2(df, map_key)
             df = df.dropna()
             df = df.loc[df[self.style_desired] != "", :]
@@ -351,15 +349,21 @@ class MetabolicPathways(BaseModel, extra='allow'):
             else:
                 logger.info(
                     "only 'sspa-kegg' download is currently supported")
+        file_path = os.path.join(self.data_dir, self.subfolder, self.file)
         try:
             official_gmt = pd.read_csv(
-                os.path.join(self.data_dir, self.subfolder,
-                             self.file),
-                header=None, sep='\t', index_col=False, low_memory=False)
-            official_gmt = official_gmt.dropna(
-                axis=1, how="all")  # drop if entire column is NaN
+                file_path, header=None, sep='\t', index_col=False,
+                low_memory=False)
+            official_gmt = official_gmt.dropna(axis=1, how="all")
+        except FileNotFoundError:
+            logger.error("Pathway file not found: %s", file_path)
+            raise
+        except pd.errors.EmptyDataError:
+            logger.error("Pathway file is empty: %s", file_path)
+            raise
         except Exception as e:
-            logger.error(e)
+            logger.error("Failed to load pathway file '%s': %s", self.file, e)
+            raise
 
         official_gmt = helpers.prettify_gmt(official_gmt,
                                             self.undesired_substring)
