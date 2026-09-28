@@ -1,5 +1,4 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
- 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)  [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
  
 
 SpacePath
@@ -56,36 +55,27 @@ micromamba create -f spacepath_env.yaml
 </details>
 
 
-
-
 ## Installation 
 
 The full installation process should take less than 15 minutes on a standard computer (dependencies included). Two options are possible.
 
-#### Option 1: Install via pip
-
+#### Option 1: Install via `pip`
+Follow the three steps specified in the snippet below:
 ```
-micromamba activate spacepath
-pip install SpacePath
+micromamba activate spacepath   # activate your environment
+pip install SpacePath         
 pip install sspa==1.0.4
 ```
 
 #### Option 2: Using a local clone and poetry
 
-First clone `SpacePath` in your workspace (`git clone git@github.com:cbib/SpacePath.git`) 
-
-Then, follow these steps in order:
-1. Activate your virtual environment, 2) locate into the cloned folder, 3) Install SpacePath with poetry and 4) install `sspa`:
-
+First clone `SpacePath` in your workspace (`git clone git@github.com:cbib/SpacePath.git`), then, follow the steps specified in the snippet below:
 ```
-micromamba activate spacepath   # 1
-cd SpacePath   # 2
-poetry install  # 3
-pip install sspa==1.0.4  # 4
+micromamba activate spacepath   # 1. activate your environment
+cd SpacePath   # 2. locate into the cloned SpacePath
+poetry install  # 3. install SpacePath
+pip install sspa==1.0.4  # 4. intall sspa
 ```
-Now SpacePath is ready to use.   
-
-
  
 ## After the install process
 
@@ -98,7 +88,14 @@ The generic command line to run the pipeline is:
 SpacePath $input_file $data_folder $figures_folder
 ```
 
-## Information for Developers
+# Documentation
+
+Documentation, examples of how to use `SpacePath`, and the specifics of the datasets used in the analyses 
+are provided in the [Wiki]() page.   
+
+-------------
+
+# For Developers
 
 ### Code organization of the `core` folder of SpacePath
 
@@ -113,29 +110,10 @@ The `core` folder contains the core classes for data and methods that are requir
 
 ### Running unit tests 
 
-Place yourself in `SpacePath/tests` and execute `pytest` or,  alternatively, `python -m unittest`. 
+Place yourself in `SpacePath/tests` and execute **`pytest`** or,  alternatively, `python -m unittest`. 
 
 
-
-# Documentation
-
-Documentation, examples of how to use `SpacePath`, and the specifics of the datasets used in the analyses 
-are provided in the [Wiki]() page.   
-
-The code organization is also explained in the Wiki page.
-
-
-
-----
-
-# Documentation
-
-Documentation, examples of how to use `SpacePath`, and the specifics of the datasets used in the analyses 
-are provided in the [Wiki]() page.   
-
-The code organization is also explained in the Wiki page.
-
------------------------------------------------------------------------------------------------
+-------------
   
 # Getting help
 
@@ -143,6 +121,8 @@ For any information or help, you can get in touch with:
 
 * [Johanna Galvis](mailto:deisy-johanna.galvis-rodriguez[AT]u-bordeaux.fr)
 
+
+-------------
 
 # LICENSE MIT
 
