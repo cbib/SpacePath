@@ -12,7 +12,7 @@ from SpacePath.src.helpers import (join_scores_adatas,
                                    safe_insert_clusters_column,
                                    differential_results_filter,
                                    squidpy_differential_analysis)
-import smpath.processing.measures_methods as measures_methods
+import SpacePath.core.processing.measures_methods as measures_methods
 
 from viz_results_helpers import run_alluvial_plot
 

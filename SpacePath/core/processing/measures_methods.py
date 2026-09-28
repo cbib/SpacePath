@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 from scipy.sparse import csr_matrix
-import smpath.helpers as helpers
-from smpath.data import MetabolomeAnnotations
+import SpacePath.core.helpers as helpers
+from SpacePath.core.data import MetabolomeAnnotations
 import squidpy as sq
 
 logger = logging.getLogger(__name__)

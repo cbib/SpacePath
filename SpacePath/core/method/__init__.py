@@ -17,18 +17,18 @@ from rdkit import DataStructs
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.sparse import csr_matrix
 from scipy.spatial.distance import squareform
-import smpath.helpers as helpers
-import smpath.processing.measures_methods as measures_methods
-import smpath.processing.pathways_methods as pathways_methods
-import smpath.visualization.visualization as sviz
-from smpath.data import MetabolicPathways, MetabolomeAnnotations
+import SpacePath.core.helpers as helpers
+import SpacePath.core.processing.measures_methods as measures_methods
+import SpacePath.core.processing.pathways_methods as pathways_methods
+import SpacePath.core.visualization.visualization as sviz
+from SpacePath.core.data import MetabolicPathways, MetabolomeAnnotations
 import yaml
 
 logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
 
 module_path = Path(__file__).resolve()
-library_path = module_path.parent.parent.parent.parent
+library_path = module_path.parent.parent.parent #.parent
 
 
 class BaseModel(PydanticBaseModel):

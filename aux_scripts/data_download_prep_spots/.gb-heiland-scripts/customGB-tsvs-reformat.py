@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import anndata as ad
-import smpath.data as spd
+import SpacePath.core.data as spd
 from scipy.sparse import csr_matrix
 
 """

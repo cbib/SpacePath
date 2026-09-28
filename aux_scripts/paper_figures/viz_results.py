@@ -25,7 +25,7 @@ def main(input_file, data_dir, figures_dir, mode):
     """
     \b
     Visualize the results of SpacePath:
-       requires smpath with *holoviews* installed (pip install holoviews)
+       requires also *holoviews* installed (pip install holoviews)
 
     \b
     Positional arguments:

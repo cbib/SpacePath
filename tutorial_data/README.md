@@ -1,4 +1,4 @@
-# Datasets for using the `smpath` library
+# Datasets for using `SpacePath` 
 
 Datasets are provided, consisting of examples of spatial metabolomics/lipidomics acquisitions, 
 through the public Zenodo registry [https://zenodo.org/records/19113236](https://zenodo.org/records/19113236). 
@@ -26,18 +26,18 @@ $working_dir   # e.g.$HOME or other
 │    ├── metabolites-mappings      # the provided reference pathways
 │    ├── example-cerebellum      # the provided example dataset N 2
 │
-├── smpath    # if local cloning of the library; DO NOT modify
+├── SpacePath    # if local cloning 
 │    
 ├── my_scripts/    # HERE your .py scripts or jupyter notebooks
 ```
 Details about the specific content of each subfolder of `examples-sm-data` are provided in the same Zenodo registry.
 
 
-2. Visit our Wiki page [in this LINK](), which shows the usage of `smpath` on 
+2. Visit our Wiki page [in this LINK](), which shows the usage of `SpacePath` on 
 the provided example data. There we provide code snippets, that you can re-use to run a fast analysis on the example data!
 
 
-_Note: if you cloned the `smpath` library locally for usage (and not for development purposes), we strongly recommend
+_Note: if you cloned the `SpacePath` locally for usage (and not for development purposes), we strongly recommend
 **not to add any datasets**, nor scripts, inside the library folder._
 
 

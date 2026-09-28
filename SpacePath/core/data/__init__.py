@@ -10,9 +10,9 @@ from pandas.api.types import is_numeric_dtype
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
 
-import smpath.helpers as helpers
-import smpath.processing.pathways_methods as pathways_methods
-from smpath.constants import (columns_kegg_conversion_expected,
+import SpacePath.core.helpers as helpers
+import SpacePath.core.processing.pathways_methods as pathways_methods
+from SpacePath.core.constants import (columns_kegg_conversion_expected,
                               message_multimz,
                               mz_decimal_places,
                               not_metabolic_reactions_pathways,
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
 
 module_path = Path(__file__).resolve()
-library_path = module_path.parent.parent.parent.parent
+library_path = module_path.parent.parent.parent #.parent
 
 
 class BaseModel(PydanticBaseModel):
@@ -187,6 +187,7 @@ class MetabolomeAnnotations(Dataset):
         self.no_translated[self.mz_col] = np.around(
             self.no_translated[self.mz_col].to_numpy(),
             decimals=mz_decimal_places)
+
 
         self.no_translated = helpers.purge_annotations(
             self.no_translated, self.discard_pharmaceuticals,

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import List
 from unittest import TestCase
@@ -5,10 +6,10 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 
-import src.smpath.helpers as helpers
+import SpacePath.core.helpers as helpers
 
 module_path = Path(__file__).resolve()
-test_purpose_libr_path = module_path.parent.parent
+test_purpose_libr_path = os.path.join(module_path.parent.parent, "SpacePath")
 
 
 class Test(TestCase):

@@ -15,9 +15,9 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 
-import smpath.helpers as helpers
+import SpacePath.core.helpers as helpers
 
-from smpath.constants import mz_decimal_places
+from SpacePath.core.constants import mz_decimal_places
 
 
 from tqdm import tqdm

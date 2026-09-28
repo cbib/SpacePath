@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import seaborn as sns
-import smpath.data as spd
-import smpath.method as spm
+import SpacePath.core.data as spd
+import SpacePath.core.method as spm
 import squidpy as sq
 from scipy.sparse import csr_matrix
 
@@ -103,7 +103,7 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df,
                                              type_abbr: str) -> Tuple[
     ad.AnnData, float]:
     """
-    Uses smpath library to compute scores dataframe,
+    Uses core library to compute scores dataframe,
        and wraps the scores into a new anndata object
 
     returns: - anndata object

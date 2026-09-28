@@ -15,8 +15,8 @@ import pandas as pd
 import anndata as ad
 import json
 from typing import List
-import smpath.data as spd
-import smpath.processing.measures_methods as measures_methods
+import SpacePath.core.data as spd
+import SpacePath.core.processing.measures_methods as measures_methods
 import matplotlib.pyplot as plt
 
 import logging

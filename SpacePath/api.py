@@ -3,9 +3,9 @@ import warnings
 
 warnings.simplefilter('ignore', category=FutureWarning)
 
-from smpath.helpers import setup_logger  # to add extra info to the smpath log
+from Spacepath.core.helpers import setup_logger  # to add extra info to the log
 
-import smpath.processing.measures_methods as measures_methods
+import SpacePath.core.processing.measures_methods as measures_methods
 from sklearn.cluster import KMeans
 
 import pickle
@@ -290,7 +290,7 @@ def clean_annotations_and_save_tsv(annots_obj: spd.MetabolomeAnnotations,
                                    data_centralized_folder: str
                                    ) -> None:
     """
-    cleans the loaded annotations using smpath library,
+    cleans the loaded annotations using core library,
       then saves to tab delimited .tsv files.
       one file for each type of pathway (KEGG or WIKIPATHWAYS) is saved
     """
@@ -311,7 +311,7 @@ def clean_annotations_and_save_tsv(annots_obj: spd.MetabolomeAnnotations,
     # for each type of pathway, save the respective clean annotations
     for pw_type in pathways_types:
         annots_current = annots_obj.model_copy()  # copy is compulsory
-        # cleaning annotations using `smpath` library:
+        # cleaning annotations using core library:
         if pw_type == "WIKI":
             annots_current.usable_id = "moleculeIds"
             annots_current.verify()
@@ -339,7 +339,7 @@ def normalize_classify_and_save_anndata_mz(
     """
     performs the first step consisting of intensities' normalisation
     and the classification of the ions (m/z) by their quality metrics,
-    using the library smpath
+    using the core library
     """
     adata_mz = ad.read_h5ad(filename=os.path.join(
         data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))

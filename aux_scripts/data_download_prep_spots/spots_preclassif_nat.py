@@ -8,7 +8,7 @@ import scanpy as sc
 import matplotlib.pyplot as plt
 from typing import List
 import scipy.sparse.linalg as linalg
-import smpath.method as spm
+import SpacePath.core.method as spm
 import json
 
 import warnings

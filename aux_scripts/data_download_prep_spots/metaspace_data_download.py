@@ -6,7 +6,7 @@ import sys
 import os
 import pandas as pd
 from spots_purge import show_message
-import smpath.anndata_aux.matrix_from_metaspace as mfm
+import SpacePath.core.anndata_aux.matrix_from_metaspace as mfm
 import warnings
 """"
 download any dataset using info in a .csv table

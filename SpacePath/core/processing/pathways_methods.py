@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import scipy.sparse.linalg as linalg
-from smpath.helpers import is_log_transformed
+from SpacePath.core.helpers import is_log_transformed
 import sspa as sspa
 
 

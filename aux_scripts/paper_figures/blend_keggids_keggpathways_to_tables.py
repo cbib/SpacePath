@@ -9,9 +9,9 @@
 import os
 import pandas as pd
 import anndata as ad
-import smpath.data as spd
-import smpath.method as spm
-import smpath.processing.measures_methods as measures_methods
+import SpacePath.core.data as spd
+import SpacePath.core.method as spm
+import SpacePath.core.processing.measures_methods as measures_methods
 from aux_scripts.data_download_prep_spots.spots_purge import \
     annotation_types_to_file_names_dict
 

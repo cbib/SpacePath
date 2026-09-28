@@ -1,4 +1,4 @@
-"""Minimal smoke test for smpath core workflow."""
+"""Minimal smoke test for  core workflow."""
 import os
 import tempfile
 
@@ -8,7 +8,7 @@ import anndata as ad
 from scipy.sparse import csr_matrix
 import pytest
 
-from smpath.processing import measures_methods
+from SpacePath.core.processing import measures_methods
 
 
 def create_minimal_test_data(tmpdir):
@@ -62,22 +62,22 @@ class TestImports:
     """Test that core modules import without error."""
 
     def test_import_data(self):
-        import smpath.data as spd
+        import SpacePath.core.data as spd
         assert hasattr(spd, 'MetabolomeAnnotations')
         assert hasattr(spd, 'MetabolicPathways')
 
     def test_import_method(self):
-        import smpath.method as spm
+        import SpacePath.core.method as spm
         assert hasattr(spm, 'NormalizeIntensities')
         assert hasattr(spm, 'ClassifyMZProtocol')
 
     def test_import_helpers(self):
-        import smpath.helpers as helpers
+        import SpacePath.core.helpers as helpers
         assert hasattr(helpers, 'setup_logger')
 
     def test_import_processing(self):
-        import smpath.processing.measures_methods as mm
-        import smpath.processing.pathways_methods as pm
+        import SpacePath.core.processing.measures_methods as mm
+        import SpacePath.core.processing.pathways_methods as pm
         assert hasattr(mm, 'tic_normalization')
 
 
@@ -95,7 +95,7 @@ class TestMinimalWorkflow:
 
     def test_load_annotations(self):
         """Test that annotations can be loaded."""
-        import smpath.data as spd
+        import SpacePath.core.data as spd
 
         with tempfile.TemporaryDirectory() as tmpdir:
             create_minimal_test_data(tmpdir)
@@ -118,7 +118,7 @@ class TestMinimalWorkflow:
 
     def test_normalize_intensities(self):
         """Test TIC normalization."""
-        import smpath.method as spm
+        import SpacePath.core.method as spm
 
         with tempfile.TemporaryDirectory() as tmpdir:
             create_minimal_test_data(tmpdir)
@@ -131,8 +131,8 @@ class TestMinimalWorkflow:
             assert "raw_X" in adata.layers
 
     def test_classify_mzs(self):
-        import smpath.method as spm
-        import smpath.data as spd
+        import SpacePath.core.method as spm
+        import SpacePath.core.data as spd
 
         sample_name = "test"
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -173,8 +173,8 @@ class TestMinimalWorkflow:
             assert 'moranI' in list(adata.uns.keys())
 
     def test_compute_assignments_weights(self):
-        import smpath.method as spm
-        import smpath.data as spd
+        import SpacePath.core.method as spm
+        import SpacePath.core.data as spd
         sample_name = "test"
         with tempfile.TemporaryDirectory() as tmpdir:
             create_minimal_test_data(tmpdir)
@@ -214,8 +214,8 @@ class TestMinimalWorkflow:
             assert weights_df.shape[1] == len(annots.df['moleculeIds'].unique())
 
     def test_compute_pathways_scores(self):
-        import smpath.method as spm
-        import smpath.data as spd
+        import SpacePath.core.method as spm
+        import SpacePath.core.data as spd
 
         n_spots = 50
         rng = np.random.default_rng(seed=42)

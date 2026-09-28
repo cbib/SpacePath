@@ -17,7 +17,7 @@ import pyimzml.ImzMLParser as imzmlp
 
 from scipy.sparse import csr_matrix
 
-from smpath.constants import mz_decimal_places
+from SpacePath.core.constants import mz_decimal_places
 
 from tqdm import tqdm
 

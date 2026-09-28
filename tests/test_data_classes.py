@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-import smpath.data as spd
+import SpacePath.core.data as spd
 
 
 class TestMetabolomeAnnotations:
@@ -103,7 +103,7 @@ class TestMetabolicPathways:
         return path
 
     def test_load_valid_pathways(self):
-        import smpath.data as spd
+        import SpacePath.core.data as spd
 
         with tempfile.TemporaryDirectory() as tmpdir:
             self.create_valid_pathways_gmt(tmpdir, filename="test.gmt")
@@ -164,7 +164,7 @@ class TestMetaboliteIdsMappings:
         return path
 
     def test_load_identifiers_mappings(self):
-        import smpath.data as spd
+        import SpacePath.core.data as spd
 
         with tempfile.TemporaryDirectory() as tmpdir:
             self.create_valid_identifiers_mappings(tmpdir)

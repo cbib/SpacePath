@@ -1,4 +1,4 @@
-import smpath.data as spd
+import SpacePath.core.data as spd
 from typing import List
 import pandas as pd
 import numpy as np

@@ -4,8 +4,8 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 
-import src.smpath.helpers as helpers
-import src.smpath.processing.pathways_methods as pathways_methods
+import SpacePath.core.helpers as helpers
+import SpacePath.core.processing.pathways_methods as pathways_methods
 
 
 class PathwaysForTests:

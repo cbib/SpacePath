@@ -1,15 +1,11 @@
-<<<<<<< HEAD
-# mySpacePath
-[PENDING TO FILL DESCRIPTION, huge merging of lib and pipeline]
-=======
- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
  
+ 
+
 SpacePath
 ===
-A pathway-guided framework for deep exploration of Spatial Metabolomics and Lipidomics data
+A framework for pathways and molecular sets exploration of annotated Spatial Metabolomics and Lipidomics data
 
-
-This repository contains the code of the method SpacePath (Spatial omics exploration based on molecular families and metabolic pathways profiles), dedicated to the analysis of annotated Spatial Metabolomics and Lipidomics data. The code is also applicable to annotated datasets other than those included in our study.
 
 # Introduction
 
@@ -17,12 +13,12 @@ SpacePath is a novel bioinformatics framework designed to analyze spatial metabo
 
 SpacePath's approach integrates pathway activity scores at the spatial resolution level, and investigates unmapped features with a strategy that exploits the molecular similarity between chemical entities. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping, and facilitating the interpretation of complex mass spectrometry imaging data. When applied to cancer tissues, SpacePath can enhance the understanding of tumor metabolism.
 
-<img width="900" height="570" alt="Screenshot from 2025-07-22 15-06-39" src="https://github.com/user-attachments/assets/5a5bcc3b-d561-4ffc-b110-5fe0b40b75ca" />
+<img width="900" height="500" alt="Screenshot from 2025-07-22 15-06-39" src="https://github.com/user-attachments/assets/5a5bcc3b-d561-4ffc-b110-5fe0b40b75ca" />
 
 
 Notably, SpacePath was applied on a collection of different types of healthy and tumoral tissues, including glioblastoma. By integrating complex spatially resolved lipidomics data and functional sets expressed as pathways or families, the method provided valuable insights about the glioblastoma's metabolic organization, prompting a potential impact on biomarker discovery.
 
-_Note_: Currently, our method supports as input data, the datasets consisting of aligned and recalibrated spectra intensities alongside their annotations, that are obtained from the [METASPACE](https://metaspace2020.org/) output. 
+_Note_: Our method also supports, as input data, the datasets consisting of aligned and recalibrated spectra intensities alongside their annotations, that are obtained from the [METASPACE](https://metaspace2020.org/) output. 
 
 
 # Installing SpacePath 
@@ -31,49 +27,69 @@ _Note_: Currently, our method supports as input data, the datasets consisting of
 Running SpacePath requires an Unix environment with [python 3.10](http://www.python.org/). 
 It was tested under Linux and MacOS environments.
 
-**_Information about the method implementation_**: SpacePath is a Pipeline that entirely depends on the new **`smpath`** library, which is very easy to install (see how to [Install](https://github.com/cbib/smpath?tab=readme-ov-file#installing-smpath) this core library).
+ A virtual environment with poetry 2.3.3 is required
+(see 'Explanation for creating a virtual environment').
 
-> [!NOTE]  
-> The associated core library `smpath` offers rich functions for the pathway-based analysis of annotated spatial metabolomics data, and for exploiting unmapped features. It implements `sspa`, `rdkit`, `fastcluster`, among other powerful libraries.
+<details><!--commentvirtualenv-->
+
+ <summary>Explanation for creating a virtual environment
+ <sub><sup>(click to show/hide)</sup></sub>
+ </summary>
+
+All the install process must occur in a virtual environment with poetry installed.
+* with venv in python:
+```
+python3 -m venv spacepath
+source spacepath/bin/activate  # activate
+pip install poetry==2.3.3
+```
+* alternatiely, with conda, miniconda, micromamba or mamba (command examples below use micromamba):
+  
+```
+micromamba create -n spacepath python=3.10.18 -c conda-forge poetry==2.3.3
+```
+* or use the provided .yaml file that is located at <code>tools/spacepath_env.yaml</code> :
+```
+micromamba create -f spacepath_env.yaml  
+```
+
+</details>
+
+
 
 
 ## Installation 
 
-The full installation process should take less than 15 minutes on a standard computer (dependencies included). 
+The full installation process should take less than 15 minutes on a standard computer (dependencies included). Two options are possible.
 
-1. First **clone `SpacePath`** in your workspace (`git clone git@github.com:cbib/SpacePath.git`) 
-2. also **clone `smpath`** in your workspace (`git clone git@github.com:cbib/smpath.git`)
-3. activate your virtual environment with poetry installed (visit [link](https://github.com/cbib/smpath)); 
-   - complete the environment:
-     ```
-     cd smpath
-     poetry install
-     pip install sspa==1.0.4
-     ```
-   _Note_: our associated core library `smpath` which will be soon be packaged 
-into PyPI to be installable via `pip` and the instructions will be easier very soon. 
+#### Option 1: Install via pip
 
-4. finally run:
 ```
-cd $HOME/SpacePath   # adapt to your location
-poetry install
+micromamba activate spacepath
+pip install SpacePath
+pip install sspa==1.0.4
 ```
 
-<details>
+#### Option 2: Using a local clone and poetry
 
- <summary>Running unitary tests <sub><sup>(click to show/hide)</sup></sub>
- </summary>
- 
-We include some unitary tests in this repository, but in essence this code is a Pipeline and not a package. The most relevant unitary tests are implemented in the core library `smpath`. 
+First clone `SpacePath` in your workspace (`git clone git@github.com:cbib/SpacePath.git`) 
+
+Then, follow these steps in order:
+1. Activate your virtual environment, 2) locate into the cloned folder, 3) Install SpacePath with poetry and 4) install `sspa`:
+
 ```
-cd SMPATH
-pytest
+micromamba activate spacepath   # 1
+cd SpacePath   # 2
+poetry install  # 3
+pip install sspa==1.0.4  # 4
 ```
-</details>
+Now SpacePath is ready to use.   
+
+
  
 ## After the install process
 
-For subsequent use, just activate the environment (e.g. `micromamba activate smpath`) as it has all the requirements already installed for running SpacePath.
+For subsequent use, just activate the environment (e.g. `micromamba activate spacepath`) as it has all the requirements already installed for running SpacePath.
 
 # Using SpacePath
 
@@ -82,12 +98,39 @@ The generic command line to run the pipeline is:
 SpacePath $input_file $data_folder $figures_folder
 ```
 
+## Information for Developers
+
+### Code organization of the `core` folder of SpacePath
+
+The `core` folder contains the core classes for data and methods that are required for running SpacePath. It is organized into:
+
+* `processing` directory contains the implemented high-level functions for the processed dedicated to the measurements and/or the pathways inputs
+* `visualization` directory contains the implemented high-level scripts to produce figures
+* `data` directory contains the python classes for data initialization alongside the methods proper to each data class
+* `method` directory contains the python classes of the configurations and methods that are applied on diverse types of input objects, by invoking 'core/processing' functions
+* `anndata_aux` directory contains the auxiliary functions for dataset download and formatting into an 'anndata' object
+
+
+### Running unit tests 
+
+Place yourself in `SpacePath/tests` and execute `pytest` or,  alternatively, `python -m unittest`. 
+
+
+
+# Documentation
+
+Documentation, examples of how to use `SpacePath`, and the specifics of the datasets used in the analyses 
+are provided in the [Wiki]() page.   
+
+The code organization is also explained in the Wiki page.
+
+
 
 ----
 
 # Documentation
 
-Documentation, examples of how to use our pipeline, and the specifics of the datasets used in the analyses 
+Documentation, examples of how to use `SpacePath`, and the specifics of the datasets used in the analyses 
 are provided in the [Wiki]() page.   
 
 The code organization is also explained in the Wiki page.
@@ -123,4 +166,3 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
->>>>>>> spacepath/main

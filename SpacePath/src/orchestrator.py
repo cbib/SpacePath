@@ -77,7 +77,7 @@ class SingleTissueWorkflow:
                 name=self.sample, data_dir=self.data_dir,
                 subfolder=self.subfolder,
                 annotation_files=self.annotations_dict)
-            annots_obj.load()  # load annotations with smpath library
+            annots_obj.load()  # load annotations with core library
 
         if self.mode in ["all", "1"]:
             plt.rcParams.update({'font.size': 22})
