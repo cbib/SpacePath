@@ -1,0 +1,235 @@
+import gc
+import os
+from typing import Dict
+import warnings
+
+
+from SpacePath.api import (join_scores_adatas,
+                           safe_load_data_and_clean_annotations
+                           )
+
+from viz_results_helpers import (run_alluvial_plot,
+                                 run_individual_mz_scatters,
+                                 run_individual_tabular_plots
+                                 )
+from viz_constants import alluvial_n_to_display_dict as n_for_alluvial
+
+warnings.simplefilter('ignore',category=FutureWarning)
+
+
+import numpy as np
+import pandas as pd
+
+np.random.seed(42)  # important to make the computations be reproducible
+
+
+def filter_sets_per_cluster_for_plot(diff_copy_df, cluster_to_check,
+                                     top_for_plotting=2):
+    """
+    selects differential pathways being the n top by lfc, for plotting
+       forces selection by positive and negative log2FCs, to avoid having
+       all down or all up.
+
+    Note that 'down' or 'up' are theoretical, not yet biologically verified
+    """
+    diff_copy_df = diff_copy_df.loc[
+                 diff_copy_df['group'].astype(str) == str(cluster_to_check), :].copy()
+
+    up = diff_copy_df.sort_values(
+        by=['logfoldchanges', 'pvals_adj'],
+        ascending=[False, True]).head(top_for_plotting).copy()
+    down = diff_copy_df.sort_values(
+        by=['logfoldchanges', 'pvals_adj'],
+        ascending=[True, True]).head(top_for_plotting).copy()
+
+    diff_copy_df = pd.concat([up, down], axis=0)
+
+    return diff_copy_df
+
+
+def join_clean_annotations_from_dict(annots_dict: Dict[str,pd.DataFrame],
+                )-> pd.DataFrame:
+    """
+    concatenates annotations for each element in pathways_types
+     (but not FAMILIES, as the annotations in this case are the same that served to 'WIKI' type of pathway)
+     in other words, concatenates KEGG and no-KEGG (that we coined 'WIKI') annotations
+    """
+
+    dfs_to_gather = list()
+    for k in annots_dict.keys():
+        if k == 'KEGG':
+            df = annots_dict[k][["KEGG", "moleculeNames", "mz"]]
+            df.columns = ["moleculeIds", "moleculeNames", "mz"]
+        elif k == 'WIKI':
+            df = annots_dict[k][["moleculeIds", "moleculeNames", "mz"]]
+        dfs_to_gather.append(df)
+
+    gathered_annotations = pd.concat(dfs_to_gather, axis=0)
+
+    return gathered_annotations
+
+
+def run_visualization(clustering_parameters,
+                      pathways_types, min_pathway_size, cutoff_tree,
+                      min_family_size, SAMPLE,
+                      data_centralized_folder,
+                      figures_centralized_folder, sets_relevant_n_limit,
+                      mz_spatially_relevant_n_limit,
+                      mode):
+    """script to produce alluvial plots for publications"""
+
+    subfolder = SAMPLE
+    print("\n", SAMPLE)
+
+    diff_sets = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
+                            f'{SAMPLE}-top-differential-SETS.tsv'),
+                            sep='\t', header=0)
+    diff_sets = diff_sets.sort_values(
+        by='I', ascending=False).head(sets_relevant_n_limit).copy()
+
+    # print(diff_sets.head())
+    scores_concatenated = join_scores_adatas(pathways_types, SAMPLE, subfolder,
+                                data_centralized_folder)
+
+    mapping_info = scores_concatenated.uns['current_pathways_df']
+    """ mapping info:
+             pathway_id   moleculeIds          mz
+        0     WP1403   HMDB0003540  461.165659
+        1     WP1403   HMDB0000122  294.165962
+        2      WP167  LMFA03010021  430.306419
+        3      WP167  LMFA03020023  432.322069
+        """
+    ## check how many unique pathways come out in general
+    print("number of unique pathways that passed significance filters:")
+    print(len(diff_sets['group'].unique().tolist()))
+
+    diff_mz = pd.read_csv(os.path.join(data_centralized_folder, subfolder,
+                          f'{SAMPLE}-top-differential-mzs.tsv'),
+                          sep='\t', header=0)
+    pathways_types__for_annots = list(set(pathways_types) - {"FAMILIES"})
+
+    adata_mz, annots_dict = safe_load_data_and_clean_annotations(SAMPLE,
+                                         pathways_types__for_annots,
+                                         subfolder,
+                                         data_centralized_folder)
+    concatenated_clean_annotations = join_clean_annotations_from_dict(
+        annots_dict)
+    """ concatenated_clean_annotations:
+         moleculeIds                                 moleculeNames
+    0      C11284                          3-Indolebutyric acid
+    1      C07359                            3-keto-Digoxigenin
+    2      C04230                                  LysoPC(16:0)
+    3      C05474  3a,11b,21-Trihydroxy-20-oxo-5b-pregnan-18-al
+    4      C05471                               Dihydrocortisol
+    """
+    ## check how many unique mz come out in general
+    print("unique mzs that passed significance filters:")
+    print(len(diff_mz['mz'].unique().tolist()))
+
+    ## check mzs both mapped and significant and with adequate moran I
+    diff_mz_relevant = diff_mz.loc[ diff_mz['mz'].astype(float).isin(
+        mapping_info['mz'].astype(float).tolist()
+    ), : ].copy()
+
+    # instead imposing a hard filter of I value, take the top n mzs:
+    top_moran_mzs = adata_mz.var.copy().sort_values(
+        by='I', ascending=False).head(mz_spatially_relevant_n_limit).copy()
+
+    """
+             mz       msm  rawOffSampleProb   fdr      formula quality_msm_off_fdr         I  pval_sim_fdr_bh   var_sim quality_autocorr final_quality
+760.548697  760.548697  0.528119          0.000296  0.50   C41H78NO9P                good  0.741693         0.019608  0.000172             good          good
+512.45744   512.457440  0.941250          0.000016  0.05      C28H46O                good  0.689096         0.019608  0.000136             good          good
+834.621861  834.621861  0.545073          0.000657  0.50  C45H88NO10P                good  0.669166         0.019608  0.000190             good          good
+    """
+
+    diff_mz_relevant = diff_mz_relevant.loc[diff_mz_relevant['mz'].astype(float).isin(
+        top_moran_mzs['mz'].astype(float).tolist() ),:].copy()
+
+    print("unique mzs that passed significance filters AND MAPPED AND good Moran:")
+    print(len(diff_mz_relevant['mz'].unique().tolist()))
+    # sankey diagrams of cluster and pathways and mz
+    try:
+        run_alluvial_plot(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
+                      figures_centralized_folder, subfolder)
+    except Exception as e:
+        print(e, "failed run alluvial")
+
+    plot_folder = os.path.join(figures_centralized_folder,
+                               subfolder, "prominent")
+    if not os.path.exists(plot_folder):
+        os.makedirs(plot_folder)
+
+    try:
+        run_individual_mz_scatters(SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
+                               adata_mz,
+                      figures_centralized_folder, subfolder)
+    except Exception as e:
+        print(e, "failed run scatters")
+
+    try:
+        run_individual_tabular_plots(
+            SAMPLE, diff_sets, mapping_info, diff_mz_relevant,
+             concatenated_clean_annotations,
+             figures_centralized_folder, subfolder
+         )
+    except Exception as e:
+        print(e, "failed run tabular plots")
+
+
+
+# use all above
+
+def visualize_results_for_tissues(input_file, data_dir, figures_dir, mode=None):
+    """
+    Assumes that SpacePath was already computed across the specified datasets
+
+      - parses the input dataframe having the specifics of the input datasets
+            for each row representing a dataset.
+      - runs the visualizations of the SpacePath results
+        """
+
+    from SpacePath.src.orchestrator import DatasetsProcessor as MultiSP
+
+    data_centralized_folder = data_dir
+    figures_centralized_folder = figures_dir
+
+    datasets_parameters_df = pd.read_csv(input_file,
+                                         header=0, index_col=None, sep='\t')
+
+    for i, row in datasets_parameters_df.iterrows():
+        # each row represents a dataset and its parameters
+        (SAMPLE, annotations_dict, offSample_cutoff, msm_cutoff, fdr_cutoff,
+         moran_I_cutoff, moran_padj_cutoff, clustering_parameters,
+         pathways_types, min_pathway_size, cutoff_tree,
+         min_family_size
+         ) =  MultiSP.extract_params_per_dataset(row)
+
+        try:
+            n_max_elems = n_for_alluvial[SAMPLE]
+        except:
+            n_max_elems = 150   # default if not defined in 'constants.py'
+
+
+        run_visualization(clustering_parameters,
+                          pathways_types, min_pathway_size, cutoff_tree,
+                          min_family_size, SAMPLE,
+                          data_centralized_folder,
+                          figures_centralized_folder,
+                          sets_relevant_n_limit=n_max_elems,
+                          mz_spatially_relevant_n_limit=n_max_elems,
+                          mode=None)
+        gc.collect()
+
+
+# if __name__ == "__main__":
+
+    # diff_sets = diff_sets.loc[
+    #     diff_sets['group'].astype(str) == cluster_to_check, :].copy()
+    # diff_sets = diff_sets.sort_values(by='abslfc', ascending=False).head(5)
+    # print(diff_sets.shape)   # <<< it was not useful to filter by fold change
+
+    #pid = diff_sets['pathway_id'].tolist()
+    #pnm = diff_sets['pathway_name'].tolist()
+
+    # pid = joined.var['pathway_id'].tolist()
+    # pnm = [t for t in joined.var['pathway_name'].astype(str).to_numpy()]
