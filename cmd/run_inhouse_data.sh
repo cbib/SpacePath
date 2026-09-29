@@ -2,7 +2,7 @@
 # Instruction: must be launched from SpacePath/ folder
 
 
-input_file="datasets_parameters/private-datasets-parameters.tsv"
+input_file="datasets_parameters/inhouse-datasets-parameters.tsv"
 
 data_dir="../data"
 figures_dir="../figures"

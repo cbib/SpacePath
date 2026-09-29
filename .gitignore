@@ -5,7 +5,6 @@ private*.tsv
 figs/
 figs*/
 legacy_wikipathways_aliases_treatment/
-old-private-data*.tsv
 
 __pycache__/
 */__pycache__/
