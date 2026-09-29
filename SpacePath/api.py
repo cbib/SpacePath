@@ -3,7 +3,7 @@ import warnings
 
 warnings.simplefilter('ignore', category=FutureWarning)
 
-from Spacepath.core.helpers import setup_logger  # to add extra info to the log
+from SpacePath.core.helpers import setup_logger  # to add extra info to the log
 
 import SpacePath.core.processing.measures_methods as measures_methods
 from sklearn.cluster import KMeans
