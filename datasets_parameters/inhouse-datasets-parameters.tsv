@@ -1,0 +1,8 @@
+dataset_name	metaspace_registry	annotations_to_use	in/out intensities for spot class	perform_spots_selection	offSample_cutoff	msm_cutoff	fdr_cutoff	Moran_I_cutoff	Moran_padj_cutoff	cluster_params	pathways_types	min_pathway_size	cut_tree_mol_families	min_family_size
+P3-intact	2025-05-26_11h43m25s	HMDB LipidMaps CoreMetabolome	0.001	YES	0.35	0.1	0.5	0.1	0.05	leiden_sg:0.35	KEGG WIKI	2	0.4	3
+P3-post-resection	2025-07-30_16h54m35s	HMDB LipidMaps CoreMetabolome	0.001	YES	0.35	0.1	0.5	0.1	0.05	leiden_sg:0.35	KEGG WIKI	2	0.4	3
+Mct1-Cre	2025-05-29_14h37m38s	HMDB LipidMaps CoreMetabolome	0	YES	0.35	0.1	0.5	0.1	0.05	leiden_sg:0.4	KEGG WIKI	2	0.5	2
+Mct1-nonCre	2025-05-28_16h28m09s	HMDB LipidMaps CoreMetabolome	0	YES	0.35	0.1	0.5	0.1	0.05	leiden_sg:0.4	KEGG WIKI	2	0.8	2
+Healthy-brain-1	2025-07-28_15h11m01s	HMDB LipidMaps	0.01	NO	0.55	0.1	0.5	0.02	0.05	leiden_sg:0.2	KEGG WIKI	2	0.7	2
+Healthy-brain-2	2025-07-28_15h09m59s	HMDB LipidMaps	1	YES	0.4	0.1	0.5	0.1	0.05	kmeans:5	KEGG WIKI	2	0.7	2
+Healthy-brain-3	2025-07-28_15h08m37s	HMDB LipidMaps	1	YES	0.4	0.1	0.5	0.1	0.05	kmeans:5	KEGG WIKI	2	0.7	2

@@ -1,10 +1,7 @@
 *.log
 .idea/
-private*.tsv
-*/private*.tsv
 figs/
 figs*/
-legacy_wikipathways_aliases_treatment/
 
 __pycache__/
 */__pycache__/
