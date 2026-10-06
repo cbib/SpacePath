@@ -1,7 +1,7 @@
 #!/bin/bash
 # Instruction: must be launched from SpacePath/ folder
 
-input_file="datasets_parameters/public-datasets-parameters-round1.tsv"
+input_file="datasets_parameters/public-datasets-parameters.tsv"
 
 data_dir="../data"
 figures_dir="../figures"
