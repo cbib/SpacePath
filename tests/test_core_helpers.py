@@ -2,11 +2,16 @@ import os
 from pathlib import Path
 from typing import List
 from unittest import TestCase
-
+import pytest
 import numpy as np
 import pandas as pd
+import anndata as ad
+from numpy.ma.testutils import assert_equal
+from scipy.sparse import csr_matrix
 
 import SpacePath.core.helpers as helpers
+
+from SpacePath.core.helpers import validate_intensities
 
 module_path = Path(__file__).resolve()
 test_purpose_libr_path = os.path.join(module_path.parent.parent, "SpacePath")
@@ -179,3 +184,44 @@ class Test(TestCase):
         self.assertEqual(df.shape, (1, 2))
         self.assertTrue(np.all(df.values[0] == np.array(
             ['LMFA01010018', 'Stearate'])))
+
+
+    def test_validate_intensities_decorator(self):
+        """Test that the decorator catches NaN/negative values and allows valid data."""
+
+        @validate_intensities
+        def generic_func_calling_intensities(adata):
+            res = adata.X.shape
+            return res
+
+        # --- Test 1: Valid data (no NaN or negatives) ---
+        valid_adata = ad.AnnData(
+            X=csr_matrix(np.abs(np.random.rand(10, 5))),
+            # No NaN or negatives
+            obs=pd.DataFrame(index=range(10)),
+            var=pd.DataFrame(index=range(5))
+        )
+        result = generic_func_calling_intensities(valid_adata)
+        self.assertEqual(result, (10, 5))
+
+        # --- Test 2: Data with NaN values ---
+        adata_with_nan = ad.AnnData(
+            X=csr_matrix(np.random.rand(10, 5).astype(float)),  # Add NaN
+            obs=pd.DataFrame(index=range(10)),
+            var=pd.DataFrame(index=range(5))
+        )
+        adata_with_nan.X[0, 0] = np.nan  # Force a NaN
+        with pytest.raises(ValueError,
+                           match="adata.X cannot contain NaN values"):
+            generic_func_calling_intensities(adata_with_nan)
+
+        # --- Test 3: Data with negative values ---
+        adata_with_negatives = ad.AnnData(
+            X=csr_matrix(np.random.rand(10, 5) - 1),
+            # Shift to include negatives
+            obs=pd.DataFrame(index=range(10)),
+            var=pd.DataFrame(index=range(5))
+        )
+        with pytest.raises(ValueError,
+                           match="adata.X cannot contain negative values"):
+            generic_func_calling_intensities(adata_with_negatives)

@@ -7,6 +7,7 @@ import pandas as pd
 import scanpy as sc
 from scipy.sparse import csr_matrix
 import SpacePath.core.helpers as helpers
+from SpacePath.core.helpers import validate_intensities
 from SpacePath.core.data import MetabolomeAnnotations
 import squidpy as sq
 
@@ -19,7 +20,7 @@ Functions related to mz intensities, formulae quality metrics, and to weights of
 
 
 # weights of the assignments
-
+@validate_intensities
 def build_identifiers_weights_df(adata_mz: ad.AnnData,
                                  X_metabolites_probs_df: pd.DataFrame,
                                  clean_annotations: pd.DataFrame,
@@ -265,8 +266,9 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
     return all_quality_df, mz_to_keep_part2, moran_mz_df
 
 
-def adata_mz_insert_full_quality(adata_mz: ad.AnnData, moran_mz_df,
-                                 all_quality_df) -> ad.AnnData:
+@validate_intensities
+def adata_mz_insert_full_quality(adata_mz: ad.AnnData, moran_mz_df: pd.DataFrame,
+                                 all_quality_df: pd.DataFrame) -> ad.AnnData:
     adata_mz.uns['moranI'] = moran_mz_df
 
     all_quality_df = all_quality_df.assign(final_quality="bad")
@@ -290,7 +292,6 @@ def adata_mz_insert_full_quality(adata_mz: ad.AnnData, moran_mz_df,
 
 
 # matchers
-
 def verification(adata_mz: ad.AnnData,
                  annotations_obj: MetabolomeAnnotations) -> None:
     try:
@@ -342,7 +343,7 @@ def match_adata_mz_and_annots(annotations_obj: MetabolomeAnnotations,
 
 #  spots quality functions
 
-def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
+def adata_mz_mark_spot_quality(adata_mz: ad.AnnData, features_classification_df,
                                max_n_tails: int = 100,
                                fdr_cutoff: float = 0.1,
                                mz_col: str = 'mz',
@@ -351,9 +352,9 @@ def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
                                intensity_col='totalIntensity'
                                ) -> ad.AnnData:
     """
-    :return:
+    Optional. Uses Metaspace quality information for selecting spots.
+    Imported by 'compute_spot_quality'.
     """
-
     def give_sum_array(adata_mz, mz_list) -> np.ndarray:
         tmp = adata_mz[:, mz_list].copy()
         sarray = tmp.X.sum(axis=1)
@@ -387,9 +388,13 @@ def adata_mz_mark_spot_quality(adata_mz, features_classification_df,
     return adata_mz
 
 
+@validate_intensities
 def compute_spot_quality(adata_mz, annotations_obj: MetabolomeAnnotations,
                          allowed_in_out_ratio: float,
                          fdr_cutoff: float) -> ad.AnnData:
+    """
+    Optional. Uses Metaspace quality information for selecting spots.
+    """
     logger.info("marking spot quality with params: %s", allowed_in_out_ratio)
     adata_mz = adata_mz_mark_spot_quality(
         adata_mz, annotations_obj.mz_quality, fdr_cutoff=fdr_cutoff
@@ -403,10 +408,12 @@ def compute_spot_quality(adata_mz, annotations_obj: MetabolomeAnnotations,
             del adata_mz.uns['spot_quality_colors']
     except KeyError:
         pass
+
     return adata_mz
 
 
-def mark_weak_signal_spots(adata_mz, cutoff: float = 10) -> ad.AnnData:
+@validate_intensities
+def mark_weak_signal_spots(adata_mz: ad.AnnData, cutoff: float = 10) -> ad.AnnData:
     adata_mz.obs['totalIntensitySpot'] = adata_mz.X.sum(axis=1)
     adata_mz.obs.loc[
         adata_mz.obs['totalIntensitySpot'] <= cutoff, 'spot_quality'] = 'bad'

@@ -18,6 +18,7 @@ from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.sparse import csr_matrix
 from scipy.spatial.distance import squareform
 import SpacePath.core.helpers as helpers
+from SpacePath.core.helpers import validate_intensities
 import SpacePath.core.processing.measures_methods as measures_methods
 import SpacePath.core.processing.pathways_methods as pathways_methods
 import SpacePath.core.visualization.visualization as sviz
@@ -96,6 +97,7 @@ class NormalizeIntensities:
     config: NormalizeIntensitiesConfig
 
     @staticmethod
+    @validate_intensities
     def run(adata_mz: ad.AnnData, config=NormalizeIntensitiesConfig()
             ) -> ad.AnnData:
         """
