@@ -8,8 +8,8 @@
 # or
 # - forcing two tissues to run again:
 #     python3 spots_purge.py "$input_directory/$input_file" ../../../data ../../../figures "LP-brain-mouse-7;LP-kidney3"
-
 import sys
+import logging
 import os
 import pandas as pd
 import anndata as ad
@@ -18,9 +18,6 @@ from typing import List
 import SpacePath.core.data as spd
 import SpacePath.core.processing.measures_methods as measures_methods
 import matplotlib.pyplot as plt
-
-import logging
-
 
 import squidpy as sq
 

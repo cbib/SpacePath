@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 from scipy.sparse import csr_matrix
-import SpacePath.core.helpers as helpers
-from SpacePath.core.helpers import validate_intensities
-from SpacePath.core.data import MetabolomeAnnotations
 import squidpy as sq
+
+import SpacePath.core.helpers as helpers
+from SpacePath.core.data import MetabolomeAnnotations
+from SpacePath.core.helpers import validate_intensities
 
 logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
@@ -195,15 +196,12 @@ def reset_anndata_var_columns(adata_mz):
     return adata_mz
 
 
-def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
-                                   mz_good_from_part_a: List[str],
-                                   annotations_obj: MetabolomeAnnotations,
-                                   moran_I_cutoff: float,
-                                   moran_padj_cutoff: float,
-                                   var_sim_cutoff: float,
-                                   n_neighs: int, n_perms: int
-                                   ) -> Tuple[
-    pd.DataFrame, List[str], pd.DataFrame]:
+def part_b__mz_quality_by_autocorr(
+        adata_mz: ad.AnnData, mz_good_from_part_a: List[str],
+        annotations_obj: MetabolomeAnnotations,
+        moran_I_cutoff: float, moran_padj_cutoff: float,
+        var_sim_cutoff: float, n_neighs: int, n_perms: int
+) -> Tuple[pd.DataFrame, List[str], pd.DataFrame]:
     # prepare quality merged df
     adata_mz = reset_anndata_var_columns(adata_mz)
     all_quality_df = adata_mz.var.copy()
@@ -219,7 +217,7 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
         keycol='mz')
 
     copy_mz = adata_mz[
-        :, mz_good_from_part_a].copy()  # only compute moran for the ok_part1 features
+        :, mz_good_from_part_a].copy()  # only these features for Moran's I
     try:
         if copy_mz.uns['moranI'].shape[0] != len(mz_good_from_part_a):
             del copy_mz.uns['moranI']
@@ -236,12 +234,13 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
             # this log transformed 'copy_mz' is not returned by the function
         copy_mz = compute_moran_i(copy_mz, n_neighs=n_neighs, n_perms=n_perms)
     else:
-
         logger.info(
-            f"using the available .uns['moranI'] with dimension: {copy_mz.uns['moranI'].shape}")
+            f"using the available .uns['moranI'] with dimension:"
+            f" {copy_mz.uns['moranI'].shape}")
         assert copy_mz.uns['moranI'].shape[0] == len(mz_good_from_part_a), (
-            "Fatal: moranI table dimensions do not match with length of ions list passing the 'Part a'."
-            "Killed! (solution: delete .uns['moranI'] dataframe and try again)")
+            "Fatal: moranI table dimensions do not match "
+            "with length of ions list passing the 'Part a'."
+            "Killed! (solution: delete .uns['moranI'] dataframe and retry)")
     moran_mz_df = copy_mz.uns['moranI'].copy()
     # discard features with extremely low simulated variance
     moran_mz_df = moran_mz_df.loc[
@@ -267,7 +266,8 @@ def part_b__mz_quality_by_autocorr(adata_mz: ad.AnnData,
 
 
 @validate_intensities
-def adata_mz_insert_full_quality(adata_mz: ad.AnnData, moran_mz_df: pd.DataFrame,
+def adata_mz_insert_full_quality(adata_mz: ad.AnnData,
+                                 moran_mz_df: pd.DataFrame,
                                  all_quality_df: pd.DataFrame) -> ad.AnnData:
     adata_mz.uns['moranI'] = moran_mz_df
 
@@ -299,7 +299,7 @@ def verification(adata_mz: ad.AnnData,
             sorted(annotations_obj.no_translated["mz"].unique())) == np.array(
             sorted(adata_mz.var["mz"].tolist())))
         logger.info("perfect match between mz in me_a.df "
-                    f"and adata.X: => %s <=", bool_equal)
+                    "and adata.X: => %s <=", bool_equal)
     except ValueError:
         logger.error("mz do not match between adata_mz and annotation table")
         logger.error("unique annotated mz: %s",
@@ -343,7 +343,8 @@ def match_adata_mz_and_annots(annotations_obj: MetabolomeAnnotations,
 
 #  spots quality functions
 
-def adata_mz_mark_spot_quality(adata_mz: ad.AnnData, features_classification_df,
+def adata_mz_mark_spot_quality(adata_mz: ad.AnnData,
+                               features_classification_df,
                                max_n_tails: int = 100,
                                fdr_cutoff: float = 0.1,
                                mz_col: str = 'mz',
@@ -355,6 +356,7 @@ def adata_mz_mark_spot_quality(adata_mz: ad.AnnData, features_classification_df,
     Optional. Uses Metaspace quality information for selecting spots.
     Imported by 'compute_spot_quality'.
     """
+
     def give_sum_array(adata_mz, mz_list) -> np.ndarray:
         tmp = adata_mz[:, mz_list].copy()
         sarray = tmp.X.sum(axis=1)
@@ -400,8 +402,9 @@ def compute_spot_quality(adata_mz, annotations_obj: MetabolomeAnnotations,
         adata_mz, annotations_obj.mz_quality, fdr_cutoff=fdr_cutoff
     )
     adata_mz.obs['spot_quality'] = "good"
-    adata_mz.obs.loc[adata_mz.obs['ratio_in_out'] < allowed_in_out_ratio,
-    'spot_quality'] = "bad"
+    adata_mz.obs.loc[
+        adata_mz.obs['ratio_in_out'] < allowed_in_out_ratio,
+        'spot_quality'] = "bad"
     try:
         if len(adata_mz.uns['spot_quality_colors']
                ) != len(adata_mz.obs['spot_quality'].unique()):
@@ -413,7 +416,8 @@ def compute_spot_quality(adata_mz, annotations_obj: MetabolomeAnnotations,
 
 
 @validate_intensities
-def mark_weak_signal_spots(adata_mz: ad.AnnData, cutoff: float = 10) -> ad.AnnData:
+def mark_weak_signal_spots(adata_mz: ad.AnnData,
+                           cutoff: float = 10) -> ad.AnnData:
     adata_mz.obs['totalIntensitySpot'] = adata_mz.X.sum(axis=1)
     adata_mz.obs.loc[
         adata_mz.obs['totalIntensitySpot'] <= cutoff, 'spot_quality'] = 'bad'

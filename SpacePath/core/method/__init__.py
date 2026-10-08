@@ -17,19 +17,21 @@ from rdkit import DataStructs
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.sparse import csr_matrix
 from scipy.spatial.distance import squareform
+
 import SpacePath.core.helpers as helpers
-from SpacePath.core.helpers import validate_intensities
 import SpacePath.core.processing.measures_methods as measures_methods
 import SpacePath.core.processing.pathways_methods as pathways_methods
 import SpacePath.core.visualization.visualization as sviz
 from SpacePath.core.data import MetabolicPathways, MetabolomeAnnotations
+from SpacePath.core.helpers import validate_intensities
+
 import yaml
 
 logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
 
 module_path = Path(__file__).resolve()
-library_path = module_path.parent.parent.parent #.parent
+library_path = module_path.parent.parent.parent  # .parent
 
 
 class BaseModel(PydanticBaseModel):
@@ -139,8 +141,8 @@ class ClassifyMZProtocol:
             SAMPLE: str, plot_folder: str, config=ClassifyMZProtocolConfig()
             ) -> ad.AnnData:
         logger.info("Running %s", config.description)
-        logger.info(f">> Part a: classifying the ions with thresholds: "
-                    f"MSM >= %s, offSample <= %s, FDR <= %s",
+        logger.info(">> Part a: classifying the ions with thresholds: "
+                    "MSM >= %s, offSample <= %s, FDR <= %s",
                     config.msm_cutoff,
                     config.offSample_cutoff, config.fdr_cutoff)
         annotations_obj, mz_good_from_part_a = measures_methods.part_a__mz_quality_mark(
@@ -148,7 +150,7 @@ class ClassifyMZProtocol:
             config.offSample_cutoff, config.fdr_cutoff)
 
         logger.info(
-            f"  a total of %s ions pass MSM, offSample and FDR cutoffs.",
+            "  a total of %s ions pass MSM, offSample and FDR cutoffs.",
             len(set(mz_good_from_part_a)))
 
         metr_fig = sviz.plot_mz_given_quality_metrics(
@@ -156,11 +158,16 @@ class ClassifyMZProtocol:
             config.offSample_cutoff,
             text_notice=f"valid $m/z$\n n = {len(mz_good_from_part_a)}"
         )
-        plt.savefig(os.path.join(plot_folder, f"{SAMPLE}-msm_prefilters.pdf"))
-        plt.close()
-        logger.info("  saved plot (MSM, offSample, FDR) to %s", plot_folder)
+        if metr_fig is not None:
+            plt.savefig(os.path.join(
+                plot_folder, f"{SAMPLE}-msm_prefilters.pdf"))
+            plt.close()
+            logger.info("  saved plot (MSM, offSample, FDR) to %s",
+                        plot_folder)
+        else:
+            logger.warning("  failed to generate figure, continue")
 
-        if not 'history' in list(adata_mz.uns.keys()):
+        if 'history' not in list(adata_mz.uns.keys()):
             adata_mz.uns['history'] = {}
 
         adata_mz.uns["history"]['features_n_after_mz_clean_1'] = len(
@@ -171,8 +178,8 @@ class ClassifyMZProtocol:
             if (adata_mz.shape[0] > 9e4) and (adata_mz.shape[1] > 1e3):
                 config.n_perms_moran_calc = 10
 
-        logger.info(f">> Part b: classifying ions based on Moran's I: "
-                    f"thresholds: I >= %s,  (BH) adjusted p-value <= %s",
+        logger.info(">> Part b: classifying ions based on Moran's I: "
+                    "thresholds: I >= %s,  (BH) adjusted p-value <= %s",
                     config.moran_I_cutoff, config.moran_padj_cutoff)
         logger.info(
             "  metrics are only computed for the ions that passed the 'Part a'.")
@@ -189,16 +196,20 @@ class ClassifyMZProtocol:
             moran_padj_cutoff=config.moran_padj_cutoff,
             text_notice=f"valid $m/z$: n = {len(mz_good_part_b)}",
         )
-        plt.savefig(os.path.join(plot_folder, f"{SAMPLE}-moran_filters.pdf"))
-        plt.close()
-        logger.info("  saved plot (autocorrelation) to %s", plot_folder)
+        if mor_fig is not None:
+            plt.savefig(
+                os.path.join(plot_folder, f"{SAMPLE}-moran_filters.pdf"))
+            plt.close()
+            logger.info("  saved plot (autocorrelation) to %s",
+                        plot_folder)
+        else:
+            logger.warning("  failed to generate figure, continue")
 
         adata_mz.uns["history"]['features_n_after_mz_clean_2'] = len(
             mz_good_part_b)
 
-        adata_mz = measures_methods.adata_mz_insert_full_quality(adata_mz,
-                                                                 moran_mz_df,
-                                                                 all_quality_df)
+        adata_mz = measures_methods.adata_mz_insert_full_quality(
+            adata_mz, moran_mz_df, all_quality_df)
         n_good_mz = adata_mz.var.loc[
             adata_mz.var['final_quality'] == "good", :].shape[0]
         logger.info("A total of %s ions exhibit good final quality "
@@ -225,8 +236,8 @@ class SyncPathwaysAndAnnots:
             raise AssertionError("see the error in .log file. Aborted.")
         if max_set_size == 1:
             mode = "default"
-        pathwaysObj.intersect_with_annotations(annotations_df, usable_id,
-                                               mz_col)  # this updates pathwaysObj only
+        pathwaysObj.intersect_with_annotations(
+            annotations_df, usable_id, mz_col)  # updates pathwaysObj only
         pathwaysObj.constrain(min_set_size, max_set_size, mode)
 
         annotations_df = annotations_df.loc[
@@ -345,7 +356,8 @@ class ComputeMoleculesFamilies:
         np.random.seed(42)
 
         distance_matrix = 1 - mol_similarities_result['array']
-        # squareform saves memory by representing the matrix with the upper right triangle
+        # squareform saves memory by representing the matrix with
+        # the upper right triangle
         computed_dendrogram = linkage(squareform(distance_matrix),
                                       method=config.method_linkage
                                       )

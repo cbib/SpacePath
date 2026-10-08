@@ -13,17 +13,19 @@ from pydantic import ConfigDict
 import SpacePath.core.helpers as helpers
 import SpacePath.core.processing.pathways_methods as pathways_methods
 from SpacePath.core.constants import (columns_kegg_conversion_expected,
-                              message_multimz,
-                              mz_decimal_places,
-                              not_metabolic_reactions_pathways,
-                              supported_annotations, supported_mappings)
+                                      message_multimz,
+                                      mz_decimal_places,
+                                      not_metabolic_reactions_pathways,
+                                      supported_annotations,
+                                      supported_mappings)
+
 import sspa as sspa
 
 logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
 
 module_path = Path(__file__).resolve()
-library_path = module_path.parent.parent.parent #.parent
+library_path = module_path.parent.parent.parent  # .parent
 
 
 class BaseModel(PydanticBaseModel):
@@ -60,7 +62,7 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
         for map_key in admitted_keys:
             logger.info(" loading %s", map_key)
             file_path = os.path.join(self.data_dir, self.subfolder,
-                    self.mapping_files[map_key])
+                                     self.mapping_files[map_key])
             try:
                 df = pd.read_csv(file_path, sep=self.delimiter, header=0)
             except FileNotFoundError:
@@ -70,7 +72,8 @@ class MetaboliteIdsMappings(BaseModel, extra='allow'):
                 logger.error("Mapping file is empty: %s", file_path)
                 raise
             except Exception as e:
-                logger.error("Failed to read mapping file '%s': %s", map_key, e)
+                logger.error("Failed to read mapping file '%s': %s", map_key,
+                             e)
                 raise
 
             self.check_expectations_map2(df, map_key)
@@ -139,7 +142,7 @@ class MetabolomeAnnotations(Dataset):
 
         for anno_key in admitted_keys:
             file_path = os.path.join(self.data_dir, self.subfolder,
-                self.annotation_files[anno_key])
+                                     self.annotation_files[anno_key])
             try:
                 df = pd.read_csv(
                     file_path,
@@ -168,7 +171,7 @@ class MetabolomeAnnotations(Dataset):
 
             df = df.assign(
                 **{self.mz_col: np.around(df[self.mz_col].to_numpy(),
-                decimals=mz_decimal_places)})
+                                          decimals=mz_decimal_places)})
             df = df.dropna(how="all")
             if anno_key == "custom_kegg":
                 anno_key = "KEGG"
@@ -188,13 +191,12 @@ class MetabolomeAnnotations(Dataset):
             self.no_translated[self.mz_col].to_numpy(),
             decimals=mz_decimal_places)
 
-
         self.no_translated = helpers.purge_annotations(
             self.no_translated, self.discard_pharmaceuticals,
             self.discard_plant_compounds, self.discard_other_non_animal,
             self.discard_odd_n_carb_lipids, self.cutoff_n_carb,
             self.molecule_ids_col, self.molecule_names_col,
-             library_path=library_path)
+            library_path=library_path)
         logger.info(" success, annotations loaded (attr `.no_translated`)")
 
     def pull_mz_quality_df(self):

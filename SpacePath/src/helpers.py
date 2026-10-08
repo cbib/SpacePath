@@ -1,21 +1,20 @@
-import os
 import logging
+import os
 import time
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import anndata as ad
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-
+from matplotlib.colors import ListedColormap
 import numpy as np
 import pandas as pd
 import scanpy as sc
+from scipy.sparse import csr_matrix
+import squidpy as sq
+
 import SpacePath.core.data as spd
 import SpacePath.core.method as spm
-import squidpy as sq
-from scipy.sparse import csr_matrix
-
-from SpacePath.core.helpers import setup_logger  # to add extra info to the log
+from SpacePath.core.helpers import setup_logger
 
 logger = logging.getLogger(__name__)
 setup_logger(logger)
@@ -25,7 +24,7 @@ def join_scores_adatas(
         pathways_types: List[str], SAMPLE: str,
         subfolder: str, data_centralized_folder: str) -> ad.AnnData:
     """joins computed scores (anndata objects) in one single anndata object"""
-    if not "FAMILIES" in pathways_types:
+    if "FAMILIES" not in pathways_types:
         pathways_types.append("FAMILIES")
 
     if not os.path.exists(os.path.join(data_centralized_folder, subfolder,
@@ -106,7 +105,8 @@ def score_as_adata(scores_df: pd.DataFrame,
         logger.error("Invalid data shape or type for AnnData construction")
         raise
     except TypeError:
-        logger.error("Type error in AnnData construction (non-numeric data): {e}")
+        logger.error(
+            "Type error in AnnData construction (non-numeric data): {e}")
         raise
     except Exception as e:
         logger.error(f"Unexpected error while constructing score_adata: {e}")
@@ -119,14 +119,14 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df,
                                              coords: np.ndarray,
                                              pws_obj: spd.MetabolicPathways,
                                              min_set_size: int,
-                                             type_abbr: str) -> Tuple[
-    ad.AnnData, float]:
+                                             type_abbr: str
+                                             ) -> Tuple[ad.AnnData, float]:
     """
     Uses core library to compute scores dataframe,
        and wraps the scores into a new anndata object
 
-    returns: - anndata object
-             - computation time in seconds
+        returns: - anndata object
+                 - computation time in seconds
     """
     updated_config = spm.ComputePathwaysScoresConfig(type_abbr=type_abbr,
                                                      min_entity=min_set_size)
@@ -143,7 +143,7 @@ def run_pathway_scores_steps_produce_anndata(metabolites_computed_df,
     return scores_adata, time_elapsed
 
 
-## differential routine
+# differential routine
 
 def get_top_n(group: pd.DataFrame, *args) -> pd.DataFrame:
     n_top_per_cluster = args[0]
@@ -173,10 +173,10 @@ def differential_results_filter(differential_results: pd.DataFrame,
             differential_results['group'].unique()))
     up_n = int(n_top_per_cluster * up_down_proportion[0])
     down_n = int(n_top_per_cluster * up_down_proportion[1])
-    tmp = differential_results.loc[(abs(differential_results[
-                                            'logfoldchanges']) >= abs_lfc) & (
-                                           differential_results[
-                                               'pvals_adj'] <= pvals_adj), :].copy()
+    tmp = differential_results.loc[
+        (abs(differential_results['logfoldchanges']) >= abs_lfc) & (
+            differential_results['pvals_adj'] <= pvals_adj), :
+    ].copy()
 
     tmp = tmp.assign(abslfc=abs(tmp['logfoldchanges']),
                      cluster=tmp['group'].astype(str))
@@ -218,7 +218,8 @@ def squidpy_differential_analysis(adata: ad.AnnData,
 
 
 def safe_insert_clusters_column(adata: ad.AnnData, clusters_df: pd.DataFrame,
-                                column_interest: str='kmeans-5', spots='obs'):
+                                column_interest: str = 'kmeans-5',
+                                spots='obs'):
     """
     inserts clusters column into anndata.obs from an external dataframe
     :param adata: anndata.AnnData
@@ -236,15 +237,16 @@ def safe_insert_clusters_column(adata: ad.AnnData, clusters_df: pd.DataFrame,
         clusters_df[column_interest].unique()
     ).tolist()
 
-    adata.obs = adata.obs.assign(**{column_interest : pd.Categorical(
+    adata.obs = adata.obs.assign(**{column_interest: pd.Categorical(
         clusters_df[column_interest].tolist(),
         categories=ordered_categories_clusters)})
 
     return adata
 
 
-def plot_clustering_results(adata_mz, clustering_parameters, SAMPLE,
-                            plot_folder, colors_spots: List[str]) -> None:
+def plot_clustering_results(adata_mz: ad.AnnData,
+                            clustering_parameters: Dict[str, Any], SAMPLE: str,
+                            plot_folder: str, colors_spots: List[str]) -> None:
     """Saves figure of clustering results"""
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
 
@@ -290,7 +292,7 @@ def compute_leiden__weighted_by_spatial_graph(
     except (ValueError, KeyError, TypeError):
         sc.pp.neighbors(datacopy, n_pcs=None)  # automatic from n of features
         logger.info("Impossible to use n_pcs=20 for sc.pp.neighbors(), "
-                   "used default behaviour with n_pcs=None")
+                    "used default behaviour with n_pcs=None")
 
     nn_graph_genes = datacopy.obsp["connectivities"]
     sq.gr.spatial_neighbors(datacopy)
@@ -309,7 +311,7 @@ def compute_leiden__weighted_by_spatial_graph(
     return datacopy, the_labels_str_l
 
 
-## more custom routines
+# more custom routines
 
 def safe_load_processed_data(SAMPLE: str, subfolder: str,
                              data_centralized_folder: str) -> ad.AnnData:
@@ -317,19 +319,19 @@ def safe_load_processed_data(SAMPLE: str, subfolder: str,
     try:
         adata_mz = ad.read_h5ad(filename=os.path.join(
             data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
-        adata_mz = adata_mz[:,
-        adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
-        "mz"].astype(str).tolist()]
+        adata_mz = adata_mz[:, adata_mz.var.loc[
+            adata_mz.var['final_quality'] == "good",
+            "mz"].astype(str).tolist()]
+
     except FileNotFoundError:
         logger.info("could not load mzs intensities, %s", SAMPLE)
 
     return adata_mz
 
 
-def read_clean_annotations(SAMPLE: str, pathways_types: List[str],
-                           subfolder: str,
-                           data_centralized_folder: str) -> Dict[
-    str, pd.DataFrame]:
+def read_clean_annotations(
+        SAMPLE: str, pathways_types: List[str], subfolder: str,
+        data_centralized_folder: str) -> Dict[str, pd.DataFrame]:
     """provide the dictionary of annotations dataframes,
      where the keys are the pathways_types
      Note:  ignores FAMILIES for annotations loading, as the annotations
@@ -344,18 +346,18 @@ def read_clean_annotations(SAMPLE: str, pathways_types: List[str],
                                  subfolder,
                                  f'{SAMPLE}-{pw_type}-CleanAnnotations.tsv')
             annots_dict[pw_type] = pd.read_csv(tmpfi,
-                                               sep='\t', header=0, index_col=None)
+                                               sep='\t', header=0,
+                                               index_col=None)
     except FileNotFoundError:
         logger.info("could not load clean annotations, %s", SAMPLE)
 
     return annots_dict
 
 
-def safe_load_data_and_clean_annotations(SAMPLE: str,
-                                         pathways_types: List[str],
-                                         subfolder: str,
-                                         data_centralized_folder: str
-) -> Tuple[ad.AnnData, Dict[str,pd.DataFrame]]:
+def safe_load_data_and_clean_annotations(
+        SAMPLE: str, pathways_types: List[str],  subfolder: str,
+        data_centralized_folder: str) -> Tuple[
+        ad.AnnData, Dict[str, pd.DataFrame]]:
     """
     safely load mzs intensities (anndata) and annotations (dataframe):
      only good quality ions AND only clean annotations, for both objects
@@ -380,11 +382,13 @@ def safe_load_data_and_clean_annotations(SAMPLE: str,
 def prepare_molecular_ids_df(top_differential: pd.DataFrame,
                              clean_ann_df: pd.DataFrame) -> pd.DataFrame:
     """yields clean df with columns 'moleculeIds', 'mz', 'moleculeNames'"""
-    top_differential_list = top_differential['names'
-    ].astype(float).unique().tolist()  # names are mzs in the diff result
-    molecules_ids_df = clean_ann_df.loc[clean_ann_df['mz'
-    ].isin(top_differential_list),
-    ['moleculeIds', 'mz', 'moleculeNames']].copy()
+    # names are mzs in the diff result
+    top_differential_list = top_differential[
+        'names'].astype(float).unique().tolist()
+    molecules_ids_df = clean_ann_df.loc[
+            clean_ann_df['mz'].isin(top_differential_list),
+            ['moleculeIds', 'mz', 'moleculeNames']
+    ].copy()
 
     molecules_ids_df.dropna(how='any', inplace=True)
     molecules_ids_df.drop_duplicates(inplace=True)

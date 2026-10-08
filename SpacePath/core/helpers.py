@@ -1,10 +1,13 @@
+import functools
 import logging
 import os
 import re
 import sys
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Union
+from typing import (Any, Callable, Dict, List,
+                    ParamSpec, Tuple, TypeVar, Union)
 
+import anndata as ad
 import numpy as np
 import pandas as pd
 
@@ -12,8 +15,7 @@ from rdkit import Chem
 from rdkit import DataStructs
 from rdkit.Chem import AllChem
 
-import scipy.sparse
-
+import scipy.sparse as sp
 
 LOGFILE = datetime.now().strftime("%y-%m-%-d_%H-%M-%S-%f.log")
 
@@ -61,7 +63,8 @@ def secured_trios(identifiers_validated: List[str],
         try:
             chem_molecule = Chem.MolFromSmiles(smi)
             if chem_molecule is None:
-                logger.warning("Invalid SMILES for %s: '%s', skipping", identifier, smi)
+                logger.warning("Invalid SMILES for %s: '%s', skipping",
+                               identifier, smi)
                 continue
             fingerprint = fpgen.GetFingerprint(chem_molecule)
             smiles_final.append(smi)
@@ -107,10 +110,10 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
 
     tmp1 = df[[mz_col, formula_col, molecule_ids_col]]
     tmp2 = df[[molecule_names_col, 'database']]
-    tmp1[molecule_ids_col] = tmp1[molecule_ids_col
-    ].str.split(delimiter_colon_plus_space)
-    tmp2[molecule_names_col] = tmp2[molecule_names_col
-    ].str.split(delimiter_colon_plus_space)
+    tmp1[molecule_ids_col] = tmp1[
+        molecule_ids_col].str.split(delimiter_colon_plus_space)
+    tmp2[molecule_names_col] = tmp2[
+        molecule_names_col].str.split(delimiter_colon_plus_space)
 
     tmp1 = tmp1.explode(molecule_ids_col)
     tmp2 = tmp2.explode(molecule_names_col)
@@ -119,7 +122,8 @@ def spreadout_annotation_df(df: pd.DataFrame, mz_col: str, formula_col: str,
     return df_out
 
 
-def lipid_has_odd_n_carb(lipid_name: str|Any, cutoff_n_carbons: int) -> bool:
+def lipid_has_odd_n_carb(lipid_name: str | Any,
+                         cutoff_n_carbons: int) -> bool:
     """
     True if:
      - the total sum of carbons of the lipid chains is odd, and
@@ -227,7 +231,8 @@ def convert_metabo_annots_tokegg(
         set(mappings_ref_ids['database'].unique()))
     for cd in list(common_notkegg_database):
         tmp_df = annotdf.loc[annotdf['database'] == cd, :].copy()
-        tmp_ref = mappings_ref_ids.loc[mappings_ref_ids['database'] == cd, :].copy()
+        tmp_ref = mappings_ref_ids.loc[
+            mappings_ref_ids['database'] == cd, :].copy()
         joined = pd.merge(tmp_df, tmp_ref, left_on=molecule_ids_col,
                           right_on='initial_id_unconverted', how='left')
         joined = joined.assign(database=joined.database_y)
@@ -463,8 +468,9 @@ def pws_piled_to_dict(pws_piled_mz, pathway_id: str, mz_or_identity_col: str
 
     out = {}
     for w in pathways_uniqs:
-        items_w = keptdf.loc[keptdf[pathway_id] == w,
-        mz_or_identity_col].astype(str).unique().tolist()
+        items_w = keptdf.loc[
+            keptdf[pathway_id] == w, mz_or_identity_col
+        ].astype(str).unique().tolist()
         out[w] = items_w
 
     return out
@@ -482,7 +488,7 @@ def generate_coordinates_arr(pixels_names_l: List[str]) -> np.ndarray:
 
 
 def is_log_transformed(
-        sparse_matrix: Union[scipy.sparse.csr_matrix, np.array]) -> bool:
+        sparse_matrix: Union[sp.csr_matrix, np.ndarray]) -> bool:
     """
     fast check if log-transformation was applied on a given matrix, but this
     is only valid if the log was applied on gamma distributed values
@@ -542,9 +548,10 @@ def aliases_handler(aliases_df, anno_df, usable_id: str) -> List[str]:
                                                           hmdb_ids, lm_ids,
                                                           kegg_ids)
     # intersection of aliases_df and current annots
-    annots_aliases = aliases_df.loc[(aliases_df["HMDB"].isin(hmdb_ids)
-                                     ) | (aliases_df["LipidMaps"].isin(
-        lm_ids)) | (aliases_df["KEGG"].isin(kegg_ids)), :].copy()
+    annots_aliases = aliases_df.loc[
+        (aliases_df["HMDB"].isin(hmdb_ids)
+         ) | (aliases_df["LipidMaps"].isin(
+            lm_ids)) | (aliases_df["KEGG"].isin(kegg_ids)), :].copy()
     del aliases_df
     annots_aliases = pd.concat([annots_aliases, annots_nomate_ids])
     annots_aliases = annots_aliases.fillna("empty")
@@ -555,15 +562,11 @@ def aliases_handler(aliases_df, anno_df, usable_id: str) -> List[str]:
 
 
 # Validator for intensities input
-import functools
-import anndata as ad
-from typing import Callable, TypeVar, ParamSpec
-import scipy.sparse as sp
 def validate_matrix_integrity(adata: ad.AnnData) -> None:
     """Fast validation for large sparse matrices using NumPy."""
     x_mat = adata.X
 
-    if x_mat.size == 0:   # Handle empty matrix
+    if x_mat.size == 0:  # Handle empty matrix
         logger.error("Validation failed: adata.X is empty.")
         raise ValueError("adata.X cannot be empty.")
 
@@ -578,14 +581,17 @@ def validate_matrix_integrity(adata: ad.AnnData) -> None:
         logger.error("Validation failed: adata.X contains negative values.")
         raise ValueError("adata.X cannot contain negative values.")
 
+
 P = ParamSpec('P')
 T = TypeVar('T')
+
 
 def validate_intensities(func: Callable[P, T]) -> Callable[P, T]:
     """
     Lightweight decorator to validate AnnData intensities.
     Works with both positional and keyword arguments.
     """
+
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         # Extract adata from kwargs or args

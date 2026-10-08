@@ -6,9 +6,10 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import scipy.sparse.linalg as linalg
-from SpacePath.core.helpers import is_log_transformed
-import sspa as sspa
 
+from SpacePath.core.helpers import is_log_transformed
+
+import sspa as sspa
 
 """Functions exclusive to Pathways and Families computations"""
 
@@ -125,8 +126,8 @@ def compute_kpca(sets__df: pd.DataFrame,
     except linalg._eigen.arpack.ArpackError:
         # unfrequent error, when the first column vector variance is zero.
         # to rescue, dropping the zero variance features
-        metabolites_computed_w = metabolites_computed_w.loc[:,
-        metabolites_computed_w.var() != 0]
+        metabolites_computed_w = metabolites_computed_w.loc[
+            :, metabolites_computed_w.var() != 0]
         # also decreasing min_entity to tolerate dropped features
         kpca_model = sspa.sspa_kpca.sspa_KPCA(
             sets__df, min_entity=1, random_state=0)
@@ -265,9 +266,10 @@ def yield_compliant_pathways(pathways_dict,
     """
     pathways_sizes = {k: len(pathways_dict[k]) for k in pathways_dict.keys()}
     if min_pathway_size != max_pathway_size:
-        good_pathways_sizes = {k: v for k, v in pathways_sizes.items()
-                               if ((v >= min_pathway_size) and (
-                        v <= max_pathway_size))}
+        good_pathways_sizes = {
+            k: v for k, v in pathways_sizes.items() if (
+                    (v >= min_pathway_size
+                     ) and (v <= max_pathway_size))}
     else:
         good_pathways_sizes = {k: v for k, v in pathways_sizes.items()
                                if v == min_pathway_size}

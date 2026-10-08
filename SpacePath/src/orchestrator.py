@@ -1,11 +1,10 @@
 # Orchestration of operations for the CLI interface
 # This also demonstrates how to use the SpacePath Workflow as an API
 # johaGL 2026
-import os
-import logging
-
 import gc
-from typing import Dict, List, Tuple, Any
+import logging
+import os
+from typing import Any, Dict, List, Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -13,18 +12,14 @@ from matplotlib.font_manager import fontManager
 import numpy as np
 import pandas as pd
 
-
 import SpacePath.core.data as spd
-from SpacePath.api import (setup_logger,
-                           compute_differential_families_and_pathways,
-                           compute_families_scores,
-                           compute_molecules_families,
-                           compute_pathway_scores,
-                           compute_differential_analysis_of_mzs,
-                           compute_clustering_of_spots,
-                           clean_annotations_and_save_tsv,
-                           normalize_classify_and_save_anndata_mz)
-
+from SpacePath.api import (
+    clean_annotations_and_save_tsv, compute_clustering_of_spots,
+    compute_differential_analysis_of_mzs,
+    compute_differential_families_and_pathways, compute_families_scores,
+    compute_molecules_families, compute_pathway_scores,
+    normalize_classify_and_save_anndata_mz, setup_logger
+)
 
 logger = logging.getLogger(__name__)
 setup_logger(logger)
@@ -141,8 +136,8 @@ class SingleTissueWorkflow:
 
         if self.mode in ["all", "7"]:
             compute_families_scores(self.min_family_size,
-                                        self.sample, self.subfolder,
-                                        self.data_dir)
+                                    self.sample, self.subfolder,
+                                    self.data_dir)
 
         if self.mode in ["all", "8"]:
             compute_differential_families_and_pathways(

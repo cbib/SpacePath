@@ -108,11 +108,11 @@ def load_run(data_dir, base_filename, output_dir):
     del intensities_df
     gc.collect()
     adata.uns['spatial'] = {
-        'MY_SLICE7_NAME': {'scalefactors':
-                               {'fiducial_diameter_fullres': 100,
-                                'spot_diameter_fullres': 1,
-                                'tissue_hires_scalef': 0.5,
-                                'tissue_lowres_scalef': 0.5}}}
+        'MY_SLICE7_NAME':
+            {'scalefactors': {'fiducial_diameter_fullres': 100,
+                              'spot_diameter_fullres': 1,
+                              'tissue_hires_scalef': 0.5,
+                              'tissue_lowres_scalef': 0.5}}}
 
     outfile = os.path.join(output_dir, f'{base_filename}.h5ad')
     adata.write(outfile, compression=None, compression_opts=None)

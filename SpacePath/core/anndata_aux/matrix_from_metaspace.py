@@ -16,12 +16,9 @@ import pandas as pd
 from scipy.sparse import csr_matrix
 
 import SpacePath.core.helpers as helpers
-
 from SpacePath.core.constants import mz_decimal_places
 
-
 from tqdm import tqdm
-
 
 logger = logging.getLogger(__name__)
 logger = helpers.setup_logger(logger)
@@ -78,7 +75,8 @@ def homogenize_rows_order_mx_dfs(mx_dfs: List[pd.DataFrame]
 
 
 def yield_matrix_from_read_adatas(
-        ordered_unique_mzs: List[float], matrices_dfs_list) -> pd.DataFrame:
+        ordered_unique_mzs: List[float],
+        matrices_dfs_list: List[pd.DataFrame]) -> pd.DataFrame:
     """yields matrix-dataframe with shape: coordinates x features"""
     united_mx_dict = {}
     spots_list = matrices_dfs_list[0].index.tolist()
@@ -109,8 +107,9 @@ def yield_matrix_from_read_adatas(
     return out_df.T
 
 
-def get_unified_intensities_df(metaspace_registry: str, api_versions: dict,
-                               api_fdr: float) -> Tuple[pd.DataFrame, dict]:
+def get_unified_intensities_df(
+        metaspace_registry: str, api_versions: dict,
+        api_fdr: float) -> Tuple[pd.DataFrame, dict]:
     """returns a df with shape: coordinates (rows) x features (columns)"""
     logger.info("fetching data with metaspace-converter "
                 "(T Alexandrov lab package)")
@@ -119,7 +118,8 @@ def get_unified_intensities_df(metaspace_registry: str, api_versions: dict,
      matrices_dfs_list,
      annotations_dfs_dict) = adatas_to_matrices_list(metaspace_registry,
                                                      api_versions, api_fdr)
-    # note: annotations from Metaspace python API: no offSampleProb floats (instead only offSample bool)
+    # note: annotations from Metaspace python API:
+    # no offSampleProb floats (instead only offSample bool)
     matrices_dfs_list = homogenize_rows_order_mx_dfs(matrices_dfs_list)
     ordered_unique_mzs = sorted(list(unique_mzs))
 
@@ -128,7 +128,8 @@ def get_unified_intensities_df(metaspace_registry: str, api_versions: dict,
     return outdf, annotations_dfs_dict
 
 
-def save_quantifications_anndata(outdf, outfile) -> None:
+def save_quantifications_anndata(outdf: pd.DataFrame,
+                                 outfile: str) -> None:
     coordinates_arr = helpers.generate_coordinates_arr(list(outdf.index))
     out_obj = ad.AnnData(X=csr_matrix(outdf),
                          obs=pd.DataFrame({"obs": outdf.index.tolist()},

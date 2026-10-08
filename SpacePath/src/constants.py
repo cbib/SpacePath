@@ -1,12 +1,12 @@
 # expected location of the reference pathways subfolder (within data/)
 
 pathways_files_location_info = {
-        "KEGG" : {'file': "KEGG_hsa_pathways_compounds_R110.gmt",
-                      'subfolder': "metabolites-mappings",
-                      'id_type': 'KEGG'},
-        "WIKI" : {'file': "WIKIPATHWAYS_human_multi_id_redundant.mmt",
-                          'subfolder': "metabolites-mappings",
-                          'id_type': 'moleculeIds'}}
+        "KEGG": {'file': "KEGG_hsa_pathways_compounds_R110.gmt",
+                 'subfolder': "metabolites-mappings",
+                 'id_type': 'KEGG'},
+        "WIKI": {'file': "WIKIPATHWAYS_human_multi_id_redundant.mmt",
+                 'subfolder': "metabolites-mappings",
+                 'id_type': 'moleculeIds'}}
 
 
 # "deep" from https://seaborn.pydata.org/tutorial/color_palettes.html
@@ -32,6 +32,6 @@ blindness_colors = [
 
 
 options_palette_supported = {
-    "colorblindness" : blindness_colors,
-    "default" : default_colors
+    "colorblindness": blindness_colors,
+    "default": default_colors
 }

@@ -1,7 +1,8 @@
 import os
 from typing import Dict, List
-import matplotlib.pyplot as plt
+
 import matplotlib as matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -34,7 +35,6 @@ def plot_mz_given_quality_metrics(
         df: pd.DataFrame, SAMPLE: str,
         msm_cutoff: float, offSample_cutoff: float, text_notice: str
 ) -> matplotlib.axes:
-
     fdr_categories = ['0.05', '0.1', '0.2', '0.5']
     df['FDR'] = categorize_intervals(df['fdr'].astype(float).to_numpy())
     df['FDR'] = pd.Categorical(df['FDR'].tolist(),
@@ -42,11 +42,12 @@ def plot_mz_given_quality_metrics(
     sns.set_theme(style="whitegrid", font_scale=1.2)
     mypalette = ["#580F41", "#74414D", "#907359", "#cfcb94"]
     fig = sns.scatterplot(df.loc[df['FDR'] == '0.5', :],
-                         x="msm", y="rawOffSampleProb",
-                         hue="FDR", alpha=.9, zorder=1,
-                         s=30,
-                         palette=sns.color_palette(mypalette, len(mypalette)),
-                         legend=False)
+                          x="msm", y="rawOffSampleProb",
+                          hue="FDR", alpha=.9, zorder=1,
+                          s=30,
+                          palette=sns.color_palette(mypalette,
+                                                    len(mypalette)),
+                          legend=False)
     sns.scatterplot(df.loc[df['FDR'] != '0.5', :],
                     ax=fig, x="msm", y="rawOffSampleProb",
                     hue="FDR", alpha=.9, zorder=2,
@@ -54,7 +55,7 @@ def plot_mz_given_quality_metrics(
                     palette=sns.color_palette(mypalette, len(mypalette)),
                     legend=True)
     fig.legend(loc="upper left", title="FDR",
-              bbox_to_anchor=(1, 1.03))  # .02))
+               bbox_to_anchor=(1, 1.03))  # .02))
     plt.xlim(-0.04, 1.04)
     plt.ylim(-0.04, 1.04)
     plt.axvline(x=msm_cutoff, color='teal', linestyle='--', lw=0.8)
@@ -67,14 +68,14 @@ def plot_mz_given_quality_metrics(
     return fig
 
 
-
 def plot__moran_info(df: pd.DataFrame, SAMPLE: str, text_notice: str,
                      moran_I_cutoff: float, moran_padj_cutoff: float
                      ) -> matplotlib.axes:
     df["log_var_sim"] = np.log(df["var_sim"].to_numpy())
     df['padj class'] = f" > {moran_padj_cutoff}"
-    df.loc[df["pval_sim_fdr_bh"] <= moran_padj_cutoff,
-    'padj class'] = f" <= {moran_padj_cutoff}"
+    df.loc[
+        df["pval_sim_fdr_bh"] <= moran_padj_cutoff,
+        'padj class'] = f" <= {moran_padj_cutoff}"
     df['padj class'] = pd.Categorical(df['padj class'],
                                       categories=[f" <= {moran_padj_cutoff}",
                                                   f" > {moran_padj_cutoff}"])
@@ -110,7 +111,7 @@ def save_families_plot(fig_obj: sns.matrix.ClusterGrid, SAMPLE,
 
 def plot_families(molecules_ids_df: pd.DataFrame,
                   mol_similarities_result: Dict[
-        str, np.array | List[str] | List[str]],
+                      str, np.array | List[str] | List[str]],
                   computed_dendrogram
                   ) -> sns.matrix.ClusterGrid:
     """

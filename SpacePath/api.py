@@ -1,31 +1,32 @@
-import os
 import logging
+import os
+import pickle
 from typing import Any, Dict, List
 
-import pickle
+import anndata as ad
 import numpy as np
 import pandas as pd
-import anndata as ad
 import scanpy as sc
 from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
 
-from SpacePath.core.helpers import setup_logger  # to add extra info to the log
 import SpacePath.core.data as spd
 import SpacePath.core.method as spm
 import SpacePath.core.processing.measures_methods as measures_methods
-from SpacePath.src.constants import (pathways_files_location_info,
-                                     options_palette_supported)
-from SpacePath.src.helpers import (join_scores_adatas,
-                                   safe_insert_clusters_column,
-                                   squidpy_differential_analysis,
+from SpacePath.core.helpers import setup_logger  # to add extra info to the log
+from SpacePath.src.constants import (options_palette_supported,
+                                     pathways_files_location_info
+                                     )
+from SpacePath.src.helpers import (compute_leiden__weighted_by_spatial_graph,
                                    differential_results_filter,
-                                   safe_load_processed_data,
-                                   run_pathway_scores_steps_produce_anndata,
-                                   safe_load_data_and_clean_annotations,
+                                   join_scores_adatas,
+                                   plot_clustering_results,
                                    prepare_molecular_ids_df,
-                                   compute_leiden__weighted_by_spatial_graph,
-                                   plot_clustering_results
+                                   run_pathway_scores_steps_produce_anndata,
+                                   safe_insert_clusters_column,
+                                   safe_load_data_and_clean_annotations,
+                                   safe_load_processed_data,
+                                   squidpy_differential_analysis
                                    )
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ def compute_differential_families_and_pathways(
         pathways_types: List[str],
         clustering_parameters: Dict[str, str | int | float],
         SAMPLE: str, subfolder: str, data_centralized_folder: str,
-        n_top_per_cluster: int = 30) -> None:  # before: n_top_per_cluster 25
+        n_top_per_cluster: int = 30) -> None:
     if "FAMILIES" not in pathways_types:
         pathways_types.append("FAMILIES")
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
@@ -160,7 +161,8 @@ def compute_molecules_families(cutoff_tree: float, SAMPLE: str,
             top_differential, clean_ann_df=clean_annots_nokegg_ids)
 
     except FileNotFoundError:
-        logger.warning("files required for preparing families not found, abort")
+        logger.warning(
+            "files required for preparing families not found, abort")
     except Exception as e:
         logger.warning("failed preparation for families, %s", e)
 
@@ -183,7 +185,8 @@ def compute_molecules_families(cutoff_tree: float, SAMPLE: str,
             plot_folder,
             config=updated_config)
         with open(os.path.join(
-                data_centralized_folder, subfolder, f"{SAMPLE}-mol-fam-dict.pkl"),
+                data_centralized_folder, subfolder,
+                f"{SAMPLE}-mol-fam-dict.pkl"),
                 "wb") as f:
             pickle.dump(computed_fam_results, f)
     except RuntimeError:
@@ -240,9 +243,9 @@ def compute_pathway_scores(pathways_types: List[str], min_pathway_size: int,
 
 
 def compute_differential_analysis_of_mzs(
-    pathways_types: List[str], clustering_parameters: Dict[str, Any],
-    SAMPLE: str, subfolder: str, data_centralized_folder: str,
-    n_top_per_cluster: int = 100
+        pathways_types: List[str], clustering_parameters: Dict[str, Any],
+        SAMPLE: str, subfolder: str, data_centralized_folder: str,
+        n_top_per_cluster: int = 100
 ) -> None:
     logger.info("computing differential ions between clusters")
     adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
