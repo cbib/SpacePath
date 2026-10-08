@@ -1,7 +1,9 @@
-## entry point for the CLI
+# Entry point for the CLI
 import logging
 import click
 import warnings
+
+warnings.simplefilter('ignore', category=FutureWarning)
 
 
 @click.command()
@@ -10,9 +12,7 @@ import warnings
 @click.argument('figures_dir',
                 type=click.Path(file_okay=False, dir_okay=True))
 @click.option('--mode', default="all")
-
-
-def main_cli(input_file, data_dir, figures_dir, mode):
+def main_cli(input_file: str, data_dir: str, figures_dir: str, mode: str):
     """
     \b
     'SpacePath': Spatial Metabolomics Exploration Based on Pathways and Families Profiles
@@ -37,22 +37,31 @@ def main_cli(input_file, data_dir, figures_dir, mode):
     click.echo(f'  --mode: {mode}')
 
     try:
-        if (input_file is not None) and (
-            data_dir is not None
-        ) and (figures_dir is not None):
-            warnings.simplefilter('ignore', category=FutureWarning)
+        if (input_file is None) or (data_dir is None) or (
+                figures_dir is None):
+            raise ValueError(
+                "Missing required arguments: input_file, data_dir, or figures_dir.")
 
-            # import class here to allow fast load and checks above
-            from SpacePath.src.orchestrator import DatasetsProcessor
+        from SpacePath.src.orchestrator import DatasetsProcessor
 
-            multiple_analyses = DatasetsProcessor(
-                input_file=input_file, data_dir=data_dir,
-                figures_dir=figures_dir, mode=mode
-            )
-            multiple_analyses.process_tissues()
+        multiple_analyses = DatasetsProcessor(
+            input_file=input_file, data_dir=data_dir,
+            figures_dir=figures_dir, mode=mode
+        )
+        multiple_analyses.process_tissues()
 
+    except FileNotFoundError as e:
+        logging.error(f"File not found: {e}")
+        raise  # Re-raise to exit with error code
+    except NotADirectoryError as e:
+        logging.error(f"Directory not found: {e}")
+        raise
+    except ValueError as e:
+        logging.error(f"Invalid input: {e}")
+        raise
     except Exception as e:
-        logging.error(e)
+        logging.error(f"Unexpected error: {e}")
+        raise
 
 
 if __name__ == "__main__":

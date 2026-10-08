@@ -38,6 +38,10 @@ def setup_logger(logger, prefix=''):
     return logger
 
 
+logger = logging.getLogger(__name__)
+logger = setup_logger(logger)
+
+
 def secured_trios(identifiers_validated: List[str],
                   smiles_validated: List[str]) -> Tuple[
     List[str], List[str], List[DataStructs.cDataStructs.ExplicitBitVect]
@@ -139,7 +143,6 @@ def lipid_has_odd_n_carb(lipid_name: str|Any, cutoff_n_carbons: int) -> bool:
                          lipid_name, e)
 
     return out_bool
-
 
 
 def odd_n_carb_lipids_to_df(
@@ -550,3 +553,53 @@ def aliases_handler(aliases_df, anno_df, usable_id: str) -> List[str]:
 
     return accepted_ids
 
+
+# Validator for intensities input
+import functools
+import anndata as ad
+from typing import Callable, TypeVar, ParamSpec
+import scipy.sparse as sp
+def validate_matrix_integrity(adata: ad.AnnData) -> None:
+    """Fast validation for large sparse matrices using NumPy."""
+    x_mat = adata.X
+
+    if x_mat.size == 0:   # Handle empty matrix
+        logger.error("Validation failed: adata.X is empty.")
+        raise ValueError("adata.X cannot be empty.")
+
+    # Extract data to check (handle sparse matrices efficiently)
+    data_to_check = x_mat.data if sp.issparse(x_mat) else x_mat
+
+    if np.isnan(data_to_check).any():  # Check for NaN values
+        logger.error("Validation failed: adata.X contains NaN values.")
+        raise ValueError("adata.X cannot contain NaN values.")
+
+    if (data_to_check < 0).any():  # Check for negative values
+        logger.error("Validation failed: adata.X contains negative values.")
+        raise ValueError("adata.X cannot contain negative values.")
+
+P = ParamSpec('P')
+T = TypeVar('T')
+
+def validate_intensities(func: Callable[P, T]) -> Callable[P, T]:
+    """
+    Lightweight decorator to validate AnnData intensities.
+    Works with both positional and keyword arguments.
+    """
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        # Extract adata from kwargs or args
+        adata_obj = None
+        for arg in args:
+            if isinstance(arg, ad.AnnData):
+                adata_obj = arg
+                break
+        if adata_obj is None:
+            adata_obj = kwargs.get('adata')
+
+        if adata_obj is not None:
+            validate_matrix_integrity(adata_obj)
+
+        return func(*args, **kwargs)
+
+    return wrapper

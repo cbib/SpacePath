@@ -11,8 +11,7 @@ import scipy.sparse.linalg as linalg
 import SpacePath.core.method as spm
 import json
 
-import warnings
-warnings.simplefilter('ignore',category=FutureWarning)
+
 import squidpy as sq
 
 from spots_purge import show_message

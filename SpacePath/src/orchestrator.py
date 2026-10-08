@@ -1,18 +1,35 @@
 # Orchestration of operations for the CLI interface
 # This also demonstrates how to use the SpacePath Workflow as an API
 # johaGL 2026
+import os
+import logging
+
 import gc
-import warnings
-
-warnings.simplefilter('ignore', category=FutureWarning)
-
-from SpacePath.api import *  # all the required callable operations
-import matplotlib as mpl
-import pandas as pd
 from typing import Dict, List, Tuple, Any
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import fontManager
+import numpy as np
+import pandas as pd
+
+
+import SpacePath.core.data as spd
+from SpacePath.api import (setup_logger,
+                           compute_differential_families_and_pathways,
+                           compute_families_scores,
+                           compute_molecules_families,
+                           compute_pathway_scores,
+                           compute_differential_analysis_of_mzs,
+                           compute_clustering_of_spots,
+                           clean_annotations_and_save_tsv,
+                           normalize_classify_and_save_anndata_mz)
+
 
 logger = logging.getLogger(__name__)
 setup_logger(logger)
+
+available_fonts = {f.name for f in fontManager.ttflist}
 
 np.random.seed(42)  # important to make the computations be reproducible
 
@@ -67,10 +84,13 @@ class SingleTissueWorkflow:
         """
         logger.info('\nRunning sample: %s', self.sample)
 
-        ##### these three lines are mandatory to comply with Nature journals #####
-
+        # the 'Arial' font is compulsory to comply with Nature journals
         mpl.rcParams['font.family'] = "sans-serif"
-        mpl.rcParams['font.sans-serif'] = "Arial"
+        if "Arial" in available_fonts:
+            mpl.rcParams['font.sans-serif'] = "Arial"
+        else:
+            mpl.rcParams['font.sans-serif'] = "Liberation Sans"
+            logger.info("Plots using alternative font, 'Arial' not found")
 
         if self.mode in ["all", "1", "2"]:
             annots_obj = spd.MetabolomeAnnotations(
@@ -91,7 +111,7 @@ class SingleTissueWorkflow:
             clean_annotations_and_save_tsv(annots_obj, self.pathways_types,
                                            self.sample, self.subfolder,
                                            self.data_dir
-                                           );
+                                           )
             del annots_obj  # obj no longer used: use clean .tsv files from now
 
         if self.mode in ["all", "3"]:
@@ -108,39 +128,27 @@ class SingleTissueWorkflow:
                                                  self.data_dir)
 
         if self.mode in ["all", "5"]:
-            try:
-                compute_pathway_scores(self.pathways_types,
-                                       self.min_pathway_size,
-                                       self.sample, self.subfolder,
-                                       self.data_dir)
-            except Exception as e:
-                logger.warning("failed compute_pathway_scores, %s", e)
+            compute_pathway_scores(self.pathways_types,
+                                   self.min_pathway_size,
+                                   self.sample, self.subfolder,
+                                   self.data_dir)
 
         if self.mode in ["all", "6"]:
-            try:
-                plt.rcParams.update({'font.size': 14})
-                compute_molecules_families(self.cutoff_tree,
-                                           self.sample, self.subfolder,
-                                           self.data_dir, self.plot_folder)
-            except Exception as e:
-                logger.warning("failed compute_molecules_families , %s", e)
+            plt.rcParams.update({'font.size': 14})
+            compute_molecules_families(self.cutoff_tree,
+                                       self.sample, self.subfolder,
+                                       self.data_dir, self.plot_folder)
 
         if self.mode in ["all", "7"]:
-            try:
-                compute_families_scores(self.min_family_size,
+            compute_families_scores(self.min_family_size,
                                         self.sample, self.subfolder,
                                         self.data_dir)
-            except Exception as e:
-                logger.warning("failed compute_families_scores , %s", e)
 
         if self.mode in ["all", "8"]:
-            try:
-                compute_differential_families_and_pathways(
-                    self.pathways_types,
-                    self.clustering_parameters, self.sample, self.subfolder,
-                    self.data_dir)
-            except Exception as e:
-                logger.warning("failed differential families %s", e)
+            compute_differential_families_and_pathways(
+                self.pathways_types,
+                self.clustering_parameters, self.sample, self.subfolder,
+                self.data_dir)
 
         logger.info("processed sample %s \n\n", self.sample)
 

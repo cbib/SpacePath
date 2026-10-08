@@ -1,4 +1,5 @@
 import os
+import logging
 import time
 from typing import Dict, List, Tuple, Union
 
@@ -9,12 +10,15 @@ from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 import numpy as np
 import pandas as pd
 import scanpy as sc
-import seaborn as sns
 import SpacePath.core.data as spd
 import SpacePath.core.method as spm
 import squidpy as sq
 from scipy.sparse import csr_matrix
 
+from SpacePath.core.helpers import setup_logger  # to add extra info to the log
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
 def join_scores_adatas(
@@ -31,14 +35,19 @@ def join_scores_adatas(
     list_of_scores_objects = list()
     list_of_dfs = list()
     for u in list(set(pathways_types)):
-        adata_scores = ad.read_h5ad(
-            filename=os.path.join(data_centralized_folder, subfolder,
-                                  f'{SAMPLE}-scores-{u}.h5ad'))
-        adata_scores.var['set_type'] = u
-        list_of_scores_objects.append(adata_scores)
-        df_uns = adata_scores.uns['current_pathways_df'].copy()
-        df_uns.columns = ["pathway_id", "moleculeIds", "mz"]
-        list_of_dfs.append(df_uns)
+        try:
+            adata_scores = ad.read_h5ad(
+                filename=os.path.join(data_centralized_folder, subfolder,
+                                      f'{SAMPLE}-scores-{u}.h5ad'))
+            adata_scores.var['set_type'] = u
+            list_of_scores_objects.append(adata_scores)
+            df_uns = adata_scores.uns['current_pathways_df'].copy()
+            df_uns.columns = ["pathway_id", "moleculeIds", "mz"]
+            list_of_dfs.append(df_uns)
+        except KeyError:
+            logger.warning("absent 'current_pathways_df' in .uns (%s), ", u)
+        except FileNotFoundError:
+            logger.info("failed to find set scores (%s), continue", u)
 
     joined = ad.concat(adatas=list_of_scores_objects, join='outer', axis=1)
 
@@ -70,28 +79,38 @@ def score_as_adata(scores_df: pd.DataFrame,
      - stores coordinates dict {'spatial': <np.array>} into .obsm
      - adds dictionary of parameters for plotting into .uns['spatial']
     """
-    score_adata = ad.AnnData(
-        X=csr_matrix(scores_df),
-        var=pd.DataFrame(
-            {'pathway_id': scores_df.columns.tolist()},
-            index=scores_df.columns.tolist()),
-        obs=pd.DataFrame({'obs': scores_df.index.tolist()},
-                         index=scores_df.index.tolist()),
-        obsm={'spatial': coords}
-    )
-    score_adata.uns['spatial'] = {'my_slice_name': {
-        'scalefactors': {'fiducial_diameter_fullres': 100,
-                         'spot_diameter_fullres': 1,
-                         'tissue_hires_scalef': 0.5,
-                         'tissue_lowres_scalef': 0.5}}}
-    tmp = sets_ids_df
-    tmp.index = tmp['pathway_id']
-    tmp = tmp.loc[score_adata.var['pathway_id'], :]
-    score_adata.var = score_adata.var.assign(
-        pathway_name=tmp['pathway_name'].tolist())
-
-    score_adata.uns[
-        'current_pathways_df'] = pathways_piled.copy()  # has m/z, KEGG/moleculeIds and pathwayid columns
+    try:
+        score_adata = ad.AnnData(
+            X=csr_matrix(scores_df),
+            var=pd.DataFrame(
+                {'pathway_id': scores_df.columns.tolist()},
+                index=scores_df.columns.tolist()),
+            obs=pd.DataFrame({'obs': scores_df.index.tolist()},
+                             index=scores_df.index.tolist()),
+            obsm={'spatial': coords}
+        )
+        score_adata.uns['spatial'] = {'my_slice_name': {
+            'scalefactors': {'fiducial_diameter_fullres': 100,
+                             'spot_diameter_fullres': 1,
+                             'tissue_hires_scalef': 0.5,
+                             'tissue_lowres_scalef': 0.5}}}
+        tmp = sets_ids_df
+        tmp.index = tmp['pathway_id']
+        tmp = tmp.loc[score_adata.var['pathway_id'], :]
+        score_adata.var = score_adata.var.assign(
+            pathway_name=tmp['pathway_name'].tolist())
+        # slot for df with columns: m/z, KEGG/moleculeIds and pathway_id
+        score_adata.uns[
+            'current_pathways_df'] = pathways_piled.copy()
+    except ValueError:
+        logger.error("Invalid data shape or type for AnnData construction")
+        raise
+    except TypeError:
+        logger.error("Type error in AnnData construction (non-numeric data): {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error while constructing score_adata: {e}")
+        raise
 
     return score_adata
 
@@ -251,7 +270,7 @@ def plot_clustering_results(adata_mz, clustering_parameters, SAMPLE,
                 bbox_inches='tight')
     plt.close()
 
-    print("saved figure")
+    logger.info("saved clustering figure: %s", plot_out_path)
 
 
 def compute_leiden__weighted_by_spatial_graph(
@@ -268,8 +287,11 @@ def compute_leiden__weighted_by_spatial_graph(
     """
     try:
         sc.pp.neighbors(datacopy, n_pcs=20)
-    except:
-        sc.pp.neighbors(datacopy)
+    except (ValueError, KeyError, TypeError):
+        sc.pp.neighbors(datacopy, n_pcs=None)  # automatic from n of features
+        logger.info("Impossible to use n_pcs=20 for sc.pp.neighbors(), "
+                   "used default behaviour with n_pcs=None")
+
     nn_graph_genes = datacopy.obsp["connectivities"]
     sq.gr.spatial_neighbors(datacopy)
     nn_graph_space = datacopy.obsp["spatial_connectivities"]
@@ -292,11 +314,14 @@ def compute_leiden__weighted_by_spatial_graph(
 def safe_load_processed_data(SAMPLE: str, subfolder: str,
                              data_centralized_folder: str) -> ad.AnnData:
     """safely load mzs intensities (anndata) with only good quality ions"""
-    adata_mz = ad.read_h5ad(filename=os.path.join(
-        data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
-    adata_mz = adata_mz[:,
-    adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
-    "mz"].astype(str).tolist()]
+    try:
+        adata_mz = ad.read_h5ad(filename=os.path.join(
+            data_centralized_folder, subfolder, f'{SAMPLE}.h5ad'))
+        adata_mz = adata_mz[:,
+        adata_mz.var.loc[adata_mz.var['final_quality'] == "good",
+        "mz"].astype(str).tolist()]
+    except FileNotFoundError:
+        logger.info("could not load mzs intensities, %s", SAMPLE)
 
     return adata_mz
 
@@ -312,13 +337,16 @@ def read_clean_annotations(SAMPLE: str, pathways_types: List[str],
      """
     pathways_types = list(set(pathways_types) - {"FAMILIES"})
 
-    annots_dict = {}
-    for pw_type in pathways_types:
-        tmpfi = os.path.join(data_centralized_folder,
-                             subfolder,
-                             f'{SAMPLE}-{pw_type}-CleanAnnotations.tsv')
-        annots_dict[pw_type] = pd.read_csv(tmpfi,
-                                           sep='\t', header=0, index_col=None)
+    try:
+        annots_dict = {}
+        for pw_type in pathways_types:
+            tmpfi = os.path.join(data_centralized_folder,
+                                 subfolder,
+                                 f'{SAMPLE}-{pw_type}-CleanAnnotations.tsv')
+            annots_dict[pw_type] = pd.read_csv(tmpfi,
+                                               sep='\t', header=0, index_col=None)
+    except FileNotFoundError:
+        logger.info("could not load clean annotations, %s", SAMPLE)
 
     return annots_dict
 

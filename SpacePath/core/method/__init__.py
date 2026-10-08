@@ -18,6 +18,7 @@ from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.sparse import csr_matrix
 from scipy.spatial.distance import squareform
 import SpacePath.core.helpers as helpers
+from SpacePath.core.helpers import validate_intensities
 import SpacePath.core.processing.measures_methods as measures_methods
 import SpacePath.core.processing.pathways_methods as pathways_methods
 import SpacePath.core.visualization.visualization as sviz
@@ -96,6 +97,7 @@ class NormalizeIntensities:
     config: NormalizeIntensitiesConfig
 
     @staticmethod
+    @validate_intensities
     def run(adata_mz: ad.AnnData, config=NormalizeIntensitiesConfig()
             ) -> ad.AnnData:
         """
@@ -117,14 +119,14 @@ class NormalizeIntensities:
                 else:
                     logger.info("Intensities already normalised, "
                                 "check .uns['norm'] and .layers['raw_X']")
+            except RuntimeError as e:
+                logger.critical("Failed TIC normalization: %s", e)
             except Exception as e:
-                logger.critical("Normalization failed: %s", e)
-                raise RuntimeError(
-                    f"Could not normalize intensities: {e}") from e
+                logger.critical("Unexpected error (TIC): %s", e)
         else:
             logger.error("%s is not supported", config.method)
 
-        del adata_mz.uns['tmp_slot']
+        del adata_mz.uns['tmp_slot']  # clean
 
         return adata_mz
 

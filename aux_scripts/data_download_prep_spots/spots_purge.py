@@ -21,8 +21,7 @@ import matplotlib.pyplot as plt
 
 import logging
 
-import warnings
-warnings.simplefilter('ignore', category=FutureWarning)
+
 import squidpy as sq
 
 
