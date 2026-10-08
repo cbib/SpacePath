@@ -49,7 +49,6 @@ diff_sets = diff_sets.sort_values(
     by='I', ascending=False).head(sets_relevant_n_limit).copy()
 
 
-# print(diff_sets.head())
 scores_concatenated = join_scores_adatas(pathways_types, SAMPLE, subfolder,
                             data_centralized_folder)
 

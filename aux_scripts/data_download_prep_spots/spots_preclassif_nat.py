@@ -1,22 +1,10 @@
 # johaGL 2025
-# script for cleaning spots in semimanual fashion for specific tissues
+# cleaning spots in semimanual fashion for specific tissue (Nature 2025)
 
-import os
 import pandas as pd
-import anndata as ad
-import scanpy as sc
-import matplotlib.pyplot as plt
-from typing import List
-import scipy.sparse.linalg as linalg
-import SpacePath.core.method as spm
-import json
 
-import warnings
 
-warnings.simplefilter('ignore', category=FutureWarning)
-import squidpy as sq
 
-from spots_purge import show_message
 from spots_preclassif_TD import run_custom_spot_qual
 
 data_centralized_folder = "../../../data"

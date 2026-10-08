@@ -1,19 +1,32 @@
+import os
 import logging
-import warnings
-
-warnings.simplefilter('ignore', category=FutureWarning)
-
-from SpacePath.core.helpers import setup_logger  # to add extra info to the log
-
-import SpacePath.core.processing.measures_methods as measures_methods
-from sklearn.cluster import KMeans
+from typing import Any, Dict, List
 
 import pickle
+import numpy as np
+import pandas as pd
+import anndata as ad
+import scanpy as sc
+from scipy.sparse import csr_matrix
+from sklearn.cluster import KMeans
 
+from SpacePath.core.helpers import setup_logger  # to add extra info to the log
+import SpacePath.core.data as spd
+import SpacePath.core.method as spm
+import SpacePath.core.processing.measures_methods as measures_methods
 from SpacePath.src.constants import (pathways_files_location_info,
                                      options_palette_supported)
-
-from SpacePath.src.helpers import *
+from SpacePath.src.helpers import (join_scores_adatas,
+                                   safe_insert_clusters_column,
+                                   squidpy_differential_analysis,
+                                   differential_results_filter,
+                                   safe_load_processed_data,
+                                   run_pathway_scores_steps_produce_anndata,
+                                   safe_load_data_and_clean_annotations,
+                                   prepare_molecular_ids_df,
+                                   compute_leiden__weighted_by_spatial_graph,
+                                   plot_clustering_results
+                                   )
 
 logger = logging.getLogger(__name__)
 setup_logger(logger)
@@ -23,7 +36,7 @@ np.random.seed(42)  # important to make the computations be reproducible
 """"Wrappers for a complete workflow as performed in our benchmark"""
 
 
-def display_report_sets(top_differential, SAMPLE) -> None:
+def display_report_sets(top_differential: pd.DataFrame, SAMPLE: str) -> None:
     all_l = top_differential.names.unique()
     all_fam = [k for k in all_l if k.startswith("MolFam")]
     wiki_p = [k for k in all_l if k.startswith("WP")]
@@ -40,7 +53,7 @@ def compute_differential_families_and_pathways(
         clustering_parameters: Dict[str, str | int | float],
         SAMPLE: str, subfolder: str, data_centralized_folder: str,
         n_top_per_cluster: int = 30) -> None:  # before: n_top_per_cluster 25
-    if not "FAMILIES" in pathways_types:
+    if "FAMILIES" not in pathways_types:
         pathways_types.append("FAMILIES")
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
 
@@ -84,9 +97,9 @@ def compute_differential_families_and_pathways(
     display_report_sets(top_differential, SAMPLE)
 
 
-def compute_families_scores(min_family_size,
-                            SAMPLE, subfolder,
-                            data_centralized_folder) -> None:
+def compute_families_scores(min_family_size: int,
+                            SAMPLE: str, subfolder: str,
+                            data_centralized_folder: str) -> None:
     """Compute families scores exclusively, and save to .h5ad file"""
     families_obj = spd.MetabolicPathways(
         data_dir=data_centralized_folder,
@@ -123,54 +136,65 @@ def compute_families_scores(min_family_size,
     scores_adata.write_h5ad(out_file)
 
 
-def compute_molecules_families(cutoff_tree, SAMPLE, subfolder,
-                               data_centralized_folder, plot_folder) -> None:
+def compute_molecules_families(cutoff_tree: float, SAMPLE: str,
+                               subfolder: str, data_centralized_folder: str,
+                               plot_folder: str
+                               ) -> None:
     np.random.seed(42)
-    top_differential_mzs = pd.read_csv(
-        os.path.join(data_centralized_folder, subfolder,
-                     f'{SAMPLE}-top-differential-mzs.tsv'), sep='\t',
-        header=0)
+    try:
+        top_differential_mzs = pd.read_csv(
+            os.path.join(data_centralized_folder, subfolder,
+                         f'{SAMPLE}-top-differential-mzs.tsv'), sep='\t',
+            header=0)
 
-    # to ensure consistency of families,  refilter for 25 top mz per cluster
-    top_differential = differential_results_filter(top_differential_mzs,
-                                                   n_top_per_cluster=25)
+        # to ensure consistency of families,  refilter for 25 top mz per cluster
+        top_differential = differential_results_filter(top_differential_mzs,
+                                                       n_top_per_cluster=25)
 
-    clean_annots_nokegg_ids = pd.read_csv(
-        os.path.join(data_centralized_folder, subfolder,
-                     f'{SAMPLE}-WIKI-CleanAnnotations.tsv'),
-        sep='\t', header=0, index_col=None)
+        clean_annots_nokegg_ids = pd.read_csv(
+            os.path.join(data_centralized_folder, subfolder,
+                         f'{SAMPLE}-WIKI-CleanAnnotations.tsv'),
+            sep='\t', header=0, index_col=None)
 
-    molecules_ids_df = prepare_molecular_ids_df(
-        top_differential, clean_ann_df=clean_annots_nokegg_ids)
+        molecules_ids_df = prepare_molecular_ids_df(
+            top_differential, clean_ann_df=clean_annots_nokegg_ids)
 
-    mol_similarities_result = spm.ComputeMoleculesSimilarityMatrix.run(
-        molecules_ids_list=molecules_ids_df["moleculeIds"])
+    except FileNotFoundError:
+        logger.warning("files required for preparing families not found, abort")
+    except Exception as e:
+        logger.warning("failed preparation for families, %s", e)
 
-    with open(os.path.join(data_centralized_folder, subfolder,
-                           f"{SAMPLE}-mol-similarities-matrix.pkl"),
-              "wb") as f:
-        pickle.dump(mol_similarities_result, f)
+    try:
+        mol_similarities_result = spm.ComputeMoleculesSimilarityMatrix.run(
+            molecules_ids_list=molecules_ids_df["moleculeIds"])
 
-    updated_config = spm.ComputeMoleculesFamiliesConfig(
-        cutoff_tree=cutoff_tree)
-    computed_fam_results = spm.ComputeMoleculesFamilies.run(
-        mol_similarities_result,
-        molecules_ids_df,
-        SAMPLE,
-        subfolder,
-        data_centralized_folder,
-        plot_folder,
-        config=updated_config)  # all results: maybe of relevance for the user
+        with open(os.path.join(data_centralized_folder, subfolder,
+                               f"{SAMPLE}-mol-similarities-matrix.pkl"),
+                  "wb") as f:
+            pickle.dump(mol_similarities_result, f)
+        updated_config = spm.ComputeMoleculesFamiliesConfig(
+            cutoff_tree=cutoff_tree)
+        computed_fam_results = spm.ComputeMoleculesFamilies.run(
+            mol_similarities_result,
+            molecules_ids_df,
+            SAMPLE,
+            subfolder,
+            data_centralized_folder,
+            plot_folder,
+            config=updated_config)
+        with open(os.path.join(
+                data_centralized_folder, subfolder, f"{SAMPLE}-mol-fam-dict.pkl"),
+                "wb") as f:
+            pickle.dump(computed_fam_results, f)
+    except RuntimeError:
+        logger.warning("algorithm failed, verify %s", cutoff_tree)
+    except Exception as e:
+        logger.warning("failed to compute & save families, %s", e)
 
-    with open(os.path.join(
-            data_centralized_folder, subfolder, f"{SAMPLE}-mol-fam-dict.pkl"),
-            "wb") as f:
-        pickle.dump(computed_fam_results, f)
 
-
-def compute_pathway_scores(pathways_types, min_pathway_size,
-                           SAMPLE, subfolder,
-                           data_centralized_folder) -> None:
+def compute_pathway_scores(pathways_types: List[str], min_pathway_size: int,
+                           SAMPLE: str, subfolder: str,
+                           data_centralized_folder: str) -> None:
     """
     Compute pathways scores exclusively,
     saves each type of scores (e.g. KEGG or WIKI) to distinct .h5ad files
@@ -215,11 +239,11 @@ def compute_pathway_scores(pathways_types, min_pathway_size,
         logger.info("scores saved to file %s", out_file)
 
 
-def compute_differential_analysis_of_mzs(pathways_types,
-                                         clustering_parameters, SAMPLE,
-                                         subfolder, data_centralized_folder,
-                                         n_top_per_cluster=100  # new
-                                         ) -> None:
+def compute_differential_analysis_of_mzs(
+    pathways_types: List[str], clustering_parameters: Dict[str, Any],
+    SAMPLE: str, subfolder: str, data_centralized_folder: str,
+    n_top_per_cluster: int = 100
+) -> None:
     logger.info("computing differential ions between clusters")
     adata_mz, clean_annots_dict = safe_load_data_and_clean_annotations(
         SAMPLE, pathways_types, subfolder, data_centralized_folder
@@ -232,8 +256,9 @@ def compute_differential_analysis_of_mzs(pathways_types,
     adata_mz = safe_insert_clusters_column(adata_mz, clusters_df, str_out)
 
     sc.pp.log1p(adata_mz)
-    logger.info("computing the differential abundances of all the m/z features,"
-          " cluster to cluster, for all clusters")
+    logger.info(
+        "computing the differential abundances of all the m/z features,"
+        " cluster to cluster, for all clusters")
     differential_results_by_cluster = squidpy_differential_analysis(
         adata_mz, group_str=str_out)
 
@@ -262,8 +287,10 @@ def compute_clustering_of_spots(
     top_mz_by_moran_i = adata_mz.var.loc[
         adata_mz.var['I'] >= 0.1, "mz"].astype(str).tolist()
     datacopy = adata_mz[:, top_mz_by_moran_i].copy()
+
     sc.pp.log1p(datacopy)
     sc.tl.pca(datacopy, svd_solver="arpack")
+
     if clustering_parameters['choice'] == "kmeans":
         user_k = int(clustering_parameters['numeric_parameter'])
         kmeans = KMeans(n_clusters=user_k, random_state=42).fit(
@@ -271,8 +298,12 @@ def compute_clustering_of_spots(
         the_labels_str_l = kmeans.labels_.astype(str)
     elif clustering_parameters['choice'] == "leiden_sg":
         resolution = float(clustering_parameters['numeric_parameter'])
-        datacopy, the_labels_str_l = compute_leiden__weighted_by_spatial_graph(
-            datacopy, resolution)
+        datacopy, the_labels_str_l = \
+            compute_leiden__weighted_by_spatial_graph(
+                datacopy, resolution)
+    else:
+        raise ValueError(
+            f"Unknown clustering method: {clustering_parameters['choice']}")
 
     str_out = f"{clustering_parameters['choice']}-{clustering_parameters['numeric_parameter']}"
     adata_mz.obs[str_out] = the_labels_str_l

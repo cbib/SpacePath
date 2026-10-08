@@ -1,7 +1,7 @@
 import gc
 import os
 from typing import Dict
-import warnings
+
 
 
 from SpacePath.api import (join_scores_adatas,
@@ -13,8 +13,6 @@ from viz_results_helpers import (run_alluvial_plot,
                                  run_individual_tabular_plots
                                  )
 from viz_constants import alluvial_n_to_display_dict as n_for_alluvial
-
-warnings.simplefilter('ignore',category=FutureWarning)
 
 
 import numpy as np

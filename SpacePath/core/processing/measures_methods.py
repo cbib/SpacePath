@@ -162,8 +162,8 @@ def part_a__mz_quality_mark(annotations_obj, msm_cutoff, offSample_cutoff,
     return annotations_obj, mz_to_keep_part1
 
 
-def custom_join_left(df1, df2, keycol: str = 'mz') -> Union[
-    pd.DataFrame, None]:
+def custom_join_left(df1: pd.DataFrame, df2: pd.DataFrame, keycol: str = 'mz'
+                     ) -> Union[pd.DataFrame, None]:
     df1 = df1.copy()
     df2 = df2.copy()
     df2 = df2.assign(**{keycol: df2[keycol].astype(str)})
@@ -172,8 +172,6 @@ def custom_join_left(df1, df2, keycol: str = 'mz') -> Union[
     try:
         df2 = df2.loc[
             df1[keycol].astype(str).tolist(), :]  # same row order as 1
-        # np.all(df2.index.astype(str).to_numpy(
-        # ) == df1[keycol].astype(str).to_numpy())
         for col in df2.columns:
             df1 = df1.assign(**{col: df2[col].tolist()})
         return df1

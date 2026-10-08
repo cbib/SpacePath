@@ -117,14 +117,14 @@ class NormalizeIntensities:
                 else:
                     logger.info("Intensities already normalised, "
                                 "check .uns['norm'] and .layers['raw_X']")
+            except RuntimeError as e:
+                logger.critical("Failed TIC normalization: %s", e)
             except Exception as e:
-                logger.critical("Normalization failed: %s", e)
-                raise RuntimeError(
-                    f"Could not normalize intensities: {e}") from e
+                logger.critical("Unexpected error (TIC): %s", e)
         else:
             logger.error("%s is not supported", config.method)
 
-        del adata_mz.uns['tmp_slot']
+        del adata_mz.uns['tmp_slot']  # clean
 
         return adata_mz
 

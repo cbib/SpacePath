@@ -227,6 +227,8 @@ class MetabolomeAnnotations(Dataset):
                 self.df, self.mz_col, self.usable_id)
             if excess_mz_bool:
                 logger.warning(message_multimz)
+        except (KeyError, ValueError, TypeError):
+            logger.warning("failed to identify multi mz cases")
         except Exception as e:
             logger.warning("Error: %s", e)
 
@@ -245,6 +247,8 @@ class MetabolomeAnnotations(Dataset):
                 self.no_translated, ref_table,
                 self.molecule_ids_col, self.mz_col, self.usable_id)
             self.verify()
+        except (KeyError, ValueError, TypeError):
+            logger.warning("failed to convert identifiers to KEGG compounds")
         except Exception as e:
             logger.warning("Error: %s", e)
 

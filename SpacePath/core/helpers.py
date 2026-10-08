@@ -38,6 +38,10 @@ def setup_logger(logger, prefix=''):
     return logger
 
 
+logger = logging.getLogger(__name__)
+logger = setup_logger(logger)
+
+
 def secured_trios(identifiers_validated: List[str],
                   smiles_validated: List[str]) -> Tuple[
     List[str], List[str], List[DataStructs.cDataStructs.ExplicitBitVect]
@@ -139,7 +143,6 @@ def lipid_has_odd_n_carb(lipid_name: str|Any, cutoff_n_carbons: int) -> bool:
                          lipid_name, e)
 
     return out_bool
-
 
 
 def odd_n_carb_lipids_to_df(

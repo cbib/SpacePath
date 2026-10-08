@@ -64,7 +64,6 @@ for data_type in data_types:
                                          index_col=None, sep='\t')
 
     for u in datasets_parameters_df['dataset_name'].tolist():
-        #print(os.path.exists(os.path.join(data_dir, u, f'{u}-molecules_families.mmt')))
         families_effective = set()
         good_annots_wiki = pd.read_csv(
             os.path.join(data_dir, u, f'{u}-WIKI-CleanAnnotations.tsv'), sep='\t', index_col=0)
@@ -121,8 +120,7 @@ for data_type in data_types:
     # end of a very long for
 
 # Final report over both types of data collections
-print()
-print("=========== Final report ==============")
+print("\n=========== Final report ==============")
 print("coverage by canonical pathways alone, max:",
       np.max([sets_coverage_dict["private"]['cov canonical'],
        sets_coverage_dict["public"]["cov canonical"]]))   #  max 0.0136
