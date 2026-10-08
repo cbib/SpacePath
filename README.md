@@ -12,7 +12,8 @@ SpacePath is a novel bioinformatics framework designed to analyze spatial metabo
 
 SpacePath's approach integrates pathway activity scores at the spatial resolution level, and investigates unmapped features with a strategy that exploits the molecular similarity between chemical entities. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping, and facilitating the interpretation of complex mass spectrometry imaging data. When applied to cancer tissues, SpacePath can enhance the understanding of tumor metabolism.
 
-<img width="900" height="500" alt="Screenshot from 2025-07-22 15-06-39" src="https://github.com/user-attachments/assets/5a5bcc3b-d561-4ffc-b110-5fe0b40b75ca" />
+
+<img width="900" height="500" alt="diagram-temporary-spacepath" src="https://github.com/user-attachments/assets/f1bab3aa-e198-457c-9c91-25e95cd2220a" />
 
 
 Notably, SpacePath was applied on a collection of different types of healthy and tumoral tissues, including glioblastoma. By integrating complex spatially resolved lipidomics data and functional sets expressed as pathways or families, the method provided valuable insights about the glioblastoma's metabolic organization, prompting a potential impact on biomarker discovery.
