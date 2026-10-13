@@ -60,15 +60,7 @@ micromamba create -f spacepath_env.yaml
 
 The full installation process should take less than 15 minutes on a standard computer (dependencies included). Two options are possible.
 
-#### Option 1: Install via `pip`
-Follow the three steps specified in the snippet below:
-```
-micromamba activate spacepath   # activate your environment
-pip install SpacePath         
-pip install sspa==1.0.4
-```
-
-#### Option 2: Using a local clone and poetry
+#### Option 1: Using a local clone and poetry
 
 First clone `SpacePath` in your workspace (`git clone git@github.com:cbib/SpacePath.git`), then, follow the steps specified in the snippet below:
 ```
@@ -77,6 +69,17 @@ cd SpacePath   # 2. locate into the cloned SpacePath
 poetry install  # 3. install SpacePath
 pip install sspa==1.0.4  # 4. intall sspa
 ```
+
+
+#### Option 2: Install via `pip`
+
+Follow the three steps specified in the snippet below:
+```
+micromamba activate spacepath   # activate your environment
+pip install SpacePath         
+pip install sspa==1.0.4
+```
+
  
 ## After the install process
 
