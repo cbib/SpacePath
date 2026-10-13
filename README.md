@@ -92,7 +92,7 @@ SpacePath $input_file $data_folder $figures_folder
 # Documentation
 
 Documentation, examples of how to use `SpacePath`, and the specifics of the datasets used in the analyses 
-are provided in the [Wiki]() page.   
+are provided in the [Wiki](https://github.com/cbib/SpacePath/wiki) page.   
 
 -------------
 

@@ -1,9 +1,9 @@
 [project]
 name = "SpacePath"
-version = "0.0.0"
-description = "A workflow for functional analysis of Spatial Lipidomics data"
+version = "0.1.0"
+description = "Pathway and molecular family analysis for MSI-based spatial metabolomics and lipidomics"
 authors = [
-    {name = "johaGL", email = "johanna.galvis@ibgc.cnrs.fr"}
+    {name = "johaGL", email = "johanna.galvis@u-bordeaux.fr"}
 ]
 
 readme = "README.md"

@@ -4,7 +4,7 @@ Datasets are provided, consisting of examples of spatial metabolomics/lipidomics
 through the public Zenodo registry [https://zenodo.org/records/19113236](https://zenodo.org/records/19113236). 
 
 > **Important:**
-> These datasets are not contained within the library distribution; instead, they are provided
+> These datasets are not contained within the package distribution; instead, they are provided
 > **separately** as external data for demonstration purposes.
 
 
@@ -33,12 +33,12 @@ $working_dir   # e.g.$HOME or other
 Details about the specific content of each subfolder of `examples-sm-data` are provided in the same Zenodo registry.
 
 
-2. Visit our Wiki page [in this LINK](), which shows the usage of `SpacePath` on 
+2. Visit our Wiki page [in this LINK](https://github.com/cbib/SpacePath/wiki), which shows the usage of `SpacePath` on 
 the provided example data. There we provide code snippets, that you can re-use to run a fast analysis on the example data!
 
 
 _Note: if you cloned the `SpacePath` locally for usage (and not for development purposes), we strongly recommend
-**not to add any datasets**, nor scripts, inside the library folder._
+**not to add any datasets**, nor scripts, inside the SpacePath folder._
 
 
 
