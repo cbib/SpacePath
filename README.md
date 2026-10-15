@@ -1,4 +1,5 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)  [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)  [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)   ![GitHub Release](https://img.shields.io/github/v/release/cbib/SpacePath)     [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23390206.svg)](https://doi.org/10.5281/zenodo.23390206)
+
  
 
 SpacePath
