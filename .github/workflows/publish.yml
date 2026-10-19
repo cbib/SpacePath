@@ -3,7 +3,8 @@ name: Publish SpacePath to PyPI
 on:
   push:
     tags:
-      - "v*.*.*" # Triggers the workflow when pushing a version tag
+      - "*.*.*" # Triggers the workflow when pushing a version tag
+  workflow_dispatch:  #  Allows you to manually trigger this via the GitHub UI
 
 jobs:
   build-and-publish:
