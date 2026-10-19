@@ -1,4 +1,5 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)  [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)  [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)   ![GitHub Release](https://img.shields.io/github/v/release/cbib/SpacePath)     [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23390206.svg)](https://doi.org/10.5281/zenodo.23390206)
+
  
 
 SpacePath
@@ -60,15 +61,7 @@ micromamba create -f spacepath_env.yaml
 
 The full installation process should take less than 15 minutes on a standard computer (dependencies included). Two options are possible.
 
-#### Option 1: Install via `pip`
-Follow the three steps specified in the snippet below:
-```
-micromamba activate spacepath   # activate your environment
-pip install SpacePath         
-pip install sspa==1.0.4
-```
-
-#### Option 2: Using a local clone and poetry
+#### Option 1: Using a local clone and poetry
 
 First clone `SpacePath` in your workspace (`git clone git@github.com:cbib/SpacePath.git`), then, follow the steps specified in the snippet below:
 ```
@@ -77,6 +70,17 @@ cd SpacePath   # 2. locate into the cloned SpacePath
 poetry install  # 3. install SpacePath
 pip install sspa==1.0.4  # 4. intall sspa
 ```
+
+
+#### Option 2: Install via `pip`
+
+Follow the three steps specified in the snippet below:
+```
+micromamba activate spacepath   # activate your environment
+pip install SpacePath         
+pip install sspa==1.0.4
+```
+
  
 ## After the install process
 
