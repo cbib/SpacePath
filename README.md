@@ -14,12 +14,19 @@ SpacePath is a novel bioinformatics framework designed to analyze spatial metabo
 SpacePath's approach integrates pathway activity scores at the spatial resolution level, and investigates unmapped features with a strategy that exploits the molecular similarity between chemical entities. It overcomes limitations of existing tools that lack spatial resolution capabilities, providing a generalizable solution for tissue-specific metabolic mapping, and facilitating the interpretation of complex mass spectrometry imaging data. When applied to cancer tissues, SpacePath can enhance the understanding of tumor metabolism.
 
 
-<img width="900" height="500" alt="diagram-temporary-spacepath" src="https://github.com/user-attachments/assets/f1bab3aa-e198-457c-9c91-25e95cd2220a" />
+<p align="center">
+<img width="830" height="650" alt="schema-spacepath" src="https://raw.githubusercontent.com/cbib/SpacePath/main/img/SpacePath-conceptual-schema.png"/>
+</p>
 
 
 Notably, SpacePath was applied on a collection of different types of healthy and tumoral tissues, including glioblastoma. By integrating complex spatially resolved lipidomics data and functional sets expressed as pathways or families, the method provided valuable insights about the glioblastoma's metabolic organization, prompting a potential impact on biomarker discovery.
 
 _Note_: Our method also supports, as input data, the datasets consisting of aligned and recalibrated spectra intensities alongside their annotations, that are obtained from the [METASPACE](https://metaspace2020.org/) output. 
+
+> [!IMPORTANT]
+> When using SpacePath, please cite our preprint:
+> 
+> Galvis J, Guyon J, Dartigues B, Hecht H, Grüning B, Specque F,  Soueidan H, Karkar S,  Daubon T, Nikolski M. DIMet: An open-source tool for Differential analysis of targeted Isotope-labeled Metabolomics data. _Bioinformatics_ 2024; btae282. [https://doi.org/10.1093/bioinformatics/btae282](https://doi.org/10.1093/bioinformatics/btae282)   ====  Galvis J, Moreau M, Lillo S, Bomont D, Ledoux L, Zirem Y, Salzet M, Fournier I, Desbenoit N, Daubon T, & Nikolski M (2026). SpacePath enables pathway and molecular-family analysis beyond annotation ambiguity in spatial metabolomics and lipidomics. _bioRxiv_ [https://www.biorxiv.org/content/10.64898/2026.10.16.759546v1](https://www.biorxiv.org/content/10.64898/2026.10.16.759546v1) 
 
 
 # Installing SpacePath 
