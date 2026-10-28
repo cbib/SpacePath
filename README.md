@@ -26,7 +26,7 @@ _Note_: Our method also supports, as input data, the datasets consisting of alig
 > [!IMPORTANT]
 > When using SpacePath, please cite our preprint:
 > 
-> Galvis J, Guyon J, Dartigues B, Hecht H, Grüning B, Specque F,  Soueidan H, Karkar S,  Daubon T, Nikolski M. DIMet: An open-source tool for Differential analysis of targeted Isotope-labeled Metabolomics data. _Bioinformatics_ 2024; btae282. [https://doi.org/10.1093/bioinformatics/btae282](https://doi.org/10.1093/bioinformatics/btae282)   ====  Galvis J, Moreau M, Lillo S, Bomont D, Ledoux L, Zirem Y, Salzet M, Fournier I, Desbenoit N, Daubon T, & Nikolski M (2026). SpacePath enables pathway and molecular-family analysis beyond annotation ambiguity in spatial metabolomics and lipidomics. _bioRxiv_ [https://www.biorxiv.org/content/10.64898/2026.10.16.759546v1](https://www.biorxiv.org/content/10.64898/2026.10.16.759546v1) 
+> Galvis J, Moreau M, Lillo S, Bomont D, Ledoux L, Zirem Y, Salzet M, Fournier I, Desbenoit N, Daubon T, & Nikolski M (2026). SpacePath enables pathway and molecular-family analysis beyond annotation ambiguity in spatial metabolomics and lipidomics. _bioRxiv_. [https://www.biorxiv.org/content/10.64898/2026.10.16.759546v1](https://www.biorxiv.org/content/10.64898/2026.10.16.759546v1) 
 
 
 # Installing SpacePath 
